@@ -1,0 +1,48 @@
+# A simple Typhon program demonstrating basic language features
+
+# Variable declarations with type annotations
+let x: int = 42
+let y: float = 3.14
+let message: str = "Hello, Typhon!"
+
+# Mutable variable
+mut counter: int = 0
+
+# Function definition with typed parameters and return type
+def add(a: int, b: int) -> int:
+    let result = a + b
+    return result
+
+# Function with control flow
+def check_value(value: int) -> str:
+    if value > 10:
+        return "Greater than 10"
+    else:
+        return "Less than or equal to 10"
+
+# Main function
+def main() -> int:
+    # Function call and assignment
+    let sum_result = add(5, 7)
+
+    # Control flow (if statement)
+    if sum_result > 10:
+        # Output statement
+        print("Sum is greater than 10: " + str(sum_result))
+
+    # Increment counter
+    counter = counter + 1
+
+    # String concatenation
+    let status = "Counter value: " + str(counter)
+    print(status)
+
+    # Check value function call
+    let check_result = check_value(x)
+    print("x is " + check_result)
+
+    # Return success code
+    return 0
+
+# Call main function
+main()

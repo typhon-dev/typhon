@@ -6,7 +6,7 @@ use logos::{
 };
 
 /// A token type with source location information
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     /// The kind of token
     pub kind: TokenKind,
@@ -115,19 +115,19 @@ pub enum TokenKind {
     StringLiteral,
     #[regex(r#"'([^'\\]|\\.)*'"#)]
     StringLiteral2,
-    #[regex(r#"r"([^"\\]|\\.)*("|$)"#)]
+    #[regex(r#"r"([^"\\]|\\.)*""#)]
     RawStringLiteral,
-    #[regex(r#"r'([^'\\]|\\.)*('|$)"#)]
+    #[regex(r#"r'([^'\\]|\\.)*'"#)]
     RawStringLiteral2,
     #[regex(r#"b"([^"\\]|\\.)*""#)]
     BytesLiteral,
     #[regex(r#"b'([^'\\]|\\.)*'"#)]
     BytesLiteral2,
 
-    // Triple-quoted string literals
-    #[regex(r#""{3}([\s\S]*?)"{3}"#)]
+    // Triple-quoted string literals - simplified to avoid greediness issues
+    #[regex(r#""{3}[^"]*"{3}"#)]
     MultilineStringLiteral,
-    #[regex(r#"'{3}([\s\S]*?)'{3}"#)]
+    #[regex(r#"'{3}[^']*'{3}"#)]
     MultilineStringLiteral2,
 
     // Identifiers
@@ -244,7 +244,6 @@ pub enum TokenKind {
     Eof,
 
     // Error
-    #[error]
     Error,
 }
 

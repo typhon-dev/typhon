@@ -9,7 +9,7 @@ use rustc_hash::FxHashMap;
 
 use crate::frontend::lexer::token::TokenSpan;
 
-mod visitor;
+pub mod visitor;
 
 pub use visitor::{
     DefaultVisitor,
@@ -18,7 +18,7 @@ pub use visitor::{
 };
 
 /// Source information for AST nodes
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SourceInfo {
     /// Span of the source code
     pub span: TokenSpan,

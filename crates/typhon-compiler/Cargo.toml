@@ -14,14 +14,24 @@
   unicode-xid       = "0.2.4"  # Unicode identifier detection
 
   # Parser
-  chumsky   = "0.9.3"                                     # Ergonomic parser combinators
-  miette    = { version = "7.0.0", features = ["fancy"] } # Error reporting
-  thiserror = "1.0.56"                                    # Error handling
+  chumsky   = "0.9.3"  # Ergonomic parser combinators
+  thiserror = "1.0.56" # Error handling
 
   # General utilities
   bitflags     = "2.4.1"
-  indenter     = "0.3.3"                                       # Indentation management
+  indenter     = "0.3.3"  # Indentation management
   paste        = "1.0.14"
-  rustc-hash   = "1.1.0"                                       # Fast hash maps
-  strum        = { version = "0.26.1", features = ["derive"] } # Enum utilities
+  rustc-hash   = "1.1.0"  # Fast hash maps
   strum_macros = "0.26.1"
+
+  [dependencies.inkwell]
+    features = ["llvm18-1"]
+    version  = "0.6.0"
+
+  [dependencies.miette] # Error reporting
+    features = ["fancy"]
+    version  = "7.0.0"
+
+  [dependencies.strum] # Enum utilities
+    features = ["derive"]
+    version  = "0.26.1"

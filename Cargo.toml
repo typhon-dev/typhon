@@ -15,22 +15,22 @@
 
   [workspace.dependencies]
     [workspace.dependencies.typhon-cli]
-    path = "crates/typhon-cli"
+      path = "crates/typhon-cli"
 
     [workspace.dependencies.typhon-compiler]
-    path = "crates/typhon-compiler"
+      path = "crates/typhon-compiler"
 
     [workspace.dependencies.typhon-lsp]
-    path = "crates/typhon-lsp"
+      path = "crates/typhon-lsp"
 
     [workspace.dependencies.typhon-repl]
-    path = "crates/typhon-repl"
+      path = "crates/typhon-repl"
 
     [workspace.dependencies.typhon-runtime]
-    path = "crates/typhon-runtime"
+      path = "crates/typhon-runtime"
 
     [workspace.dependencies.typhon-stdlib]
-    path = "crates/typhon-stdlib"
+      path = "crates/typhon-stdlib"
 
   [workspace.package]
     authors     = ["Jonathan Howard <howard.jonathan.21@gmail.com>"]
@@ -39,7 +39,6 @@
     edition     = "2024"
     keywords    = ["compiler", "language", "llvm", "python", "static-typing"]
     license     = "Apache-2.0"
-    name        = "typhon"
     readme      = "README.md"
     repository  = "https://github.com/typhon-dev/typhon"
     version     = "0.1.0"

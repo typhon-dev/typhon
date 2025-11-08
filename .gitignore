@@ -23,6 +23,7 @@
 !*.rs
 !*.sh
 !*.svg
+!*.ty
 !*.yaml
 !*.yml
 !AGENTS.md
@@ -56,6 +57,7 @@
 !/.taskfiles/
 !/.vscode/
 !/crates/
-!/crates/**/*
+!/crates/**/
 !/docs/
+!/docs/**/
 !/examples/
