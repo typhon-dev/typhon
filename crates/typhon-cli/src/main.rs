@@ -20,10 +20,8 @@
 //!
 //! Command-line interface for the Typhon programming language.
 
-use std::cell::RefCell;
 use std::fs::File;
 use std::io::Write;
-use std::rc::Rc;
 
 use anyhow::{
     Context,
@@ -34,10 +32,6 @@ use typhon_compiler::backend::CodeGenerator;
 use typhon_compiler::backend::llvm::LLVMContext;
 use typhon_compiler::driver::Driver;
 use typhon_compiler::frontend::parser::Parser as TyphonParser;
-use {
-    typhon_compiler as compiler,
-    typhon_runtime as runtime,
-};
 
 /// The Typhon programming language compiler and runtime
 #[derive(Parser, Debug)]
@@ -72,13 +66,13 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     if args.verbose {
-        println!("Typhon Compiler v{}", compiler::VERSION);
-        println!("Runtime v{}", runtime::VERSION);
+        println!("Typhon Compiler v{}", typhon_compiler::VERSION);
+        println!("Runtime v{}", typhon_runtime::VERSION);
     }
 
     // Process the input file if provided
-    if let Some(input) = args.input {
-        compile_file(&input, &args)?;
+    if let Some(input) = &args.input {
+        compile_file(input, &args)?;
     } else {
         println!("No input file provided. Use --help for usage information.");
     }
@@ -96,7 +90,7 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
     }
 
     // Implement full compilation process using the Driver
-    let driver = Driver::new();
+    let _driver = Driver::new();
 
     // We can either use the driver's high-level API
     // driver.compile_file(Path::new(input)).context("Failed to compile file using driver")?;
@@ -115,10 +109,15 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
     }
 
     // Create LLVM context for code generation
-    let llvm_context = Rc::new(RefCell::new(LLVMContext::new("typhon_module")));
+    let context_box = Box::new(inkwell::context::Context::create());
+    let context = Box::leak(context_box);
+
+    // Create an LLVM context
+    let llvm_context_box = Box::new(LLVMContext::new(context, "typhon_module"));
+    let llvm_context = Box::leak(llvm_context_box);
 
     // Create code generator
-    let mut code_generator = CodeGenerator::new(llvm_context.clone());
+    let mut code_generator = CodeGenerator::new(llvm_context);
 
     // Generate code
     code_generator
@@ -126,7 +125,7 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
         .context("Failed to generate code")?;
 
     // Get the generated LLVM IR
-    let llvm_ir = llvm_context.borrow().module().to_string();
+    let llvm_ir = llvm_context.module().to_string();
 
     // Output the LLVM IR or compile to an executable
     if args.emit_llvm {

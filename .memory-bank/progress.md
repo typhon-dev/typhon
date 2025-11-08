@@ -1,7 +1,7 @@
 ---
 title: Progress
 description: Tracks the project's progress using a task list format
-tags: ["memory-bank", "documentation", "progress", "tasks", "tracking", "implementation"]
+tags: [memory-bank, documentation, progress, tasks, tracking, implementation]
 ---
 
 This file tracks the project's progress using a task list format.
@@ -28,6 +28,10 @@ This file tracks the project's progress using a task list format.
 - Added support for Python-style True/False/None keywords as dedicated tokens
 - Refactored dependency management using workspace dependencies
 - Updated project configuration for consistent file indentation
+- Fixed typhon-cli build errors:
+  - Added VERSION constant to typhon-compiler/src/lib.rs
+  - Fixed LLVMContext instantiation with correct argument count
+  - Resolved LLVMContext type mismatch using Box::leak for lifetime management
 
 ## Current Tasks
 
@@ -47,3 +51,4 @@ This file tracks the project's progress using a task list format.
 2025-11-07 22:07:00 - Updated with completed LLVM compatibility fixes and current tasks.
 2025-11-07 23:10:00 - Updated to reflect completion of all compiler error fixes including lifetime and memory management issues.
 2025-11-08 18:55:00 - Updated with boolean literals support, dependency management refactoring, and project configuration improvements.
+2025-11-08 21:36:00 - Updated with completed typhon-cli build error fixes including VERSION constant and LLVMContext handling.

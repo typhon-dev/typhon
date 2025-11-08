@@ -11,6 +11,9 @@
   serde.workspace      = true
   tempfile.workspace   = true # Temporary file handling
 
+  # General utilities
+  inkwell.workspace = true # LLVM bindings
+
   # Internal crates
   typhon-compiler.workspace = true
   typhon-runtime.workspace  = true

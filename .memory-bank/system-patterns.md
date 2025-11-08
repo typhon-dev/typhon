@@ -1,7 +1,7 @@
 ---
 title: System Patterns *Optional*
 description: Documents recurring patterns and standards used in the project
-tags: ["memory-bank", "documentation", "system-patterns", "coding-patterns", "architectural-patterns", "testing-patterns", "patterns", "standards", "code-organization", "architecture", "testing"]
+tags: [memory-bank, documentation, system-patterns, standards, architecture, testing]
 ---
 
 This file documents recurring patterns and standards used in the project.

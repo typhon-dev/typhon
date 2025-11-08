@@ -1,7 +1,7 @@
 ---
 title: Product Context
 description: High-level overview of the project
-tags: ["memory-bank", "documentation", "product-context", "project-overview", "product", "architecture", "features"]
+tags: [memory-bank, documentation, product-context, project-overview, architecture, features]
 ---
 
 This file provides a high-level overview of the project and the expected product that will be created.

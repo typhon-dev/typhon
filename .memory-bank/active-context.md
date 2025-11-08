@@ -1,7 +1,7 @@
 ---
 title: Active Context
 description: Current status of the project including recent changes and goals
-tags: ["memory-bank", "documentation", "active-context", "current-status", "active", "status", "changes", "questions"]
+tags: [memory-bank, documentation, active-context, status, changes, questions]
 ---
 
 This file tracks the project's current status, including recent changes, current goals, and open questions.
@@ -29,6 +29,10 @@ This file tracks the project's current status, including recent changes, current
 - Added support for Python-style True/False/None keywords in the AST and lexer tokens
 - Refactored dependency management in Cargo.toml files to use workspace dependencies
 - Updated project configuration to treat .ty files with same indent rules as .rs files
+- Fixed typhon-cli build errors:
+  - Added VERSION constant to typhon-compiler/src/lib.rs
+  - Fixed LLVMContext instantiation with correct argument count
+  - Resolved LLVMContext type mismatch using Box::leak for lifetime management
 
 ## Open Questions/Issues
 
@@ -43,3 +47,4 @@ This file tracks the project's current status, including recent changes, current
 2025-11-07 22:06:00 - Updated with recent fixes for LLVM 18.1.8 compatibility and remaining issues.
 2025-11-07 23:21:00 - Updated to reflect completion of all LLVM compatibility issues and the new memory management architecture.
 2025-11-08 18:50:00 - Updated with findings about True/False/None keywords and dependency management changes.
+2025-11-08 21:35:00 - Updated with fixes to typhon-cli build errors related to VERSION constant and LLVMContext handling.

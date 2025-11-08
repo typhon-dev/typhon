@@ -1,7 +1,7 @@
 ---
 title: Decision Log
 description: Records architectural and implementation decisions in the project
-tags: ["memory-bank", "documentation", "decision-log", "architecture", "implementation", "decisions", "design"]
+tags: [memory-bank, documentation, decision-log, architecture, design]
 ---
 <!-- markdownlint-disable-file no-duplicate-heading -->
 
@@ -237,8 +237,26 @@ Consistent indentation across both Rust source and Typhon files improves develop
 
 ---
 
+## Decision
+
+Fix typhon-cli build errors related to VERSION constant and LLVMContext handling
+
+## Rationale
+
+The typhon-cli package had multiple build errors preventing compilation: missing VERSION constant, incorrect function call argument count, and a type mismatch with LLVMContext. These needed to be fixed to make the CLI functional.
+
+## Implementation Details
+
+- Added VERSION constant to typhon-compiler/src/lib.rs using env!("CARGO_PKG_VERSION") to dynamically get version from Cargo.toml
+- Fixed LLVMContext instantiation by using correct argument count and proper parameter types
+- Resolved LLVMContext type mismatch by replacing Rc<RefCell<>> with Box::leak for better lifetime management
+- Used Box::leak to create static references that satisfy lifetime requirements without complex ownership patterns
+
+---
+
 2025-10-20 04:39:00 - Initial creation of decision log.
 2025-10-20 05:05:00 - Added decisions on project structure, backend, and parsing libraries.
 2025-11-07 22:08:00 - Added decisions related to LLVM compatibility fixes and type system improvements.
 2025-11-07 23:24:00 - Updated with architectural decisions for memory management redesign and LLVM compatibility.
 2025-11-08 18:50:00 - Added decisions about Python-style True/False/None keywords, dependency management, and file indentation.
+2025-11-08 21:32:00 - Added decision about fixing typhon-cli build errors related to VERSION constant and LLVMContext handling.

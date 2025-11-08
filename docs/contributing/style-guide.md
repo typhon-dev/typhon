@@ -1,7 +1,7 @@
 ---
 title: Code and Documentation Standards
 description: Defines code and documentation standards for this project
-tags: ["code", "standards", "documentation", "formatting", "testing", "style"]
+tags: [code, standards, documentation, formatting, testing, style]
 ---
 
 This document defines the coding standards, formatting rules, and testing organization principles for this project.
@@ -24,7 +24,7 @@ This document defines the coding standards, formatting rules, and testing organi
    description: A brief description of the document
    author: Your Name/Handle
    version: 1.0
-   tags: ["category", "topic", "workflow"]
+   tags: [category, topic, workflow]
    ---
 
    This document <provide the purpose of the document>

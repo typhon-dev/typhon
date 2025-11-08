@@ -3,7 +3,7 @@ title: AGENTS.md
 description: Main guidance for AI assistants working with the typhon repository
 author: https://github.com/typhon-dev/typhon
 version: 1.0
-tags: ["agents", "guidance"]
+tags: [agents, guidance]
 ---
 
 This file provides guidance to agents when working with code in this repository.

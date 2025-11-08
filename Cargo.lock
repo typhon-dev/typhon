@@ -1762,6 +1762,7 @@ dependencies = [
  "anyhow",
  "clap",
  "env_logger",
+ "inkwell",
  "log",
  "serde",
  "serde_json",

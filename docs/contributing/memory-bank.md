@@ -2,7 +2,7 @@
 title: Memory Bank
 description:
 version: 1.0
-tags: ["contributing", "agents", "guidance"]
+tags: [contributing, agents, guidance]
 ---
 
 This file provides guidance for management of the project memory bank for contributors and AI agents when working with code in this repository.
@@ -84,7 +84,7 @@ I need to check if the .memory-bank/ directory and the required files exist.
 ---
 title: Product Context
 description: High-level overview of the project
-tags: ["memory-bank", "documentation", "product-context", "project-overview", "product", "architecture", "features"]
+tags: [memory-bank, documentation, product-context, project-overview, product, architecture, features]
 ---
 
 This file provides a high-level overview of the project and the expected product that will be created. Initially it is based upon project-brief.md (if provided) and all other available project-related information in the working directory. This file is intended to be updated as the project evolves, and should be used to inform all other modes of the project's goals and context.
@@ -112,7 +112,7 @@ YYYY-MM-DD HH:MM:SS - Log of updates made will be appended as footnotes to the e
 ---
 title: Active Context
 description: Current status of the project including recent changes and goals
-tags: ["memory-bank", "documentation", "active-context", "current-status", "active", "status", "changes", "questions"]
+tags: [memory-bank, documentation, active-context, current-status, active, status, changes, questions]
 ---
 
 This file tracks the project's current status, including recent changes, current goals, and open questions.
@@ -140,7 +140,7 @@ YYYY-MM-DD HH:MM:SS - Log of updates made.
 ---
 title: Progress
 description: Tracks the project's progress using a task list format
-tags: ["memory-bank", "documentation", "progress", "tasks", "tracking", "implementation"]
+tags: [memory-bank, documentation, progress, tasks, tracking, implementation]
 ---
 
 This file tracks the project's progress using a task list format.
@@ -168,7 +168,7 @@ YYYY-MM-DD HH:MM:SS - Log of updates made.
 ---
 title: Decision Log
 description: Records architectural and implementation decisions in the project
-tags: ["memory-bank", "documentation", "decision-log", "architecture", "implementation", "decisions", "design"]
+tags: [memory-bank, documentation, decision-log, architecture, implementation, decisions, design]
 ---
 <!-- markdownlint-disable-file no-duplicate-heading -->
 
@@ -199,7 +199,7 @@ YYYY-MM-DD HH:MM:SS - Log of updates made.
 ---
 title: System Patterns *Optional*
 description: Documents recurring patterns and standards used in the project
-tags: ["memory-bank", "documentation", "system-patterns", "coding-patterns", "architectural-patterns", "testing-patterns", "patterns", "standards", "code-organization", "architecture", "testing"]
+tags: [memory-bank, documentation, system-patterns, coding-patterns, architectural-patterns, testing-patterns, patterns, standards, code-organization, architecture, testing]
 ---
 
 This file documents recurring patterns and standards used in the project.
@@ -229,7 +229,7 @@ YYYY-MM-DD HH:MM:SS - Log of updates made.
 ---
 title: Development Journal
 description: A chronological record of changes, decisions, challenges, and solutions during development
-tags: ["memory-bank", "documentation", "journal", "changes", "decisions", "challenges", "solutions"]
+tags: [memory-bank, documentation, journal, changes, decisions, challenges, solutions]
 ---
 
 This file provides a chronological narrative of the development process, documenting significant technical challenges, solutions, and architectural decisions as they occur.

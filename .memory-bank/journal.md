@@ -1,7 +1,7 @@
 ---
 title: Development Journal
 description: A chronological record of changes, decisions, challenges, and solutions during development
-tags: ["memory-bank", "documentation", "journal", "changes", "decisions", "challenges", "solutions"]
+tags: [memory-bank, documentation, journal, changes, decisions, challenges, solutions]
 ---
 
 This file provides a chronological narrative of the development process, documenting significant technical challenges, solutions, and architectural decisions as they occur.
@@ -122,3 +122,43 @@ Improved developer experience with configuration updates:
 - Set indent_size = 4 for both file types
 - Added .ty files to VS Code settings for consistent editor behavior
 - Updated allowed commands in roo-cline configuration
+
+## 2025-11-08: typhon-cli Package Fixes
+
+Today we fixed several critical build errors in the typhon-cli package:
+
+### 1. VERSION Constant Issue
+
+**Challenge:**
+The cli package was referencing a VERSION constant from the compiler crate that didn't exist, causing build errors.
+
+**Solution:**
+
+- Added a VERSION constant to typhon-compiler/src/lib.rs using env!("CARGO_PKG_VERSION")
+- This dynamically obtains the package version from Cargo.toml at compile time
+- Ensures version information stays synchronized with the package version
+
+### 2. LLVMContext Handling
+
+**Challenge:**
+Two critical issues with LLVMContext handling in the CLI:
+
+- A function call with incorrect argument count (only 1 provided when 2 required)
+- Type mismatch where &LLVMContext<'_> was expected but Rc<RefCell<LLVMContext<'_>>> was provided
+
+**Solution:**
+
+- Fixed the LLVMContext instantiation to properly create an inkwell Context first
+- Replaced the Rc<RefCell<>> approach with Box::leak for better lifetime management
+- This creates heap-allocated objects with Box and intentionally leaks the memory (acceptable since these objects need to live for the program's duration)
+- Provides the correct reference type expected by functions
+- Avoids complex lifetime issues that would occur with temporary references
+
+### 3. Technical Learnings
+
+Key insights from this experience:
+
+- VERSION constants should be consistently implemented across packages or centralized
+- Box::leak is an effective solution for handling complex lifetime requirements when objects need to live for the program's duration
+- When dealing with LLVM APIs, careful attention to reference types and ownership patterns is critical
+- Prefer simple ownership models over complex nested smart pointer patterns when possible
