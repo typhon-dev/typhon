@@ -1,0 +1,36 @@
+[package]
+  authors     = ["Typhon Development Team"]
+  description = "Interactive REPL for the Typhon programming language"
+  edition     = "2024"
+  license     = "MIT OR Apache-2.0"
+  name        = "typhon-repl"
+  repository  = "https://github.com/typhon-language/typhon"
+  version     = "0.1.0"
+
+  # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+  # Core dependencies
+  anyhow     = "1.0"
+  log        = "0.4"
+  serde_json = "1.0"
+  thiserror  = "1.0"
+
+  # REPL-specific dependencies
+  env_logger = "0.10" # Logging implementation
+  rustyline  = "12.0" # Line editing for REPL
+
+  [dependencies.clap] # Command-line argument parsing
+    features = ["derive"]
+    version  = "4.4"
+
+  [dependencies.serde]
+    features = ["derive"]
+    version  = "1.0"
+
+  # Internal crates
+  [dependencies.typhon-compiler]
+    path = "../typhon-compiler"
+
+  [dependencies.typhon-runtime]
+    path = "../typhon-runtime"

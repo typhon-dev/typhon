@@ -1,0 +1,30 @@
+# Check http://editorconfig.org for more information
+# This is the main config file for this project:
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+max_line_length = 100
+trim_trailing_whitespace = true
+
+[{Makefile,.gitmodules}]
+indent_style = tab
+indent_size = 4
+
+[*.{ansi,md,txt}]
+insert_final_newline = false
+
+[*.{code-snippets,json,toml,yaml,yml}]
+indent_size = 2
+
+[*.rs]
+indent_size = 4
+
+[*.sh]
+keep_padding = true
+space_redirects = true
+switch_case_indent = true

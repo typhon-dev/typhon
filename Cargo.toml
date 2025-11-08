@@ -1,0 +1,86 @@
+[profile.dev]
+  debug     = true # Full debug info
+  opt-level = 0    # No optimizations for development
+
+[profile.release]
+  codegen-units = 1       # Optimize for better runtime performance
+  debug         = false   # No debug info in release
+  lto           = true    # Link-time optimization
+  opt-level     = 3       # Maximum optimizations
+  panic         = "abort" # Abort on panic (smaller binary)
+
+[workspace]
+  members = [
+    "crates/typhon-cli",
+    "crates/typhon-compiler",
+    "crates/typhon-lsp",
+    "crates/typhon-repl",
+    "crates/typhon-runtime",
+    "crates/typhon-stdlib",
+  ]
+
+  [workspace.package]
+    authors     = ["Typhon Development Team"]
+    categories  = ["compilers", "development-tools", "programming-languages"]
+    description = "A statically and strongly typed programming language based on Python 3"
+    edition     = "2024"
+    keywords    = ["compiler", "language", "llvm", "python", "static-typing"]
+    license     = "MIT"
+    name        = "typhon"
+    readme      = "README.md"
+    repository  = "https://github.com/typhon-language/typhon"
+    version     = "0.1.0"
+
+  [workspace.lints.rust]
+    unreachable_pub = "warn"
+    unsafe_code     = "warn"
+
+    [workspace.lints.rust.unexpected_cfgs]
+      check-cfg = ["cfg(codspeed)", "cfg(fuzzing)"]
+      level     = "warn"
+
+  [workspace.lints.clippy]
+    # Allowed pedantic lints
+    char_lit_as_u8               = "allow"
+    collapsible_else_if          = "allow"
+    collapsible_if               = "allow"
+    implicit_hasher              = "allow"
+    map_unwrap_or                = "allow"
+    match_same_arms              = "allow"
+    missing_errors_doc           = "allow"
+    missing_panics_doc           = "allow"
+    module_name_repetitions      = "allow"
+    must_use_candidate           = "allow"
+    needless_continue            = "allow" # An explicit continue can be more readable, especially if the alternative is an empty block.
+    similar_names                = "allow"
+    single_match_else            = "allow"
+    too_many_lines               = "allow"
+    unnecessary_debug_formatting = "allow" # too many instances, the display also doesn't quote the path which is often desired in logs where we use them the most often.
+    # Without the hashes we run into a `rustfmt` bug in some snapshot tests, see #13250
+    needless_raw_string_hashes = "allow"
+    # Disallowed restriction lints
+    dbg_macro                       = "warn"
+    empty_drop                      = "warn"
+    empty_structs_with_brackets     = "warn"
+    exit                            = "warn"
+    get_unwrap                      = "warn"
+    ignore_without_reason           = "allow" # Too many exsisting instances, and there's no auto fix.
+    print_stderr                    = "warn"
+    print_stdout                    = "warn"
+    rc_buffer                       = "warn"
+    rc_mutex                        = "warn"
+    rest_pat_in_fully_bound_structs = "warn"
+    # nursery rules
+    debug_assert_with_mut_call = "warn"
+    redundant_clone            = "warn"
+    unused_peekable            = "warn"
+
+    [workspace.lints.clippy.pedantic]
+      level    = "warn"
+      priority = -2
+
+      # Diagnostics are not actionable: Enable once https://github.com/rust-lang/rust-clippy/issues/13774 is resolved.
+      large_stack_arrays = "allow"
+
+  [workspace.metadata.cargo-machete]
+    check_internal_dependencies = false

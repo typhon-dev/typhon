@@ -1,0 +1,50 @@
+[package]
+  authors     = ["Typhon Development Team"]
+  description = "Main compiler library for the Typhon programming language"
+  edition     = "2024"
+  license     = "MIT OR Apache-2.0"
+  name        = "typhon-compiler"
+  repository  = "https://github.com/typhon-language/typhon"
+  version     = "0.1.0"
+
+  # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+  # Core compiler dependencies
+  anyhow = "1.0"
+  log    = "0.4"
+
+  serde_json = "1.0"
+  thiserror  = "1.0"
+
+  # Parsing
+  logos = "0.13" # Lexer generator
+  regex = "1.9"  # Regular expressions for parsing
+
+  # Data structures
+  fxhash   = "0.2" # Fast hash implementation
+  indexmap = "2.1" # Indexed hash map
+  petgraph = "0.6" # Graph data structures for compiler
+
+  # LLVM integration
+  llvm-sys = "170.0.0" # LLVM bindings (version aligned with LLVM 17.0.0)
+
+  [dependencies.inkwell] # Higher-level LLVM wrapper
+    branch   = "master"
+    features = ["llvm17-0"]
+    git      = "https://github.com/TheDan64/inkwell"
+
+  [dependencies.serde]
+    features = ["derive"]
+    version  = "1.0"
+
+  # Internal crates
+  [dependencies.typhon-runtime]
+    path = "../typhon-runtime"
+
+  [dependencies.typhon-stdlib]
+    path = "../typhon-stdlib"
+
+[dev-dependencies]
+  insta    = "1.34" # Snapshot testing
+  proptest = "1.3"  # Property-based testing

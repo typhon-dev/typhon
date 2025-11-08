@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://www.schemastore.org/yamllint.json
+---
+extends: default
+
+ignore-from-file: .gitignore
+
+locale: en_US.UTF-8
+
+rules:
+  comments:
+    min-spaces-from-content: 1
+
+  braces:
+    forbid: non-empty
+
+  indentation:
+    spaces: 2
+
+  line-length:
+    level: warning
+    max: 120
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  quoted-strings:
+    allow-quoted-quotes: true
+    check-keys: true
+    quote-type: double
+    required: only-when-needed
+
+  truthy:
+    check-keys: false
+
+yaml-files:
+  - .yamllint
+  - "*.yaml"
+  - "*.yml"

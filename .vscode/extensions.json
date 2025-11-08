@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "fill-labs.dependi",
+    "jedeop.crates-completer",
+    "JScearcy.rust-doc-viewer",
+    "rust-lang.rust-analyzer",
+    "ryanluker.vscode-coverage-gutters",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb"
+  ]
+}

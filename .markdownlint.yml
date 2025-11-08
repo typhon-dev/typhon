@@ -1,0 +1,57 @@
+# yamllint disable-line rule:line-length
+# yaml-language-server: $schema=https://github.com/DavidAnson/markdownlint/raw/main/schema/markdownlint-config-schema.json
+---
+# Default to true for all rules
+default: true
+
+# MD004/ul-style : Unordered list style
+ul-style:
+  style: dash
+
+# MD007/ul-indent : Unordered list indentation
+ul-indent:
+  indent: 2
+
+# MD009/no-trailing-spaces - No trailing spaces
+no-trailing-spaces: true
+
+# MD013/line-length : Line length
+line-length: false
+
+# MD014/commands-show-output : Dollar signs used before commands without showing output
+commands-show-output: false
+
+# MD022/blanks-around-headings - Headings should be surrounded by blank lines
+blanks-around-headings: true
+
+# MD024/no-duplicate-heading : Multiple headings with the same content
+no-duplicate-heading:
+  # Allow when nested under different parents e.g. CHANGELOG.md
+  siblings_only: true
+
+# MD031/blanks-around-fenced-code - Fenced code blocks should be surrounded by blank lines
+blanks-around-fenced-code: true
+
+# MD033/no-inline-html : Inline HTML
+no-inline-html: false
+
+# MD040/fenced-code-language : Fenced code blocks should have a language specified
+fenced-code-language:
+  language_only: false
+
+# MD041/first-line-heading/first-line-h1 : First line in a file should be a top-level heading
+first-line-heading: false
+
+# MD046/code-block-style : Code block style
+code-block-style:
+  style: fenced
+
+# MD047/single-trailing-newline - Files should end with a single newline character
+single-trailing-newline: true
+
+# MD048/code-fence-style - Code fence style
+code-fence-style:
+  style: backtick
+
+# MD059/descriptive-link-text : Link text should be descriptive
+descriptive-link-text: false

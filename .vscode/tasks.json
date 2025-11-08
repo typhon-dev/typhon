@@ -1,0 +1,74 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // Default build command
+    {
+      "type": "cargo",
+      "command": "build",
+      "problemMatcher": ["$rustc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "Rust: Build"
+    },
+
+    // Clean command
+    {
+      "type": "cargo",
+      "command": "clean",
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Clean"
+    },
+
+    // Testing command
+    {
+      "type": "cargo",
+      "command": "test",
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Test"
+    },
+
+    // Linting command
+    {
+      "type": "cargo",
+      "command": "clippy",
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Lint"
+    },
+
+    // Formatting command
+    {
+      "type": "cargo",
+      "command": "fmt",
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Format"
+    },
+
+    // Generate documentation
+    {
+      "type": "cargo",
+      "command": "doc",
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Generate Documentation"
+    },
+
+    // Generate code coverage LCOV file
+    {
+      "type": "cargo",
+      "command": "llvm-cov",
+      "args": ["--lcov", "--output-path", "target/lcov.info"],
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Generate Inline Coverage"
+    },
+
+    // Generate code coverage HTML report
+    {
+      "type": "cargo",
+      "command": "llvm-cov",
+      "args": ["--html"],
+      "problemMatcher": ["$rustc"],
+      "label": "Rust: Generate Coverage Report"
+    }
+  ]
+}

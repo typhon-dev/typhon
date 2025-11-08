@@ -1,0 +1,63 @@
+include = ["**/*.toml"]
+
+[formatting]
+  # Align entries vertically. Entries that have table headers, comments,
+  # or blank lines between them are not aligned (default: false)
+  align_entries = true
+
+  # Align consecutive comments after entries and items vertically.This applies
+  # to comments that are after entries or array items (default: true)
+  # align_comments = true
+
+  # The maximum amount of consecutive blank lines allowed (default: 2)
+  allowed_blank_lines = 1
+
+  # Put trailing commas for multiline arrays (default: true)
+  # array_trailing_comma = true
+
+  # Automatically expand arrays to multiple lines when they
+  # exceed column_width characters (default: true)
+  # array_auto_expand = true
+
+  # Automatically collapse arrays if they fit in one line (default: true)
+  # array_auto_collapse = true
+
+  # Omit whitespace padding inside single-line arrays (default: true)
+  # compact_arrays = true
+
+  # Omit whitespace padding inside inline tables (default: false)
+  # compact_inline_tables = false
+
+  # Expand values (e.g. arrays) inside inline tables (default: true)
+  # inline_table_expand = true
+
+  # Omit whitespace around = (default: false)
+  # compact_entries = false
+
+  # Target maximum column width after which arrays are expanded into new lines (default: 80)
+  column_width = 100
+
+  # Indent subtables if they come in order (default: false)
+  indent_tables = true
+
+  # Indent entries under tables (default: false)
+  indent_entries = true
+
+  # Indentation to use, should be tabs or spaces but technically
+  # could be anything (default: 2 spaces (" "))
+  # indent_string = "  "
+
+  # Add trailing newline to the source (default: true)
+  # trailing_newline = true
+
+  # Alphabetically reorder keys that are not separated by blank lines (default: false)
+  reorder_keys = true
+
+  # Alphabetically reorder array values that are not separated by blank lines (default: false)
+  reorder_arrays = true
+
+  # Alphabetically reorder inline tables (default: false)
+  reorder_inline_tables = true
+
+  # Use CRLF line endings (default: false)
+  # crlf = false

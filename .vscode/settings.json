@@ -1,0 +1,43 @@
+{
+  "[json][jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+
+  // Coverage
+  "coverage-gutters.coverageBaseDir": "target",
+  "coverage-gutters.coverageFileNames": ["lcov.info"],
+  "coverage-gutters.coverageReportFileName": "**/target/llvm-cov/html/index.html",
+
+  // Formatting
+  "editor.formatOnSave": true,
+  "editor.rulers": [100],
+
+  // Tweaking TOML style
+  "evenBetterToml.formatter.alignEntries": true,
+  "evenBetterToml.formatter.indentTables": true,
+  "evenBetterToml.formatter.reorderKeys": true,
+
+  "files.readonlyInclude": {
+    "**/.cargo/git/checkouts/**/*.rs": true,
+    "**/.cargo/registry/src/**/*.rs": true,
+    "**/lib/rustlib/src/rust/library/**/*.rs": true
+  },
+
+  // Allow LLDB expression evaluation to take longer
+  "lldb.evaluationTimeout": 30,
+
+  "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"],
+  // "rust-analyzer.rustfmt.overrideCommand": [""],
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::all"],
+  // More advanced linting with Clippy
+  "rust-analyzer.checkOnSave": true,
+  // Misc
+  "rust-analyzer.imports.granularity.enforce": true,
+  "rust-analyzer.lens.enable": true
+}
