@@ -1,12 +1,3 @@
-[package]
-  authors.workspace    = true
-  description          = "Compiler for the Typhon programming language"
-  edition.workspace    = true
-  license.workspace    = true
-  name                 = "typhon-compiler"
-  repository.workspace = true
-  version.workspace    = true
-
 [dependencies]
   # Lexer
   logos             = "0.14.0" # Fast lexer generator
@@ -28,6 +19,9 @@
     features = ["llvm18-1"]
     version  = "0.6.0"
 
+  [dependencies.llvm-sys]
+    version = "181.2.0"
+
   [dependencies.miette] # Error reporting
     features = ["fancy"]
     version  = "7.0.0"
@@ -35,3 +29,12 @@
   [dependencies.strum] # Enum utilities
     features = ["derive"]
     version  = "0.26.1"
+
+[package]
+  authors.workspace    = true
+  description          = "Compiler for the Typhon programming language"
+  edition.workspace    = true
+  license.workspace    = true
+  name                 = "typhon-compiler"
+  repository.workspace = true
+  version.workspace    = true

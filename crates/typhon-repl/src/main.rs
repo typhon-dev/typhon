@@ -1,18 +1,38 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-repl/src/main.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Typhon REPL
 //!
 //! Interactive REPL (Read-Eval-Print Loop) for the Typhon programming language.
 
 mod commands;
-mod history;
 mod completion;
+mod history;
 mod utils;
 
 use anyhow::Result;
 use clap::Parser;
-use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
-use typhon_compiler as compiler;
-use typhon_runtime as runtime;
+use rustyline::error::ReadlineError;
+use {
+    typhon_compiler as compiler,
+    typhon_runtime as runtime,
+};
 
 /// The Typhon programming language REPL
 #[derive(Parser, Debug)]
@@ -67,15 +87,15 @@ fn main() -> Result<()> {
                 }
 
                 evaluate_input(&line, args.verbose);
-            },
+            }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
                 break;
-            },
+            }
             Err(ReadlineError::Eof) => {
                 println!("CTRL-D");
                 break;
-            },
+            }
             Err(err) => {
                 println!("Error: {}", err);
                 break;

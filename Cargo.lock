@@ -1779,6 +1779,7 @@ dependencies = [
  "chumsky",
  "indenter",
  "inkwell",
+ "llvm-sys",
  "logos",
  "miette",
  "paste",

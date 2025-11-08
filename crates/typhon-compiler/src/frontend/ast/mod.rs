@@ -1,35 +1,34 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/ast/mod.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Abstract Syntax Tree (AST) definitions for the Typhon programming language.
-use std::fmt;
-use std::hash::{
-    Hash,
-    Hasher,
-};
+use std::hash::Hash;
 
 use rustc_hash::FxHashMap;
-
-use crate::frontend::lexer::token::TokenSpan;
 
 pub mod visitor;
 
 pub use visitor::{
     DefaultVisitor,
-    MutVisitor,
     Visitor,
 };
 
-/// Source information for AST nodes
-#[derive(Debug, Clone, PartialEq)]
-pub struct SourceInfo {
-    /// Span of the source code
-    pub span: TokenSpan,
-}
-
-impl SourceInfo {
-    /// Creates a new source information object.
-    pub fn new(span: TokenSpan) -> Self {
-        Self { span }
-    }
-}
+use crate::common::SourceInfo;
 
 /// Identifier in the AST
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -110,7 +109,7 @@ pub enum Statement {
     /// Return statement
     Return {
         /// Value being returned (optional)
-        value: Option<Expression>,
+        value: Option<Box<Expression>>,
         /// Source information
         source_info: SourceInfo,
     },
@@ -185,7 +184,7 @@ pub enum Statement {
         /// Type annotation (optional)
         type_annotation: Option<TypeExpression>,
         /// Initial value (optional)
-        value: Option<Expression>,
+        value: Option<Box<Expression>>,
         /// Mutability
         mutable: bool,
         /// Source information
@@ -201,7 +200,7 @@ pub struct Parameter {
     /// Type annotation (optional)
     pub type_annotation: Option<TypeExpression>,
     /// Default value (optional)
-    pub default_value: Option<Expression>,
+    pub default_value: Option<Box<Expression>>,
     /// Source information
     pub source_info: SourceInfo,
 }
@@ -211,7 +210,7 @@ impl Parameter {
     pub fn new(
         name: Identifier,
         type_annotation: Option<TypeExpression>,
-        default_value: Option<Expression>,
+        default_value: Option<Box<Expression>>,
         source_info: SourceInfo,
     ) -> Self {
         Self {

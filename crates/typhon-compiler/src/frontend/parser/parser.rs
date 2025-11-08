@@ -1,12 +1,27 @@
-use std::collections::HashMap;
-
-use rustc_hash::FxHashMap;
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/parser/parser.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 
 use super::error::{
     ParseError,
-    ParseErrorBuilder,
     ParseResult,
 };
+use crate::common::SourceInfo;
 use crate::frontend::ast::{
     BinaryOperator,
     Expression,
@@ -14,18 +29,14 @@ use crate::frontend::ast::{
     Literal,
     Module,
     Parameter,
-    SourceInfo,
     Statement,
     TypeExpression,
     UnaryOperator,
 };
-use crate::frontend::lexer::{
-    Lexer,
-    token::{
-        Token,
-        TokenKind,
-        TokenSpan,
-    },
+use crate::frontend::lexer::Lexer;
+use crate::frontend::lexer::token::{
+    Token,
+    TokenKind,
 };
 
 /// Parser for the Typhon programming language
@@ -59,7 +70,7 @@ impl<'a> Parser<'a> {
 
     /// Parses the source code into a module.
     pub fn parse(&mut self) -> ParseResult<Module> {
-        let source_info = SourceInfo::new(0..self.source.len());
+        let source_info = SourceInfo::new((0..self.source.len()).into());
         let name = String::new(); // Module name will be set elsewhere
 
         let mut statements = Vec::new();
@@ -91,7 +102,7 @@ impl<'a> Parser<'a> {
 
     /// Checks if the current token has the given kind.
     fn check(&self, kind: TokenKind) -> bool {
-        self.current.map_or(false, |token| token.kind == kind)
+        self.current.is_some_and(|token| token.kind == kind)
     }
 
     /// Matches the current token against the given kinds.
@@ -106,7 +117,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Consumes the current token if it has the given kind, otherwise returns an error.
-    fn consume(&mut self, kind: TokenKind, message: &str) -> ParseResult<Token> {
+    fn consume(&mut self, kind: TokenKind, _message: &str) -> ParseResult<Token> {
         if self.check(kind) {
             Ok(self.advance().unwrap())
         } else {
@@ -130,7 +141,7 @@ impl<'a> Parser<'a> {
         while let Some(token) = self.current {
             if self
                 .previous
-                .map_or(false, |t| t.kind == TokenKind::Semicolon)
+                .is_some_and(|t| t.kind == TokenKind::Semicolon)
             {
                 return;
             }
@@ -140,7 +151,6 @@ impl<'a> Parser<'a> {
                 | TokenKind::Def
                 | TokenKind::For
                 | TokenKind::If
-                | TokenKind::Let
                 | TokenKind::Return
                 | TokenKind::While => {
                     return;
@@ -154,11 +164,7 @@ impl<'a> Parser<'a> {
 
     /// Parses a statement.
     fn parse_statement(&mut self) -> ParseResult<Statement> {
-        if self.match_token(&[TokenKind::Let]) {
-            self.parse_variable_declaration(true)
-        } else if self.match_token(&[TokenKind::Mut]) {
-            self.parse_variable_declaration(false)
-        } else if self.match_token(&[TokenKind::Def]) {
+        if self.match_token(&[TokenKind::Def]) {
             self.parse_function_definition()
         } else if self.match_token(&[TokenKind::Class]) {
             self.parse_class_definition()
@@ -187,6 +193,18 @@ impl<'a> Parser<'a> {
             let source_info = SourceInfo::new(token.span);
             Ok(Statement::Continue { source_info })
         } else {
+            // Check if this is a variable declaration (identifier followed by colon or equals)
+            if let Some(token) = self.current {
+                if token.kind == TokenKind::Identifier {
+                    let peek_result = self.lexer.peek();
+                    if peek_result.is_some_and(|t| {
+                        t.kind == TokenKind::Colon || t.kind == TokenKind::Assign
+                    }) {
+                        return self.parse_variable_declaration(false); // Default to immutable
+                    }
+                }
+            }
+
             // Expression statement or assignment
             let expr = self.parse_expression()?;
 
@@ -194,7 +212,7 @@ impl<'a> Parser<'a> {
                 // Assignment statement
                 let value = self.parse_expression()?;
                 let span = expr.source_info().span.start..value.source_info().span.end;
-                let source_info = SourceInfo::new(span);
+                let source_info = SourceInfo::new(span.into());
 
                 Ok(Statement::Assignment {
                     target: expr,
@@ -209,23 +227,27 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a variable declaration.
-    fn parse_variable_declaration(&mut self, mutable: bool) -> ParseResult<Statement> {
+    fn parse_variable_declaration(&mut self, _mutable: bool) -> ParseResult<Statement> {
+        // Parse the identifier
         let name_token = self.consume(TokenKind::Identifier, "Expect variable name.")?;
         let name = Identifier::new(
             self.lexer.slice(name_token.span).to_string(),
             SourceInfo::new(name_token.span),
         );
 
+        // Check for type annotation
         let mut type_annotation = None;
         if self.match_token(&[TokenKind::Colon]) {
             type_annotation = Some(self.parse_type_expression()?);
         }
 
+        // Check for assignment
         let mut value = None;
         if self.match_token(&[TokenKind::Assign]) {
-            value = Some(self.parse_expression()?);
+            value = Some(Box::new(self.parse_expression()?));
         }
 
+        // Calculate the source span
         let end = if let Some(ref val) = value {
             val.source_info().span.end
         } else if let Some(ref ty) = type_annotation {
@@ -234,13 +256,13 @@ impl<'a> Parser<'a> {
             name.source_info.span.end
         };
 
-        let source_info = SourceInfo::new(name.source_info.span.start..end);
+        let source_info = SourceInfo::new((name.source_info.span.start..end).into());
 
         Ok(Statement::VariableDecl {
             name,
             type_annotation,
             value,
-            mutable,
+            mutable: true, // All variables are mutable by default in Python-style
             source_info,
         })
     }
@@ -279,7 +301,7 @@ impl<'a> Parser<'a> {
 
                 let mut default_value = None;
                 if self.match_token(&[TokenKind::Assign]) {
-                    default_value = Some(self.parse_expression()?);
+                    default_value = Some(Box::new(self.parse_expression()?));
                 }
 
                 let param_end = if let Some(ref val) = default_value {
@@ -291,7 +313,7 @@ impl<'a> Parser<'a> {
                 };
 
                 let param_source_info =
-                    SourceInfo::new(param_name.source_info.span.start..param_end);
+                    SourceInfo::new((param_name.source_info.span.start..param_end).into());
 
                 parameters.push(Parameter::new(
                     param_name,
@@ -340,7 +362,7 @@ impl<'a> Parser<'a> {
                 .map_or_else(|| name.source_info.span.end, |ty| ty.source_info().span.end)
         };
 
-        let source_info = SourceInfo::new(name.source_info.span.start..body_end);
+        let source_info = SourceInfo::new((name.source_info.span.start..body_end).into());
 
         Ok(Statement::FunctionDef {
             name,
@@ -400,7 +422,7 @@ impl<'a> Parser<'a> {
             name.source_info.span.end
         };
 
-        let source_info = SourceInfo::new(name.source_info.span.start..body_end);
+        let source_info = SourceInfo::new((name.source_info.span.start..body_end).into());
 
         Ok(Statement::ClassDef {
             name,
@@ -465,7 +487,8 @@ impl<'a> Parser<'a> {
             }
         }
 
-        let source_info = SourceInfo::new(condition.source_info().span.start..source_info_end);
+        let source_info =
+            SourceInfo::new((condition.source_info().span.start..source_info_end).into());
 
         Ok(Statement::If {
             condition,
@@ -504,7 +527,7 @@ impl<'a> Parser<'a> {
             condition.source_info().span.end
         };
 
-        let source_info = SourceInfo::new(condition.source_info().span.start..body_end);
+        let source_info = SourceInfo::new((condition.source_info().span.start..body_end).into());
 
         Ok(Statement::While {
             condition,
@@ -546,7 +569,7 @@ impl<'a> Parser<'a> {
             iter.source_info().span.end
         };
 
-        let source_info = SourceInfo::new(target.source_info().span.start..body_end);
+        let source_info = SourceInfo::new((target.source_info().span.start..body_end).into());
 
         Ok(Statement::For {
             target,
@@ -562,14 +585,14 @@ impl<'a> Parser<'a> {
         let mut value = None;
 
         if !self.check(TokenKind::Newline) && !self.check(TokenKind::Eof) {
-            value = Some(self.parse_expression()?);
+            value = Some(Box::new(self.parse_expression()?));
         }
 
         let end = value
             .as_ref()
             .map_or(keyword.span.end, |expr| expr.source_info().span.end);
 
-        let source_info = SourceInfo::new(keyword.span.start..end);
+        let source_info = SourceInfo::new((keyword.span.start..end).into());
 
         Ok(Statement::Return { value, source_info })
     }
@@ -609,7 +632,7 @@ impl<'a> Parser<'a> {
                 .map_or(name.source_info.span.end, |n| n.source_info.span.end)
         });
 
-        let source_info = SourceInfo::new(keyword.span.start..end);
+        let source_info = SourceInfo::new((keyword.span.start..end).into());
 
         Ok(Statement::Import { names, source_info })
     }
@@ -673,7 +696,7 @@ impl<'a> Parser<'a> {
                     .map_or(name.source_info.span.end, |n| n.source_info.span.end)
             });
 
-        let source_info = SourceInfo::new(keyword.span.start..end);
+        let source_info = SourceInfo::new((keyword.span.start..end).into());
 
         Ok(Statement::FromImport {
             module,
@@ -713,7 +736,7 @@ impl<'a> Parser<'a> {
 
         if self.match_token(&[TokenKind::Assign]) {
             let equals = self.previous.unwrap();
-            let value = self.parse_assignment()?;
+            let _value = self.parse_assignment()?;
 
             // Only variable and attribute expressions can be assigned to.
             if let Expression::Variable { .. } | Expression::Attribute { .. } = expr {
@@ -737,7 +760,7 @@ impl<'a> Parser<'a> {
             let operator = BinaryOperator::Or;
             let right = self.parse_and()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -758,7 +781,7 @@ impl<'a> Parser<'a> {
             let operator = BinaryOperator::And;
             let right = self.parse_equality()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -784,7 +807,7 @@ impl<'a> Parser<'a> {
 
             let right = self.parse_comparison()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -817,7 +840,7 @@ impl<'a> Parser<'a> {
 
             let right = self.parse_term()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -843,7 +866,7 @@ impl<'a> Parser<'a> {
 
             let right = self.parse_factor()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -876,7 +899,7 @@ impl<'a> Parser<'a> {
 
             let right = self.parse_unary()?;
             let span = expr.source_info().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             expr = Expression::BinaryOp {
                 left: Box::new(expr),
@@ -907,7 +930,7 @@ impl<'a> Parser<'a> {
 
             let right = self.parse_unary()?;
             let span = self.previous.unwrap().span.start..right.source_info().span.end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             return Ok(Expression::UnaryOp {
                 op: operator,
@@ -1027,11 +1050,11 @@ impl<'a> Parser<'a> {
                 "Expect ']' after generic type arguments.",
             )?;
 
-            let base_source_info = type_expr.source_info().clone();
+            let base_source_info = *type_expr.source_info();
             let base = Box::new(type_expr);
             let end = self.previous.unwrap().span.end;
             let span = base_source_info.span.start..end;
-            let source_info = SourceInfo::new(span);
+            let source_info = SourceInfo::new(span.into());
 
             type_expr = TypeExpression::Generic {
                 base,

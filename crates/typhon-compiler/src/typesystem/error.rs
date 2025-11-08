@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/typesystem/error.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Error types and utilities for the Typhon type system.
 //!
 //! This module defines the error types used in the type checking process,
@@ -5,9 +23,10 @@
 
 use std::fmt;
 
-use crate::frontend::ast::SourceInfo;
-use crate::frontend::lexer::token::TokenSpan;
-use crate::typesystem::types::Type;
+use crate::common::{
+    SourceInfo,
+    Span,
+};
 
 /// A type error.
 #[derive(Debug, Clone)]
@@ -30,7 +49,7 @@ impl TypeError {
     }
 
     /// Returns the source span for the error, if available.
-    pub fn span(&self) -> Option<TokenSpan> {
+    pub fn span(&self) -> Option<Span> {
         self.source_info.map(|info| info.span)
     }
 }
@@ -152,36 +171,41 @@ pub enum TypeErrorKind {
     },
 }
 
+impl fmt::Display for TypeErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message())
+    }
+}
+
 impl TypeErrorKind {
     /// Returns the error message for the error kind.
     pub fn message(&self) -> String {
         match self {
             TypeErrorKind::TypeMismatch { expected, actual } => {
-                format!("Type mismatch: expected {}, got {}", expected, actual)
+                format!("Type mismatch: expected {expected}, got {actual}")
             }
             TypeErrorKind::UndefinedVariable { name } => {
-                format!("Undefined variable: '{}'", name)
+                format!("Undefined variable: '{name}'")
             }
             TypeErrorKind::UndefinedAttribute { base, name } => {
-                format!("Undefined attribute '{}' for type {}", name, base)
+                format!("Undefined attribute '{name}' for type {base}")
             }
             TypeErrorKind::NotCallable { ty } => {
-                format!("Type {} is not callable", ty)
+                format!("Type {ty} is not callable")
             }
             TypeErrorKind::IncorrectArgumentCount { expected, actual } => {
                 format!(
-                    "Incorrect argument count: expected {}, got {}",
-                    expected, actual
+                    "Incorrect argument count: expected {expected}, got {actual}"
                 )
             }
             TypeErrorKind::UndefinedType { name } => {
-                format!("Undefined type: '{}'", name)
+                format!("Undefined type: '{name}'")
             }
             TypeErrorKind::RecursiveType { name } => {
-                format!("Recursive type definition: '{}'", name)
+                format!("Recursive type definition: '{name}'")
             }
             TypeErrorKind::InvalidOperationType { operation, ty } => {
-                format!("Invalid type for operation '{}': {}", operation, ty)
+                format!("Invalid type for operation '{operation}': {ty}")
             }
             TypeErrorKind::InvalidBinaryOperandTypes {
                 operation,
@@ -189,33 +213,30 @@ impl TypeErrorKind {
                 right,
             } => {
                 format!(
-                    "Invalid operand types for binary operation '{}': {} and {}",
-                    operation, left, right
+                    "Invalid operand types for binary operation '{operation}': {left} and {right}"
                 )
             }
             TypeErrorKind::InvalidUnaryOperandType { operation, ty } => {
                 format!(
-                    "Invalid operand type for unary operation '{}': {}",
-                    operation, ty
+                    "Invalid operand type for unary operation '{operation}': {ty}"
                 )
             }
             TypeErrorKind::InvalidAssignmentTarget { ty } => {
-                format!("Invalid assignment target: {}", ty)
+                format!("Invalid assignment target: {ty}")
             }
             TypeErrorKind::InvalidReturnType { expected, actual } => {
-                format!("Invalid return type: expected {}, got {}", expected, actual)
+                format!("Invalid return type: expected {expected}, got {actual}")
             }
             TypeErrorKind::MissingReturn { function, expected } => {
                 format!(
-                    "Missing return statement in function '{}' with return type {}",
-                    function, expected
+                    "Missing return statement in function '{function}' with return type {expected}"
                 )
             }
             TypeErrorKind::InvalidTypeAnnotation { name, annotation } => {
-                format!("Invalid type annotation for '{}': {}", name, annotation)
+                format!("Invalid type annotation for '{name}': {annotation}")
             }
             TypeErrorKind::CircularInheritance { name } => {
-                format!("Circular inheritance in class '{}'", name)
+                format!("Circular inheritance in class '{name}'")
             }
             TypeErrorKind::Generic { message } => message.clone(),
         }

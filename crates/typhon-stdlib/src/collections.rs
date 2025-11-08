@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-stdlib/src/collections.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Collection types for the Typhon language.
 
 /// List collection implementation.
@@ -27,6 +45,12 @@ pub mod list {
         /// Check if the list is empty.
         pub fn is_empty(&self) -> bool {
             self.items.is_empty()
+        }
+    }
+
+    impl<T> Default for List<T> {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }
@@ -60,6 +84,15 @@ pub mod dict {
         /// Check if the dictionary is empty.
         pub fn is_empty(&self) -> bool {
             self.items.is_empty()
+        }
+    }
+
+    impl<K, V> Default for Dict<K, V>
+    where
+        K: std::hash::Hash + Eq,
+    {
+        fn default() -> Self {
+            Self::new()
         }
     }
 }

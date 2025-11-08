@@ -1,17 +1,37 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/typesystem/checker.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Type checker for the Typhon programming language.
 //!
 //! This module implements the type checker for Typhon, which performs static type
 //! analysis of AST nodes. It uses a visitor pattern to traverse the AST and
 //! check type correctness of each node.
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
+use crate::common::{
+    SourceInfo,
+    Span,
+};
 use crate::frontend::ast::{
     BinaryOperator,
     DefaultVisitor,
     Expression,
-    Identifier,
     Literal,
     Module,
     Parameter,
@@ -20,7 +40,6 @@ use crate::frontend::ast::{
     UnaryOperator,
     Visitor,
 };
-use crate::frontend::lexer::token::TokenSpan;
 use crate::typesystem::error::{
     TypeError,
     TypeErrorKind,
@@ -29,15 +48,12 @@ use crate::typesystem::error::{
 use crate::typesystem::types::{
     FunctionType,
     GenericInstance,
-    GenericParam,
     ListType,
     ParameterType,
     PrimitiveTypeKind,
     TupleType,
     Type,
-    TypeCompatibility,
     TypeEnv,
-    TypeVar,
     UnionType,
     check_type_compatibility,
 };
@@ -48,13 +64,19 @@ pub type TypeCheckResult = Result<Rc<Type>, TypeError>;
 /// Type checker for the Typhon programming language.
 pub struct TypeChecker {
     /// Current type environment.
-    env: Rc<TypeEnv>,
+    env: TypeEnv,
     /// Type error report.
     error_report: TypeErrorReport,
     /// Current function return type for checking return statements.
     current_function_return_type: Option<Rc<Type>>,
     /// Current function name for error reporting.
     current_function_name: Option<String>,
+}
+
+impl Default for TypeChecker {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TypeChecker {
@@ -64,7 +86,7 @@ impl TypeChecker {
         env.create_builtins();
 
         Self {
-            env: Rc::new(env),
+            env,
             error_report: TypeErrorReport::new(),
             current_function_return_type: None,
             current_function_name: None,
@@ -72,7 +94,7 @@ impl TypeChecker {
     }
 
     /// Creates a new type checker with a given type environment.
-    pub fn with_env(env: Rc<TypeEnv>) -> Self {
+    pub fn with_env(env: TypeEnv) -> Self {
         Self {
             env,
             error_report: TypeErrorReport::new(),
@@ -83,13 +105,18 @@ impl TypeChecker {
 
     /// Enters a new scope.
     pub fn enter_scope(&mut self) {
-        self.env = Rc::new(TypeEnv::new_child(self.env.clone()));
+        let parent_env = Box::new(std::mem::take(&mut self.env));
+        self.env = TypeEnv::new();
+        self.env.parent = Some(Rc::new(*parent_env));
     }
 
     /// Exits the current scope.
     pub fn exit_scope(&mut self) {
         match &self.env.parent {
-            Some(parent) => self.env = parent.clone(),
+            Some(parent) => {
+                let parent_clone = (**parent).clone();
+                self.env = parent_clone;
+            }
             None => panic!("Cannot exit top-level scope"),
         }
     }
@@ -106,14 +133,13 @@ impl TypeChecker {
                     ..
                 } => {
                     let function_type = self.function_type_from_def(parameters, return_type)?;
-                    self.env
-                        .add_variable(name.name.clone(), Rc::new(Type::Function(function_type)));
+                    self.env.add_variable(name.name.clone(), function_type);
                 }
-                Statement::ClassDef { name, bases, .. } => {
+                Statement::ClassDef { name, bases: _, .. } => {
                     // Create a placeholder class type to handle recursive references
                     let class_type = Rc::new(Type::class(
                         name.name.clone(),
-                        Some(name.source_info.clone()),
+                        Some(name.source_info),
                     ));
                     self.env.add_type_def(name.name.clone(), class_type.clone());
                     self.env.add_variable(name.name.clone(), class_type);
@@ -159,7 +185,12 @@ impl TypeChecker {
             None => Rc::new(Type::Any),
         };
 
-        Ok(Rc::new(FunctionType::new(param_types, ret_type, None)))
+        // Create a FunctionType and wrap it in Type::Function
+        Ok(Rc::new(Type::from(FunctionType::new(
+            param_types,
+            ret_type,
+            None,
+        ))))
     }
 
     /// Resolves a type expression to a concrete type.
@@ -172,7 +203,7 @@ impl TypeChecker {
                         TypeErrorKind::UndefinedType {
                             name: name.name.clone(),
                         },
-                        Some(source_info.clone()),
+                        Some(*source_info),
                     )),
                 }
             }
@@ -189,7 +220,7 @@ impl TypeChecker {
                     .collect::<Result<Vec<_>, _>>()?;
 
                 Ok(Rc::new(Type::GenericInstance(Rc::new(
-                    GenericInstance::with_source_info(base_type, type_args, source_info.clone()),
+                    GenericInstance::with_source_info(base_type, type_args, *source_info),
                 ))))
             }
             TypeExpression::Union { types, source_info } => {
@@ -200,7 +231,7 @@ impl TypeChecker {
 
                 Ok(Rc::new(Type::Union(UnionType::with_source_info(
                     union_types,
-                    source_info.clone(),
+                    *source_info,
                 ))))
             }
             TypeExpression::Optional { inner, source_info } => {
@@ -211,7 +242,7 @@ impl TypeChecker {
 
                 Ok(Rc::new(Type::Union(UnionType::with_source_info(
                     vec![inner_type, none_type],
-                    source_info.clone(),
+                    *source_info,
                 ))))
             }
             TypeExpression::Callable {
@@ -232,11 +263,10 @@ impl TypeChecker {
                     .map(|ty| ParameterType::new(None, ty, false))
                     .collect();
 
-                Ok(Rc::new(Type::Function(Rc::new(FunctionType::new(
-                    params,
-                    ret_type,
-                    Some(source_info.clone()),
-                )))))
+                // Create function type with proper source info
+                let function_type = FunctionType::new(params, ret_type, Some(*source_info));
+
+                Ok(Rc::new(Type::Function(Rc::new(function_type))))
             }
         }
     }
@@ -246,7 +276,7 @@ impl TypeChecker {
         &mut self,
         expected: &Type,
         actual: &Type,
-        source_info: Option<TokenSpan>,
+        source_info: Option<Span>,
     ) -> TypeCheckResult {
         let compatibility = check_type_compatibility(actual, expected);
         if compatibility.is_compatible() {
@@ -257,7 +287,7 @@ impl TypeChecker {
                     expected: expected.to_string(),
                     actual: actual.to_string(),
                 },
-                source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                source_info.map(SourceInfo::new),
             ))
         }
     }
@@ -268,7 +298,7 @@ impl TypeChecker {
         left: &Expression,
         op: &BinaryOperator,
         right: &Expression,
-        source_info: Option<TokenSpan>,
+        source_info: Option<Span>,
     ) -> TypeCheckResult {
         let left_type = self.visit_expression(left)?;
         let right_type = self.visit_expression(right)?;
@@ -336,11 +366,11 @@ impl TypeChecker {
                 } else {
                     Err(TypeError::new(
                         TypeErrorKind::InvalidBinaryOperandTypes {
-                            operation: format!("{:?}", op),
+                            operation: format!("{op:?}"),
                             left: left_type.to_string(),
                             right: right_type.to_string(),
                         },
-                        source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                        source_info.map(SourceInfo::new),
                     ))
                 }
             }
@@ -359,7 +389,7 @@ impl TypeChecker {
         op: &BinaryOperator,
         left_type: &Type,
         right_type: &Type,
-        source_info: Option<TokenSpan>,
+        source_info: Option<Span>,
     ) -> TypeCheckResult {
         let is_numeric_left = matches!(
             left_type,
@@ -396,11 +426,11 @@ impl TypeChecker {
             } else {
                 return Err(TypeError::new(
                     TypeErrorKind::InvalidBinaryOperandTypes {
-                        operation: format!("{:?}", op),
+                        operation: format!("{op:?}"),
                         left: left_type.to_string(),
                         right: right_type.to_string(),
                     },
-                    source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                    source_info.map(SourceInfo::new),
                 ));
             }
         }
@@ -428,11 +458,11 @@ impl TypeChecker {
         } else {
             Err(TypeError::new(
                 TypeErrorKind::InvalidBinaryOperandTypes {
-                    operation: format!("{:?}", op),
+                    operation: format!("{op:?}"),
                     left: left_type.to_string(),
                     right: right_type.to_string(),
                 },
-                source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                source_info.map(SourceInfo::new),
             ))
         }
     }
@@ -443,7 +473,7 @@ impl TypeChecker {
         op: &BinaryOperator,
         left_type: &Type,
         right_type: &Type,
-        source_info: Option<TokenSpan>,
+        source_info: Option<Span>,
     ) -> TypeCheckResult {
         let is_int_left = matches!(
             left_type,
@@ -463,11 +493,11 @@ impl TypeChecker {
         } else {
             Err(TypeError::new(
                 TypeErrorKind::InvalidBinaryOperandTypes {
-                    operation: format!("{:?}", op),
+                    operation: format!("{op:?}"),
                     left: left_type.to_string(),
                     right: right_type.to_string(),
                 },
-                source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                source_info.map(SourceInfo::new),
             ))
         }
     }
@@ -477,7 +507,7 @@ impl TypeChecker {
         &mut self,
         op: &UnaryOperator,
         operand: &Expression,
-        source_info: Option<TokenSpan>,
+        source_info: Option<Span>,
     ) -> TypeCheckResult {
         let operand_type = self.visit_expression(operand)?;
 
@@ -498,10 +528,10 @@ impl TypeChecker {
                 } else {
                     Err(TypeError::new(
                         TypeErrorKind::InvalidUnaryOperandType {
-                            operation: format!("{:?}", op),
+                            operation: format!("{op:?}"),
                             ty: operand_type.to_string(),
                         },
-                        source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                        source_info.map(SourceInfo::new),
                     ))
                 }
             }
@@ -524,10 +554,10 @@ impl TypeChecker {
                 } else {
                     Err(TypeError::new(
                         TypeErrorKind::InvalidUnaryOperandType {
-                            operation: format!("{:?}", op),
+                            operation: format!("{op:?}"),
                             ty: operand_type.to_string(),
                         },
-                        source_info.map(|span| crate::frontend::ast::SourceInfo::new(span)),
+                        source_info.map(SourceInfo::new),
                     ))
                 }
             }
@@ -587,7 +617,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                             TypeErrorKind::InvalidAssignmentTarget {
                                 ty: target_type.to_string(),
                             },
-                            Some(source_info.clone()),
+                            Some(*source_info),
                         ));
                     }
                 }
@@ -608,11 +638,25 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 // Create function type
                 let function_type = self.function_type_from_def(parameters, return_type)?;
 
+                // First, get the return type from the function type before entering a new scope
+                let return_type_clone = match function_type.as_ref() {
+                    Type::Function(f) => f.return_type.clone(),
+                    _ => Rc::new(Type::Any), // Fallback
+                };
+
+                // Store current function information before modifying
+                let prev_return_type = self.current_function_return_type.clone();
+                let prev_function_name = self.current_function_name.clone();
+
+                // Set function context before entering scope
+                self.current_function_return_type = Some(return_type_clone);
+                self.current_function_name = Some(name.name.clone());
+
                 // Enter a new scope for the function body
                 self.enter_scope();
 
-                // Add parameters to the scope
-                for (i, param) in parameters.iter().enumerate() {
+                // Add parameters to the scope - avoid mutable self borrowing issues
+                for param in parameters.iter() {
                     let param_type = if let Some(ty_expr) = &param.type_annotation {
                         self.resolve_type_expression(ty_expr)?
                     } else {
@@ -622,36 +666,37 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                     self.env.add_variable(param.name.name.clone(), param_type);
                 }
 
-                // Set the current function context for return statements
-                let prev_return_type = self.current_function_return_type.clone();
-                let prev_function_name = self.current_function_name.clone();
-                self.current_function_return_type = Some(function_type.return_type.clone());
-                self.current_function_name = Some(name.name.clone());
-
                 // Check the function body
                 let mut return_seen = false;
                 for stmt in body {
-                    match stmt {
-                        Statement::Return { .. } => {
-                            return_seen = true;
-                        }
-                        _ => {}
+                    if let Statement::Return { .. } = stmt {
+                        return_seen = true;
                     }
 
                     self.visit_statement(stmt)?;
                 }
 
                 // Check if a return statement is required but missing
-                if !return_seen
-                    && !matches!(function_type.return_type.as_ref(), Type::None | Type::Any)
-                {
-                    return Err(TypeError::new(
-                        TypeErrorKind::MissingReturn {
-                            function: name.name.clone(),
-                            expected: function_type.return_type.to_string(),
-                        },
-                        Some(source_info.clone()),
-                    ));
+                if !return_seen {
+                    // Extract return type information to use in the error message
+                    let (is_optional_return, return_type_str) = match function_type.as_ref() {
+                        Type::Function(f) => {
+                            let rt = &f.return_type;
+                            let is_optional = matches!(rt.as_ref(), Type::None | Type::Any);
+                            (is_optional, rt.to_string())
+                        }
+                        _ => (true, "<unknown>".to_string()),
+                    };
+
+                    if !is_optional_return {
+                        return Err(TypeError::new(
+                            TypeErrorKind::MissingReturn {
+                                function: name.name.clone(),
+                                expected: return_type_str,
+                            },
+                            Some(*source_info),
+                        ));
+                    }
                 }
 
                 // Restore function context
@@ -665,7 +710,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
             }
 
             Statement::ClassDef {
-                name,
+                name: _,
                 bases,
                 body,
                 source_info,
@@ -673,8 +718,41 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 // Resolve base class types
                 let base_types = bases
                     .iter()
-                    .map(|base| self.visit_expression(base))
+                    .map(|base| {
+                        let base_type = self.visit_expression(base)?;
+                        // Validate that base type is a class or can be used as a base
+                        match base_type.as_ref() {
+                            Type::Class(_) => Ok(base_type),
+                            Type::Any => Ok(base_type), // Allow Any as a base for flexibility
+                            _ => Err(TypeError::new(
+                                TypeErrorKind::Generic {
+                                    message: format!(
+                                        "Base class must be a class type, got {base_type}"
+                                    ),
+                                },
+                                Some(*source_info),
+                            )),
+                        }
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
+
+                // Verify all base types and collect methods/attributes that should be inherited
+                let mut inherited_methods = vec![];
+                let mut inherited_fields = vec![];
+
+                for base_type in base_types {
+                    if let Type::Class(class_type) = base_type.as_ref() {
+                        // Collect methods and fields for inheritance
+                        for (method_name, method_type) in &class_type.methods {
+                            inherited_methods.push((method_name.clone(), method_type.clone()));
+                        }
+
+                        for (field_name, field_type) in &class_type.fields {
+                            inherited_fields.push((field_name.clone(), field_type.clone()));
+                        }
+                    }
+                    // For Any type bases, we don't do inheritance since we don't know the structure
+                }
 
                 // Enter a new scope for the class body
                 self.enter_scope();
@@ -692,39 +770,47 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
 
             Statement::Return { value, source_info } => {
                 // Check if return is in a function
-                if let Some(return_type) = &self.current_function_return_type {
-                    match value {
-                        Some(expr) => {
-                            let expr_type = self.visit_expression(expr)?;
-                            self.check_type_compatibility(
-                                return_type,
-                                &expr_type,
-                                Some(source_info.span),
-                            )?;
-                        }
-                        None => {
-                            // No value is equivalent to returning None
-                            let none_type = Type::None;
-                            self.check_type_compatibility(
-                                return_type,
-                                &none_type,
-                                Some(source_info.span),
-                            )?;
-                        }
-                    }
-                } else {
+                if self.current_function_return_type.is_none() {
                     return Err(TypeError::new(
                         TypeErrorKind::Generic {
                             message: "Return statement outside of function".to_string(),
                         },
-                        Some(source_info.clone()),
+                        Some(*source_info),
                     ));
+                }
+
+                // Get a clone of the return type to avoid borrow issues
+                let return_type = self.current_function_return_type.clone().unwrap();
+
+                // Now check the expression type against the return type
+                match value {
+                    Some(expr) => {
+                        let expr_type = self.visit_expression(expr)?;
+                        // Pass a reference to return_type that isn't tied to self
+                        self.check_type_compatibility(
+                            &return_type,
+                            &expr_type,
+                            Some(source_info.span),
+                        )?;
+                    }
+                    None => {
+                        // No value is equivalent to returning None
+                        let none_type = Type::None;
+                        self.check_type_compatibility(
+                            &return_type,
+                            &none_type,
+                            Some(source_info.span),
+                        )?;
+                    }
                 }
 
                 Ok(Rc::new(Type::None))
             }
 
-            Statement::Import { names, source_info } => {
+            Statement::Import {
+                names,
+                source_info: _,
+            } => {
                 // For now, assume imported modules and names are valid and have Any type
                 for (name, as_name) in names {
                     let var_name = if let Some(alias) = as_name {
@@ -740,10 +826,10 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
             }
 
             Statement::FromImport {
-                module,
+                module: _,
                 names,
-                level,
-                source_info,
+                level: _,
+                source_info: _,
             } => {
                 // For now, assume imported names are valid and have Any type
                 for (name, as_name) in names {
@@ -763,10 +849,10 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 condition,
                 body,
                 else_body,
-                source_info,
+                source_info: _,
             } => {
                 // Check condition
-                let cond_type = self.visit_expression(condition)?;
+                let _cond_type = self.visit_expression(condition)?;
 
                 // Enter a new scope for the if body
                 self.enter_scope();
@@ -796,10 +882,10 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
             Statement::While {
                 condition,
                 body,
-                source_info,
+                source_info: _,
             } => {
                 // Check condition
-                let cond_type = self.visit_expression(condition)?;
+                let _cond_type = self.visit_expression(condition)?;
 
                 // Enter a new scope for the while body
                 self.enter_scope();
@@ -850,7 +936,25 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                     // For other target expressions, check they're assignable
                     _ => {
                         let target_type = self.visit_expression(target)?;
-                        // Check if target is assignable (this is a simplification)
+
+                        // Check if target is an assignable expression
+                        match target {
+                            Expression::Variable { .. }
+                            | Expression::Attribute { .. }
+                            | Expression::Subscript { .. } => {
+                                // These are valid assignment targets, assign elem_type
+                                // For now we don't actually enforce the assignment
+                                // but we could modify to perform type checking here
+                            }
+                            _ => {
+                                return Err(TypeError::new(
+                                    TypeErrorKind::InvalidAssignmentTarget {
+                                        ty: target_type.to_string(),
+                                    },
+                                    Some(*source_info),
+                                ));
+                            }
+                        }
                     }
                 }
 
@@ -874,7 +978,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 name,
                 type_annotation,
                 value,
-                mutable,
+                mutable: _,
                 source_info,
             } => {
                 // Resolve variable type
@@ -917,7 +1021,10 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 source_info,
             } => self.check_unary_op(op, operand, Some(source_info.span)),
 
-            Expression::Literal { value, source_info } => Ok(self.infer_literal_type(value)),
+            Expression::Literal {
+                value,
+                source_info: _,
+            } => Ok(self.infer_literal_type(value)),
 
             Expression::Variable { name, source_info } => match self.env.get_variable(&name.name) {
                 Some(ty) => Ok(ty),
@@ -925,7 +1032,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                     TypeErrorKind::UndefinedVariable {
                         name: name.name.clone(),
                     },
-                    Some(source_info.clone()),
+                    Some(*source_info),
                 )),
             },
 
@@ -965,7 +1072,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                                         base: value_type.to_string(),
                                         name: attr.name.clone(),
                                     },
-                                    Some(source_info.clone()),
+                                    Some(*source_info),
                                 ))
                             }
                         }
@@ -978,7 +1085,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                             base: value_type.to_string(),
                             name: attr.name.clone(),
                         },
-                        Some(source_info.clone()),
+                        Some(*source_info),
                     )),
                 }
             }
@@ -1005,7 +1112,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                                     operation: "indexing".to_string(),
                                     ty: index_type.to_string(),
                                 },
-                                Some(source_info.clone()),
+                                Some(*source_info),
                             ))
                         }
                     }
@@ -1027,7 +1134,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                                     operation: "indexing".to_string(),
                                     ty: index_type.to_string(),
                                 },
-                                Some(source_info.clone()),
+                                Some(*source_info),
                             ))
                         }
                     }
@@ -1043,7 +1150,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                                     operation: "indexing".to_string(),
                                     ty: index_type.to_string(),
                                 },
-                                Some(source_info.clone()),
+                                Some(*source_info),
                             ))
                         }
                     }
@@ -1055,7 +1162,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                             operation: "indexing".to_string(),
                             ty: value_type.to_string(),
                         },
-                        Some(source_info.clone()),
+                        Some(*source_info),
                     )),
                 }
             }
@@ -1063,7 +1170,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
             Expression::Call {
                 func,
                 args,
-                keywords,
+                keywords: _,
                 source_info,
             } => {
                 let func_type = self.visit_expression(func)?;
@@ -1089,16 +1196,12 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                                     expected: func_type.parameters.len(),
                                     actual: arg_types.len(),
                                 },
-                                Some(source_info.clone()),
+                                Some(*source_info),
                             ));
                         }
 
                         // Check argument types
-                        for (i, (arg_type, param)) in arg_types
-                            .iter()
-                            .zip(func_type.parameters.iter())
-                            .enumerate()
-                        {
+                        for (arg_type, param) in arg_types.iter().zip(func_type.parameters.iter()) {
                             self.check_type_compatibility(
                                 &param.ty,
                                 arg_type,
@@ -1116,7 +1219,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                         TypeErrorKind::NotCallable {
                             ty: func_type.to_string(),
                         },
-                        Some(source_info.clone()),
+                        Some(*source_info),
                     )),
                 }
             }
@@ -1170,7 +1273,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                 let function_type = Rc::new(FunctionType::new(
                     param_types,
                     return_type,
-                    Some(source_info.clone()),
+                    Some(*source_info),
                 ));
 
                 Ok(Rc::new(Type::Function(function_type)))
@@ -1196,7 +1299,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
 
                 Ok(Rc::new(Type::List(ListType::with_source_info(
                     first_type,
-                    source_info.clone(),
+                    *source_info,
                 ))))
             }
 
@@ -1211,7 +1314,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
 
                 Ok(Rc::new(Type::Tuple(TupleType::with_source_info(
                     element_types,
-                    source_info.clone(),
+                    *source_info,
                 ))))
             }
 
@@ -1222,7 +1325,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                         GenericInstance::with_source_info(
                             Rc::new(Type::class("dict".to_string(), None)),
                             vec![Rc::new(Type::Any), Rc::new(Type::Any)],
-                            source_info.clone(),
+                            *source_info,
                         ),
                     ))));
                 }
@@ -1246,7 +1349,7 @@ impl<'a> Visitor<TypeCheckResult> for TypeChecker {
                     GenericInstance::with_source_info(
                         Rc::new(Type::class("dict".to_string(), None)),
                         vec![key_type, val_type],
-                        source_info.clone(),
+                        *source_info,
                     ),
                 ))))
             }

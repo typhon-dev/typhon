@@ -1,21 +1,36 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/lexer/token.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
+
 use std::fmt;
 
-use logos::{
-    Logos,
-    Span,
-};
+use logos::Logos;
+
+use crate::common::Span;
 
 /// A token type with source location information
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Token {
     /// The kind of token
     pub kind: TokenKind,
     /// The span of the token in the source code
-    pub span: TokenSpan,
+    pub span: Span,
 }
-
-/// A span in the source code
-pub type TokenSpan = Span;
 
 /// Represents a token in the Typhon programming language
 #[derive(Logos, Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,12 +101,6 @@ pub enum TokenKind {
     With,
     #[token("yield")]
     Yield,
-
-    // Typhon-specific keywords
-    #[token("let")]
-    Let,
-    #[token("mut")]
-    Mut,
 
     // Type system keywords
     #[token("->")]
@@ -272,8 +281,6 @@ impl fmt::Display for TokenKind {
             TokenKind::In => write!(f, "in"),
             TokenKind::Is => write!(f, "is"),
             TokenKind::Lambda => write!(f, "lambda"),
-            TokenKind::Let => write!(f, "let"),
-            TokenKind::Mut => write!(f, "mut"),
             TokenKind::Nonlocal => write!(f, "nonlocal"),
             TokenKind::Not => write!(f, "not"),
             TokenKind::Or => write!(f, "or"),

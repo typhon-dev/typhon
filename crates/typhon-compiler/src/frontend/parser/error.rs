@@ -1,9 +1,28 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/parser/error.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
+
 use thiserror::Error;
 
+use crate::common::Span;
 use crate::frontend::lexer::token::{
     Token,
     TokenKind,
-    TokenSpan,
 };
 
 /// Parser error type
@@ -37,7 +56,7 @@ pub enum ParseError {
         /// Error message
         message: String,
         /// Span of the error
-        span: TokenSpan,
+        span: Span,
     },
 
     /// Indentation error
@@ -46,7 +65,7 @@ pub enum ParseError {
         /// Error message
         message: String,
         /// Span of the error
-        span: TokenSpan,
+        span: Span,
     },
 
     /// Other error
@@ -66,11 +85,17 @@ pub struct ParseErrorBuilder {
     /// Error message
     message: Option<String>,
     /// Span of the error
-    span: Option<TokenSpan>,
+    span: Option<Span>,
     /// Line number
     line: Option<usize>,
     /// Column number
     column: Option<usize>,
+}
+
+impl Default for ParseErrorBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ParseErrorBuilder {
@@ -111,7 +136,7 @@ impl ParseErrorBuilder {
     }
 
     /// Sets the span of the error.
-    pub fn span(mut self, span: TokenSpan) -> Self {
+    pub fn span(mut self, span: Span) -> Self {
         self.span = Some(span);
         self
     }
@@ -178,7 +203,7 @@ impl ParseError {
     }
 
     /// Creates a new invalid syntax error.
-    pub fn invalid_syntax(message: impl Into<String>, span: TokenSpan) -> Self {
+    pub fn invalid_syntax(message: impl Into<String>, span: Span) -> Self {
         ParseError::InvalidSyntax {
             message: message.into(),
             span,
@@ -186,7 +211,7 @@ impl ParseError {
     }
 
     /// Creates a new indentation error.
-    pub fn indentation_error(message: impl Into<String>, span: TokenSpan) -> Self {
+    pub fn indentation_error(message: impl Into<String>, span: Span) -> Self {
         ParseError::IndentationError {
             message: message.into(),
             span,

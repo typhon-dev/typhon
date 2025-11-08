@@ -1,16 +1,16 @@
 # A simple Typhon program demonstrating basic language features
 
 # Variable declarations with type annotations
-let x: int = 42
-let y: float = 3.14
-let message: str = "Hello, Typhon!"
+x: int = 42
+y: float = 3.14
+message: str = "Hello, Typhon!"
 
-# Mutable variable
-mut counter: int = 0
+# Variable without type annotation (type inferred)
+counter = 0
 
 # Function definition with typed parameters and return type
 def add(a: int, b: int) -> int:
-    let result = a + b
+    result = a + b
     return result
 
 # Function with control flow
@@ -23,7 +23,7 @@ def check_value(value: int) -> str:
 # Main function
 def main() -> int:
     # Function call and assignment
-    let sum_result = add(5, 7)
+    sum_result = add(5, 7)
 
     # Control flow (if statement)
     if sum_result > 10:
@@ -34,11 +34,11 @@ def main() -> int:
     counter = counter + 1
 
     # String concatenation
-    let status = "Counter value: " + str(counter)
+    status = "Counter value: " + str(counter)
     print(status)
 
     # Check value function call
-    let check_result = check_value(x)
+    check_result = check_value(x)
     print("x is " + check_result)
 
     # Return success code

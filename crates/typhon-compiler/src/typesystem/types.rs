@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/typesystem/types.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Type definitions and type utilities for the Typhon type system.
 //!
 //! This module defines the core types supported by Typhon, including primitive types,
@@ -11,9 +29,10 @@ use std::collections::{
 use std::fmt;
 use std::rc::Rc;
 
-use crate::frontend::ast::{
-    Identifier,
-    SourceInfo,
+use crate::common::SourceInfo;
+use crate::typesystem::{
+    TypeError,
+    TypeErrorKind,
 };
 
 /// A unique identifier for a type.
@@ -70,6 +89,31 @@ pub enum Type {
 }
 
 impl Type {
+    /// Attempts to get a reference to the inner FunctionType if this is a Function variant.
+    pub fn as_function_type(&self) -> Option<&FunctionType> {
+        match self {
+            Type::Function(func_type) => Some(func_type),
+            _ => None,
+        }
+    }
+
+    /// Attempts to get a reference to the inner FunctionType if this is a Function variant.
+    /// Returns an error with appropriate message if it's not a Function.
+    pub fn try_as_function_type(
+        &self,
+        source_info: Option<SourceInfo>,
+    ) -> Result<&FunctionType, TypeError> {
+        self.as_function_type().ok_or_else(|| {
+            TypeError::new(
+                TypeErrorKind::TypeMismatch {
+                    expected: "function".to_string(),
+                    actual: self.to_string(),
+                },
+                source_info,
+            )
+        })
+    }
+
     /// Creates a new primitive type.
     pub fn primitive(kind: PrimitiveTypeKind) -> Self {
         Type::Primitive(PrimitiveType::new(kind))
@@ -134,17 +178,31 @@ impl Type {
     }
 }
 
+/// Implementation to convert from FunctionType to Type
+impl From<Rc<FunctionType>> for Type {
+    fn from(func_type: Rc<FunctionType>) -> Self {
+        Type::Function(func_type)
+    }
+}
+
+/// Implementation to convert from FunctionType to Type (non-reference counted version)
+impl From<FunctionType> for Type {
+    fn from(func_type: FunctionType) -> Self {
+        Type::Function(Rc::new(func_type))
+    }
+}
+
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Type::Primitive(p) => write!(f, "{}", p),
+            Type::Primitive(p) => write!(f, "{p}"),
             Type::Class(c) => write!(f, "{}", c.name),
-            Type::Function(func) => write!(f, "{}", func),
-            Type::Union(u) => write!(f, "{}", u),
-            Type::Tuple(t) => write!(f, "{}", t),
-            Type::List(l) => write!(f, "{}", l),
+            Type::Function(func) => write!(f, "{func}"),
+            Type::Union(u) => write!(f, "{u}"),
+            Type::Tuple(t) => write!(f, "{t}"),
+            Type::List(l) => write!(f, "{l}"),
             Type::TypeVar(v) => write!(f, "{}", v.name),
-            Type::GenericInstance(g) => write!(f, "{}", g),
+            Type::GenericInstance(g) => write!(f, "{g}"),
             Type::Any => write!(f, "Any"),
             Type::None => write!(f, "None"),
             Type::Never => write!(f, "Never"),
@@ -341,7 +399,7 @@ impl fmt::Display for FunctionType {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", param)?;
+            write!(f, "{param}")?;
             first = false;
         }
         write!(f, ") -> {}", self.return_type)
@@ -402,7 +460,7 @@ impl UnionType {
         let mut seen = HashSet::new();
 
         for ty in flattened.types {
-            let type_str = format!("{}", ty);
+            let type_str = format!("{ty}");
             if !seen.contains(&type_str) {
                 seen.insert(type_str);
                 unique_types.push(ty);
@@ -441,7 +499,7 @@ impl fmt::Display for UnionType {
             if !first {
                 write!(f, " | ")?;
             }
-            write!(f, "{}", ty)?;
+            write!(f, "{ty}")?;
             first = false;
         }
         Ok(())
@@ -483,7 +541,7 @@ impl fmt::Display for TupleType {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", ty)?;
+            write!(f, "{ty}")?;
             first = false;
         }
         if self.element_types.len() == 1 {
@@ -650,7 +708,7 @@ impl fmt::Display for GenericInstance {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", arg)?;
+            write!(f, "{arg}")?;
             first = false;
         }
         write!(f, "]")
@@ -668,6 +726,12 @@ pub struct TypeEnv {
     pub parent: Option<Rc<TypeEnv>>,
     /// Next type ID.
     next_id: TypeId,
+}
+
+impl Default for TypeEnv {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TypeEnv {

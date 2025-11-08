@@ -17,7 +17,7 @@ This command provides a systematic approach for resolving git merge conflicts wi
 ## Options
 
 - `view`: List all conflicted files and categorize them by type
-- `memory`: Resolve conflicts in memory bank files (`.roo/memory-bank/*.md`)
+- `memory`: Resolve conflicts in memory bank files (`.memory-bank/*.md`)
 - `config`: Resolve conflicts in configuration files (`.json`, `.yml`, etc.)
 - `code`: Resolve conflicts in source code files (TypeScript, JavaScript, etc.)
 - `test`: Resolve conflicts in test files
@@ -48,7 +48,7 @@ This command provides a systematic approach for resolving git merge conflicts wi
 
 ## Key Strategies By File Type
 
-### Memory Bank Files (`.roo/memory-bank/*.md`)
+### Memory Bank Files (`.memory-bank/*.md`)
 
 - Use incoming changes as the foundation
 - Preserve chronological ordering of entries

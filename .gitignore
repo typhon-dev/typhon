@@ -53,7 +53,9 @@
 !/.github/
 !/.github/scripts/
 !/.github/workflows/
+!/.memory-bank/
 !/.roo/
+!/.roo/**/
 !/.taskfiles/
 !/.vscode/
 !/crates/

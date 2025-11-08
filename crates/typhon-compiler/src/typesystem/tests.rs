@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/typesystem/tests.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! Tests for the Typhon type system.
 //!
 //! This module contains tests for the type checker and type inference.
@@ -17,9 +35,9 @@ use crate::frontend::ast::{
     UnaryOperator,
 };
 use crate::frontend::lexer::token::{
+    Span,
     Token,
     TokenKind,
-    TokenSpan,
 };
 use crate::typesystem::checker::TypeChecker;
 use crate::typesystem::error::TypeErrorKind;
@@ -29,8 +47,8 @@ use crate::typesystem::types::{
 };
 
 /// Creates a token span for testing.
-fn span(start: usize, end: usize) -> TokenSpan {
-    (start..end)
+fn span(start: usize, end: usize) -> Span {
+    Span::new(start, end)
 }
 
 /// Creates a source info for testing.

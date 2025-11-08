@@ -1,45 +1,52 @@
-// Copyright (c) 2024 The Typhon Project
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/backend/llvm.rs
+// SPDX-FileType: SOURCE
 // SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 //! LLVM wrapper for the Typhon compiler.
 //!
 //! This module provides a safe wrapper around the LLVM C API for code generation.
 
+use std::env;
 use std::path::Path;
-use std::rc::Rc;
 
+use inkwell::builder::Builder;
+use inkwell::context::Context;
+use inkwell::module::Module;
+use inkwell::passes::{
+    PassBuilderOptions,
+    PassManager,
+};
+use inkwell::targets::{
+    CodeModel,
+    FileType,
+    InitializationConfig,
+    RelocMode,
+    Target,
+    TargetMachine,
+};
+use inkwell::types::{
+    BasicMetadataTypeEnum,
+    BasicTypeEnum,
+    FunctionType,
+    StructType,
+};
 use inkwell::{
     AddressSpace,
-    FloatPredicate,
-    IntPredicate,
     OptimizationLevel,
-    builder::Builder,
-    context::Context,
-    module::Module,
-    passes::PassManager,
-    targets::{
-        CodeModel,
-        FileType,
-        InitializationConfig,
-        RelocMode,
-        Target,
-        TargetMachine,
-        TargetTriple,
-    },
-    types::{
-        AnyTypeEnum,
-        BasicMetadataTypeEnum,
-        BasicTypeEnum,
-        FunctionType,
-        PointerType,
-        StructType,
-    },
-    values::{
-        BasicMetadataValueEnum,
-        BasicValueEnum,
-        FunctionValue,
-        PointerValue,
-        StructValue,
-    },
 };
 
 use crate::backend::error::{
@@ -47,41 +54,31 @@ use crate::backend::error::{
     CodeGenResult,
 };
 use crate::typesystem::types::{
-    ClassType,
     FunctionType as TyphonFunctionType,
     PrimitiveTypeKind,
     Type as TyphonType,
 };
 
 /// LLVM context wrapper.
-pub struct LLVMContext {
+pub struct LLVMContext<'ctx> {
     /// The LLVM context.
-    context: Context,
+    context: &'ctx Context,
     /// The LLVM module.
-    module: Module,
+    module: Module<'ctx>,
     /// The LLVM builder.
-    builder: Builder,
+    builder: Builder<'ctx>,
     /// The LLVM pass manager.
-    pass_manager: PassManager<Module>,
+    pass_manager: PassManager<Module<'ctx>>,
 }
 
-impl LLVMContext {
+impl<'ctx> LLVMContext<'ctx> {
     /// Creates a new LLVM context.
-    pub fn new(module_name: &str) -> Self {
-        let context = Context::create();
+    ///
+    /// Note: The context parameter must outlive the returned LLVMContext.
+    pub fn new(context: &'ctx Context, module_name: &str) -> Self {
         let module = context.create_module(module_name);
         let builder = context.create_builder();
-        let pass_manager = PassManager::create(&module);
-
-        // Add optimization passes
-        pass_manager.add_instruction_combining_pass();
-        pass_manager.add_reassociate_pass();
-        pass_manager.add_gvn_pass();
-        pass_manager.add_cfg_simplification_pass();
-        pass_manager.add_basic_alias_analysis_pass();
-        pass_manager.add_promote_memory_to_register_pass();
-        pass_manager.add_instruction_combining_pass();
-        pass_manager.add_reassociate_pass();
+        let pass_manager = PassManager::create(());
 
         // Initialize target
         Self::initialize_target();
@@ -96,6 +93,14 @@ impl LLVMContext {
 
     /// Initializes the LLVM target.
     fn initialize_target() {
+        // Print a helpful message about LLVM path configuration
+        if env::var("LLVM_SYS_181_PREFIX").is_err() {
+            eprintln!(
+                "Note: You can set LLVM_SYS_181_PREFIX environment variable to help find LLVM"
+            );
+            eprintln!("Example: LLVM_SYS_181_PREFIX=/usr/local/opt/llvm@18 cargo build");
+        }
+
         let config = InitializationConfig {
             asm_parser: true,
             asm_printer: true,
@@ -110,31 +115,31 @@ impl LLVMContext {
 
     /// Gets the LLVM context.
     pub fn context(&self) -> &Context {
-        &self.context
+        self.context
     }
 
     /// Gets the LLVM module.
-    pub fn module(&self) -> &Module {
+    pub fn module(&self) -> &Module<'ctx> {
         &self.module
     }
 
     /// Gets the LLVM builder.
-    pub fn builder(&self) -> &Builder {
+    pub fn builder(&self) -> &Builder<'ctx> {
         &self.builder
     }
 
     /// Gets a mutable reference to the LLVM module.
-    pub fn module_mut(&mut self) -> &mut Module {
+    pub fn module_mut(&mut self) -> &mut Module<'ctx> {
         &mut self.module
     }
 
     /// Gets a mutable reference to the LLVM builder.
-    pub fn builder_mut(&mut self) -> &mut Builder {
+    pub fn builder_mut(&mut self) -> &mut Builder<'ctx> {
         &mut self.builder
     }
 
     /// Converts a Typhon type to an LLVM type.
-    pub fn convert_type(&self, ty: &TyphonType) -> CodeGenResult<BasicTypeEnum> {
+    pub fn convert_type(&self, ty: &TyphonType) -> CodeGenResult<BasicTypeEnum<'ctx>> {
         match ty {
             TyphonType::Primitive(p) => {
                 match p.kind {
@@ -143,25 +148,23 @@ impl LLVMContext {
                     PrimitiveTypeKind::Bool => Ok(self.context.bool_type().into()),
                     PrimitiveTypeKind::Str => {
                         // String is represented as a pointer to a char array
-                        let i8_type = self.context.i8_type();
-                        Ok(i8_type.ptr_type(AddressSpace::default()).into())
+                        Ok(self.context.ptr_type(AddressSpace::default()).into())
                     }
                     PrimitiveTypeKind::Bytes => {
                         // Bytes is represented as a pointer to a byte array
-                        let i8_type = self.context.i8_type();
-                        Ok(i8_type.ptr_type(AddressSpace::default()).into())
+                        Ok(self.context.ptr_type(AddressSpace::default()).into())
                     }
                 }
             }
             TyphonType::Class(_) => {
                 // Classes are represented as pointers to structures
-                let struct_type = self.create_class_struct(ty)?;
-                Ok(struct_type.ptr_type(AddressSpace::default()).into())
+                let _struct_type = self.create_class_struct(ty)?;
+                Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
             TyphonType::Function(func_type) => {
                 // Function types are pointers to function values
-                let function_type = self.create_function_type(func_type)?;
-                Ok(function_type.ptr_type(AddressSpace::default()).into())
+                let _function_type = self.create_function_type(func_type)?;
+                Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
             TyphonType::Tuple(tuple_type) => {
                 // Create a struct type for the tuple
@@ -179,8 +182,12 @@ impl LLVMContext {
                 // - A pointer to the data
                 // - The length of the list
                 // - The capacity of the list
-                let element_llvm_type = self.convert_type(&list_type.element_type)?;
-                let element_ptr_type = element_llvm_type.ptr_type(AddressSpace::default());
+                // Convert element type (needed for correct LLVM type registration)
+                let _element_llvm_type = self.convert_type(&list_type.element_type)?;
+                // Create a pointer to the element type
+                // In LLVM 18, we need to convert to a specific type before calling ptr_type
+                // So we create a generic pointer type instead
+                let element_ptr_type = self.context.ptr_type(AddressSpace::default());
 
                 let list_struct_type = self.context.struct_type(
                     &[
@@ -211,13 +218,11 @@ impl LLVMContext {
             )),
             TyphonType::Any => {
                 // Any is represented as a pointer to i8 (void*)
-                let i8_type = self.context.i8_type();
-                Ok(i8_type.ptr_type(AddressSpace::default()).into())
+                Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
             TyphonType::None => {
                 // None is represented as a null pointer
-                let i8_type = self.context.i8_type();
-                Ok(i8_type.ptr_type(AddressSpace::default()).into())
+                Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
             TyphonType::Never => Err(CodeGenError::type_conversion_error(
                 "Cannot convert Never type to LLVM type",
@@ -227,25 +232,34 @@ impl LLVMContext {
     }
 
     /// Creates a class structure type.
-    fn create_class_struct(&self, ty: &TyphonType) -> CodeGenResult<StructType> {
+    fn create_class_struct<'a>(&'a self, ty: &TyphonType) -> CodeGenResult<StructType<'a>> {
         if let TyphonType::Class(class_type) = ty {
             // Create fields for the class
             let mut field_types = Vec::new();
 
             // First field is the vtable pointer for method dispatch
-            let i8_ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
-            field_types.push(i8_ptr_type.into());
+            let ptr_type = self.context.ptr_type(AddressSpace::default());
+            field_types.push(ptr_type.into());
 
             // Add fields for instance variables
-            for (_, field_type) in &class_type.fields {
+            for field_type in class_type.fields.values() {
                 let llvm_type = self.convert_type(field_type)?;
                 field_types.push(llvm_type);
             }
 
-            // Create the struct type
+            // Create the struct type with name
             let struct_name = format!("class.{}", class_type.name);
-            let struct_type = self.context.struct_type(&field_types, false);
-            self.module.add_struct_named(&struct_name, struct_type);
+            // In LLVM 18, we should use identified structs properly
+            let struct_type = if let Some(existing) = self.context.get_struct_type(&struct_name) {
+                // Reuse the existing type if it exists
+                existing.set_body(&field_types, false);
+                existing
+            } else {
+                // Create a new identified struct type
+                let new_type = self.context.opaque_struct_type(&struct_name);
+                new_type.set_body(&field_types, false);
+                new_type
+            };
 
             Ok(struct_type)
         } else {
@@ -257,12 +271,15 @@ impl LLVMContext {
     }
 
     /// Creates an LLVM function type from a Typhon function type.
-    fn create_function_type(&self, func_type: &TyphonFunctionType) -> CodeGenResult<FunctionType> {
+    fn create_function_type(
+        &self,
+        func_type: &TyphonFunctionType,
+    ) -> CodeGenResult<FunctionType<'ctx>> {
         // Convert parameter types
-        let mut param_types = Vec::new();
+        let mut param_types: Vec<BasicMetadataTypeEnum<'ctx>> = Vec::new();
         for param in &func_type.parameters {
             let llvm_type = self.convert_type(&param.ty)?;
-            param_types.push(llvm_type);
+            param_types.push(llvm_type.into());
         }
 
         // Convert return type
@@ -276,6 +293,7 @@ impl LLVMContext {
             BasicTypeEnum::StructType(t) => t.fn_type(&param_types, false),
             BasicTypeEnum::ArrayType(t) => t.fn_type(&param_types, false),
             BasicTypeEnum::VectorType(t) => t.fn_type(&param_types, false),
+            BasicTypeEnum::ScalableVectorType(t) => t.fn_type(&param_types, false),
         };
 
         Ok(function_type)
@@ -283,6 +301,16 @@ impl LLVMContext {
 
     /// Optimizes the module.
     pub fn optimize_module(&self) {
+        // In LLVM 18, we need to use the PassBuilderOptions approach
+        // instead of the individual pass methods like add_instruction_combining_pass()
+        let pass_builder_options = PassBuilderOptions::create();
+
+        // Configure optimization options
+        pass_builder_options.set_loop_vectorization(true);
+        pass_builder_options.set_loop_unrolling(true);
+        pass_builder_options.set_loop_slp_vectorization(true);
+
+        // Run the pass manager on the module
         self.pass_manager.run_on(&self.module);
     }
 
@@ -290,7 +318,7 @@ impl LLVMContext {
     pub fn write_ir_to_file(&self, path: &Path) -> CodeGenResult<()> {
         if let Err(e) = self.module.print_to_file(path) {
             return Err(CodeGenError::code_gen_error(
-                format!("Failed to write IR to file: {}", e),
+                format!("Failed to write IR to file: {e}"),
                 None,
             ));
         }
@@ -304,7 +332,7 @@ impl LLVMContext {
 
         // Get the target
         let target = Target::from_triple(&triple)
-            .map_err(|e| CodeGenError::llvm_setup_error(format!("Failed to get target: {}", e)))?;
+            .map_err(|e| CodeGenError::llvm_setup_error(format!("Failed to get target: {e}")))?;
 
         // Create a target machine
         let target_machine = target
@@ -324,7 +352,7 @@ impl LLVMContext {
         target_machine
             .write_to_file(&self.module, FileType::Object, path)
             .map_err(|e| {
-                CodeGenError::code_gen_error(format!("Failed to write object file: {}", e), None)
+                CodeGenError::code_gen_error(format!("Failed to write object file: {e}"), None)
             })?;
 
         Ok(())

@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "context7": {
+      "disabled": false,
+      "alwaysAllow": ["resolve-library-id", "get-library-docs"],
+      "timeout": 60,
+      "type": "stdio",
+      "command": "npx",
+      "args": ["--yes", "@upstash/context7-mcp@latest"]
+    },
+
+    "sequential-thinking": {
+      "disabled": false,
+      "alwaysAllow": ["sequentialthinking"],
+      "timeout": 60,
+      "type": "stdio",
+      "command": "npx",
+      "args": ["--yes", "@modelcontextprotocol/server-sequential-thinking@latest"]
+    }
+  }
+}

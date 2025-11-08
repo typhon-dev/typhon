@@ -1,12 +1,32 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/lexer/lexer.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
+
 use std::collections::VecDeque;
+use std::ops::Range;
 
 use logos::Logos;
 
 use super::token::{
     Token,
     TokenKind,
-    TokenSpan,
 };
+use crate::common::Span;
 
 /// Lexer for the Typhon programming language
 pub struct Lexer<'a> {
@@ -83,26 +103,26 @@ impl<'a> Lexer<'a> {
                 let span = self.logos_lexer.span();
 
                 match token_kind {
-                    TokenKind::Newline => {
+                    Ok(TokenKind::Newline) => {
                         // If we're at a new line, check for indentation on the next line
                         self.handle_newline();
                     }
-                    TokenKind::Comment => {
+                    Ok(TokenKind::Comment) => {
                         // Skip comments and continue
                         self.advance_tokens();
                     }
                     _ => {
                         // Handle indentation at the start of a line
-                        if self.at_line_start && token_kind != TokenKind::Newline {
+                        if self.at_line_start && token_kind != Ok(TokenKind::Newline) {
                             self.handle_indentation(span.start);
                         }
 
                         // For all other tokens, just add them to the queue
-                        if token_kind != TokenKind::Newline {
+                        if token_kind != Ok(TokenKind::Newline) {
                             self.at_line_start = false;
                             self.token_queue.push_back(Token {
-                                kind: token_kind,
-                                span,
+                                kind: token_kind.expect("Invalid token"),
+                                span: span.into(),
                             });
                         }
                     }
@@ -130,7 +150,7 @@ impl<'a> Lexer<'a> {
         let span = self.logos_lexer.span();
         self.token_queue.push_back(Token {
             kind: TokenKind::Newline,
-            span,
+            span: span.into(),
         });
     }
 
@@ -145,7 +165,7 @@ impl<'a> Lexer<'a> {
             self.indent_stack.push(indentation);
             self.token_queue.push_back(Token {
                 kind: TokenKind::Indent,
-                span: 0..0, // Zero-width span at the start of the line
+                span: Span::new(0, 0), // Zero-width span at the start of the line
             });
         } else if indentation < current {
             // Indentation decreased, emit DEDENT tokens
@@ -154,7 +174,7 @@ impl<'a> Lexer<'a> {
                 self.indent_stack.pop();
                 self.token_queue.push_back(Token {
                     kind: TokenKind::Dedent,
-                    span: 0..0, // Zero-width span at the start of the line
+                    span: Span::new(0, 0), // Zero-width span at the start of the line
                 });
             }
 
@@ -163,7 +183,7 @@ impl<'a> Lexer<'a> {
                 // This is an indentation error, but we'll just emit an error token
                 self.token_queue.push_back(Token {
                     kind: TokenKind::Error,
-                    span: 0..0, // Zero-width span at the start of the line
+                    span: Span::new(0, 0), // Zero-width span at the start of the line
                 });
                 // Reset indentation to avoid further errors
                 if self.indent_stack.is_empty() {
@@ -178,7 +198,7 @@ impl<'a> Lexer<'a> {
     fn calculate_indentation(&self, pos: usize) -> usize {
         // Count the number of spaces at the current position
         let mut count = 0;
-        let mut i = pos - self.column as usize + 1; // Start at the beginning of the line
+        let mut i = pos - self.column + 1; // Start at the beginning of the line
 
         while i < self.source.len() {
             match self.source.as_bytes()[i] {
@@ -199,14 +219,14 @@ impl<'a> Lexer<'a> {
             self.indent_stack.pop();
             self.token_queue.push_back(Token {
                 kind: TokenKind::Dedent,
-                span: self.logos_lexer.span(), // Use the last span
+                span: self.logos_lexer.span().into(), // Use the last span
             });
         }
 
         // Emit an EOF token
         self.token_queue.push_back(Token {
             kind: TokenKind::Eof,
-            span: self.logos_lexer.span(), // Use the last span
+            span: self.logos_lexer.span().into(), // Use the last span
         });
     }
 
@@ -221,7 +241,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Returns a slice of the source code corresponding to the given span.
-    pub fn slice(&self, span: TokenSpan) -> &'a str {
-        &self.source[span]
+    pub fn slice(&self, span: Span) -> &'a str {
+        &self.source[<Span as Into<Range<usize>>>::into(span)]
     }
 }

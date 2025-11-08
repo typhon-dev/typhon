@@ -1,3 +1,21 @@
+// -------------------------------------------------------------------------
+// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
+// SPDX-FileName: crates/typhon-compiler/src/frontend/ast/visitor.rs
+// SPDX-FileType: SOURCE
+// SPDX-License-Identifier: Apache-2.0
+// -------------------------------------------------------------------------
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -------------------------------------------------------------------------
 use super::*;
 
 /// Visitor trait for AST nodes
@@ -16,24 +34,6 @@ pub trait Visitor<T> {
 
     /// Visits a literal
     fn visit_literal(&mut self, lit: &Literal) -> T;
-}
-
-/// Mutable visitor trait for AST nodes
-pub trait MutVisitor {
-    /// Visits a module
-    fn visit_module_mut(&mut self, module: &mut Module);
-
-    /// Visits a statement
-    fn visit_statement_mut(&mut self, stmt: &mut Statement);
-
-    /// Visits an expression
-    fn visit_expression_mut(&mut self, expr: &mut Expression);
-
-    /// Visits a type expression
-    fn visit_type_expression_mut(&mut self, type_expr: &mut TypeExpression);
-
-    /// Visits a literal
-    fn visit_literal_mut(&mut self, lit: &mut Literal);
 }
 
 /// Default implementation of the Visitor trait
@@ -60,21 +60,21 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 self.visit_expression(value);
             }
             Statement::FunctionDef {
-                name,
+                name: _,
                 parameters,
                 return_type,
                 body,
                 ..
             } => {
                 for param in parameters {
-                    if let Some(ref type_annotation) = param.type_annotation {
+                    if let Some(type_annotation) = &param.type_annotation {
                         self.visit_type_expression(type_annotation);
                     }
-                    if let Some(ref default_value) = param.default_value {
+                    if let Some(default_value) = &param.default_value {
                         self.visit_expression(default_value);
                     }
                 }
-                if let Some(ref ret_type) = return_type {
+                if let Some(ret_type) = return_type {
                     self.visit_type_expression(ret_type);
                 }
                 for stmt in body {
@@ -90,7 +90,7 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 }
             }
             Statement::Return { value, .. } => {
-                if let Some(ref val) = value {
+                if let Some(val) = value {
                     self.visit_expression(val);
                 }
             }
@@ -107,7 +107,7 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 for stmt in body {
                     self.visit_statement(stmt);
                 }
-                if let Some(ref else_stmts) = else_body {
+                if let Some(else_stmts) = else_body {
                     for stmt in else_stmts {
                         self.visit_statement(stmt);
                     }
@@ -138,10 +138,10 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 value,
                 ..
             } => {
-                if let Some(ref type_annot) = type_annotation {
+                if let Some(type_annot) = type_annotation {
                     self.visit_type_expression(type_annot);
                 }
-                if let Some(ref val) = value {
+                if let Some(val) = value {
                     self.visit_expression(val);
                 }
             }
@@ -182,7 +182,7 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 for arg in args {
                     self.visit_expression(arg);
                 }
-                for (_, value) in keywords {
+                for value in keywords.values() {
                     self.visit_expression(value);
                 }
             }
@@ -190,10 +190,10 @@ pub trait DefaultVisitor<T>: Visitor<T> {
                 parameters, body, ..
             } => {
                 for param in parameters {
-                    if let Some(ref type_annotation) = param.type_annotation {
+                    if let Some(type_annotation) = &param.type_annotation {
                         self.visit_type_expression(type_annotation);
                     }
-                    if let Some(ref default_value) = param.default_value {
+                    if let Some(default_value) = &param.default_value {
                         self.visit_expression(default_value);
                     }
                 }
