@@ -17,6 +17,7 @@
 // limitations under the License.
 // -------------------------------------------------------------------------
 //! Abstract Syntax Tree (AST) definitions for the Typhon programming language.
+
 use std::hash::Hash;
 
 use rustc_hash::FxHashMap;

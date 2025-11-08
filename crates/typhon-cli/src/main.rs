@@ -21,12 +21,8 @@
 //! Command-line interface for the Typhon programming language.
 
 use std::cell::RefCell;
-use std::fs::{
-    self,
-    File,
-};
+use std::fs::File;
 use std::io::Write;
-use std::path::Path;
 use std::rc::Rc;
 
 use anyhow::{
@@ -34,14 +30,14 @@ use anyhow::{
     Result,
 };
 use clap::Parser;
-use typhon_compiler as compiler;
 use typhon_compiler::backend::CodeGenerator;
 use typhon_compiler::backend::llvm::LLVMContext;
 use typhon_compiler::driver::Driver;
-use typhon_compiler::frontend::lexer::Lexer;
 use typhon_compiler::frontend::parser::Parser as TyphonParser;
-use typhon_compiler::typesystem::TypeChecker;
-use typhon_runtime as runtime;
+use {
+    typhon_compiler as compiler,
+    typhon_runtime as runtime,
+};
 
 /// The Typhon programming language compiler and runtime
 #[derive(Parser, Debug)]

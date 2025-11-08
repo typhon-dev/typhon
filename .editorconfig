@@ -21,7 +21,7 @@ insert_final_newline = false
 [*.{code-snippets,json,toml,yaml,yml}]
 indent_size = 2
 
-[*.rs]
+[*.{rs,ty}]
 indent_size = 4
 
 [*.sh]

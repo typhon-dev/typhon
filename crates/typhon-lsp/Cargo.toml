@@ -1,3 +1,23 @@
+[dependencies]
+  # Core dependencies
+  log.workspace        = true
+  serde_json.workspace = true
+  thiserror.workspace  = true
+
+  # LSP-specific dependencies
+  parking_lot.workspace = true # Synchronization primitives
+  ropey.workspace       = true # Rope data structure for text manipulation
+  serde.workspace       = true
+  tokio.workspace       = true # Async runtime
+  tower-lsp.workspace   = true
+  url.workspace         = true # URL handling for LSP URIs
+
+  # Internal crates
+  typhon-compiler.workspace = true
+
+[dev-dependencies]
+  insta.workspace = true # Snapshot testing
+
 [package]
   authors.workspace    = true
   description          = "Language server implementation for the Typhon programming language"
@@ -8,30 +28,3 @@
   version.workspace    = true
 
   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-  # Core dependencies
-  log        = "0.4"
-  serde_json = "1.0"
-  thiserror  = "1.0"
-
-  # LSP-specific dependencies
-  parking_lot = "0.12" # Synchronization primitives
-  ropey       = "1.6"  # Rope data structure for text manipulation
-  tower-lsp   = "0.20"
-  url         = "2.4"  # URL handling for LSP URIs
-
-  [dependencies.serde]
-    features = ["derive"]
-    version  = "1.0"
-
-  [dependencies.tokio] # Async runtime
-    features = ["full"]
-    version  = "1.28"
-
-  # Internal crates
-  [dependencies.typhon-compiler]
-    path = "../typhon-compiler"
-
-[dev-dependencies]
-  insta = "1.34" # Snapshot testing

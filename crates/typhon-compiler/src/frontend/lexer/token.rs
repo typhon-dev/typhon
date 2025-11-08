@@ -102,6 +102,14 @@ pub enum TokenKind {
     #[token("yield")]
     Yield,
 
+    // Keyword literals
+    #[token("True")]
+    True,
+    #[token("False")]
+    False,
+    #[token("None")]
+    None,
+
     // Type system keywords
     #[token("->")]
     Arrow,
@@ -291,6 +299,9 @@ impl fmt::Display for TokenKind {
             TokenKind::While => write!(f, "while"),
             TokenKind::With => write!(f, "with"),
             TokenKind::Yield => write!(f, "yield"),
+            TokenKind::True => write!(f, "True"),
+            TokenKind::False => write!(f, "False"),
+            TokenKind::None => write!(f, "None"),
             TokenKind::Arrow => write!(f, "->"),
             TokenKind::Ellipsis => write!(f, "..."),
             TokenKind::IntLiteral => write!(f, "<int>"),

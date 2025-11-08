@@ -25,7 +25,6 @@ use tower_lsp::jsonrpc::{
 use tower_lsp::lsp_types::*;
 use typhon_compiler::frontend::lexer::Lexer;
 use typhon_compiler::frontend::parser::Parser;
-use typhon_compiler::typesystem::TypeChecker;
 
 use crate::document::DocumentManager;
 use crate::utils;

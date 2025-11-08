@@ -18,7 +18,6 @@
 // -------------------------------------------------------------------------
 //! LSP server implementation for the Typhon programming language.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use parking_lot::RwLock;

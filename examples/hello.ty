@@ -31,6 +31,7 @@ def main() -> int:
         print("Sum is greater than 10: " + str(sum_result))
 
     # Increment counter
+    global counter
     counter = counter + 1
 
     # String concatenation

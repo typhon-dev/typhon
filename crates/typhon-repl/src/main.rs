@@ -29,10 +29,6 @@ use anyhow::Result;
 use clap::Parser;
 use rustyline::DefaultEditor;
 use rustyline::error::ReadlineError;
-use {
-    typhon_compiler as compiler,
-    typhon_runtime as runtime,
-};
 
 /// The Typhon programming language REPL
 #[derive(Parser, Debug)]

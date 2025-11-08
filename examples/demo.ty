@@ -1,0 +1,64 @@
+# Typhon Language Demo
+# This program demonstrates key features of the Typhon language
+
+# Variable declarations with type annotations
+name: str = "Typhon"
+version: float = 0.1
+is_compiled: bool = True
+
+# Function with type annotations
+def fibonacci(n: int) -> int:
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+
+# Class definition with methods
+class Calculator:
+    value: int = 0
+
+    def add(self, x: int) -> int:
+        self.value = self.value + x
+        return self.value
+
+    def subtract(self, x: int) -> int:
+        self.value = self.value - x
+        return self.value
+
+    def get_value(self) -> int:
+        return self.value
+
+# Main function
+def main() -> int:
+    # String operations
+    greeting = "Hello, " + name + "!"
+    print(greeting)
+
+    # Numeric operations
+    print("Fibonacci sequence:")
+    for i in range(10):
+        print(str(fibonacci(i)))
+
+    # Object instantiation and method calls
+    calc = Calculator()
+    calc.add(5)
+    calc.add(10)
+    print("Calculator value: " + str(calc.get_value()))
+
+    # Control flow
+    if calc.get_value() > 10:
+        print("Value is greater than 10")
+    else:
+        print("Value is 10 or less")
+
+    # Loop with range
+    print("Counting down:")
+    i = 5
+    while i > 0:
+        print(str(i))
+        i = i - 1
+
+    return 0
+
+# Call main function
+main()

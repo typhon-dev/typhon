@@ -1,26 +1,19 @@
 [dependencies]
   # Core dependencies
-  log       = "0.4"
-  thiserror = "1.0"
+  log.workspace       = true
+  thiserror.workspace = true
 
   # Memory management
-  crossbeam = "0.8" # Concurrent data structures
-
-  [dependencies.inkwell]
-    features = ["llvm18-1"]
-    version  = "0.6.0"
-
-  [dependencies.serde]
-    features = ["derive"]
-    version  = "1.0"
+  crossbeam.workspace = true # Concurrent data structures
+  inkwell.workspace   = true
+  serde.workspace     = true
 
   # Internal crates
-  [dependencies.typhon-stdlib]
-    path = "../typhon-stdlib"
+  typhon-stdlib.workspace = true
 
 [dev-dependencies]
-  insta    = "1.34" # Snapshot testing
-  proptest = "1.3"  # Property-based testing
+  insta.workspace    = true # Snapshot testing
+  proptest.workspace = true # Property-based testing
 
 [package]
   authors.workspace    = true

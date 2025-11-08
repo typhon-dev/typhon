@@ -91,3 +91,34 @@ Key learnings from this process:
 - Shared mutable state requires careful architecture, especially with complex lifetime requirements
 - Arc<Mutex<>> is preferable to RefCell when objects need to be shared across function boundaries
 - Type system consistency is critical across compiler stages
+
+## 2025-11-08: Boolean Literals and Project Configuration Updates
+
+Today we made several improvements to the codebase and documentation:
+
+### 1. Special Literals and Type System
+
+We analyzed how special literals are handled in the Typhon language:
+
+- The AST supports boolean literals through the `Literal::Bool(bool)` variant and null values through `Literal::None`
+- Example code in `demo.ty` uses Python-style capitalized `True` for boolean values
+- Implemented `True`, `False`, and `None` as dedicated tokens in the lexer rather than treating them as identifiers
+- Created a consistent approach for all Python-style special literals to maintain code coherence
+
+### 2. Dependency Management Refactoring
+
+Significant improvements to our dependency management:
+
+- Moved all dependency declarations to workspace.dependencies section in root Cargo.toml
+- Used .workspace = true syntax for dependencies in individual crates
+- Organized external dependencies with clear comments and grouping
+- Simplified version management across the entire project
+
+### 3. Project Configuration Updates
+
+Improved developer experience with configuration updates:
+
+- Updated .editorconfig to apply the same indent rules to .rs and .ty files
+- Set indent_size = 4 for both file types
+- Added .ty files to VS Code settings for consistent editor behavior
+- Updated allowed commands in roo-cline configuration

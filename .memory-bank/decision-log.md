@@ -188,7 +188,57 @@ Helps future developers understand API changes and patterns, reducing the learni
 
 ---
 
+## Decision
+
+Add support for Python-style boolean literals (True/False) and None as tokens in the AST
+
+## Rationale
+
+As a Python-based language, Typhon should follow Python's convention of using capitalized True and False for boolean literals and None as a null value, making code more familiar to Python developers.
+
+## Implementation Details
+
+- Added Literal::Bool(bool) and Literal::None variants in the AST's Literal enum
+- Implemented True, False, and None as dedicated tokens in the lexer
+- Ensured consistent handling between lexer and parser stages
+- Used the same pattern for all three special literals to maintain consistency
+
+---
+
+## Decision
+
+Refactor dependency management using workspace dependencies
+
+## Rationale
+
+Centralizing dependency management in the workspace root improves consistency, simplifies updates, and prevents version mismatches across crates.
+
+## Implementation Details
+
+- Moved all dependency declarations to workspace.dependencies section in root Cargo.toml
+- Used .workspace = true syntax for dependencies in individual crates
+- Organized external dependencies with clear comments and grouping
+
+---
+
+## Decision
+
+Treat .ty files with same indent rules as .rs files
+
+## Rationale
+
+Consistent indentation across both Rust source and Typhon files improves developer experience and code readability.
+
+## Implementation Details
+
+- Updated .editorconfig to apply the same indent rules to .rs and .ty files
+- Set indent_size = 4 for both file types
+- Ensures code in both languages follows the same visual structure
+
+---
+
 2025-10-20 04:39:00 - Initial creation of decision log.
 2025-10-20 05:05:00 - Added decisions on project structure, backend, and parsing libraries.
 2025-11-07 22:08:00 - Added decisions related to LLVM compatibility fixes and type system improvements.
 2025-11-07 23:24:00 - Updated with architectural decisions for memory management redesign and LLVM compatibility.
+2025-11-08 18:50:00 - Added decisions about Python-style True/False/None keywords, dependency management, and file indentation.

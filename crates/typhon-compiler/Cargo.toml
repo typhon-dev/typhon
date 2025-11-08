@@ -1,34 +1,24 @@
 [dependencies]
   # Lexer
-  logos             = "0.14.0" # Fast lexer generator
-  unic-ucd-category = "0.9.0"  # Unicode character categories
-  unicode-xid       = "0.2.4"  # Unicode identifier detection
+  logos.workspace             = true # Fast lexer generator
+  unic-ucd-category.workspace = true # Unicode character categories
+  unicode-xid.workspace       = true # Unicode identifier detection
 
   # Parser
-  chumsky   = "0.9.3"  # Ergonomic parser combinators
-  thiserror = "1.0.56" # Error handling
+  chumsky.workspace   = true # Ergonomic parser combinators
+  thiserror.workspace = true # Error handling
 
   # General utilities
-  bitflags     = "2.4.1"
-  indenter     = "0.3.3"  # Indentation management
-  paste        = "1.0.14"
-  rustc-hash   = "1.1.0"  # Fast hash maps
-  strum_macros = "0.26.1"
+  bitflags.workspace     = true
+  indenter.workspace     = true # Indentation management
+  paste.workspace        = true
+  rustc-hash.workspace   = true # Fast hash maps
+  strum_macros.workspace = true
 
-  [dependencies.inkwell]
-    features = ["llvm18-1"]
-    version  = "0.6.0"
-
-  [dependencies.llvm-sys]
-    version = "181.2.0"
-
-  [dependencies.miette] # Error reporting
-    features = ["fancy"]
-    version  = "7.0.0"
-
-  [dependencies.strum] # Enum utilities
-    features = ["derive"]
-    version  = "0.26.1"
+  inkwell.workspace  = true # LLVM bindings
+  llvm-sys.workspace = true # LLVM system bindings
+  miette.workspace   = true # Error reporting
+  strum.workspace    = true # Enum utilities
 
 [package]
   authors.workspace    = true

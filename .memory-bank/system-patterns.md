@@ -30,6 +30,8 @@ This file documents recurring patterns and standards used in the project.
 - Proper lifetime management for LLVM objects
 - Use Context::ptr_type() instead of type-specific ptr_type() methods
 - Explicit error handling for LLVM operations
+- Use Python-style capitalized special literal keywords (True, False, None)
+- Centralize dependency management in workspace.dependencies
 
 ## Testing Patterns
 
@@ -46,3 +48,4 @@ This file documents recurring patterns and standards used in the project.
 2025-10-20 05:07:00 - Updated architectural patterns and testing patterns.
 2025-11-07 22:09:00 - Added patterns identified during LLVM compatibility fixes.
 2025-11-07 23:23:00 - Updated architectural patterns with LLVM 18 compatibility and new memory management model.
+2025-11-08 18:55:00 - Added patterns for Python-style True/False/None keywords and workspace dependency management.

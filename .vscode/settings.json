@@ -22,6 +22,9 @@
   "evenBetterToml.formatter.indentTables": true,
   "evenBetterToml.formatter.reorderKeys": true,
 
+  "files.associations": {
+    "*.ty": "python"
+  },
   "files.readonlyInclude": {
     "**/.cargo/git/checkouts/**/*.rs": true,
     "**/.cargo/registry/src/**/*.rs": true,
@@ -30,7 +33,14 @@
 
   "lldb.evaluationTimeout": 30,
 
-  "roo-cline.allowedCommands": ["cargo check", "cargo clippy", "git log", "git diff", "git show"],
+  "roo-cline.allowedCommands": [
+    "cargo check",
+    "cargo clippy",
+    "git diff",
+    "git log",
+    "git show",
+    "git status"
+  ],
   "roo-cline.newTaskRequireTodos": true,
 
   "rust-analyzer.check.command": "clippy",
@@ -39,5 +49,7 @@
   "rust-analyzer.diagnostics.previewRustcOutput": true,
   "rust-analyzer.imports.granularity.enforce": true,
   "rust-analyzer.lens.enable": true,
-  "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"]
+  "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"],
+
+  "shellformat.useEditorConfig": true
 }
