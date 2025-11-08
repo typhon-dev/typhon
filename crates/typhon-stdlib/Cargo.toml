@@ -1,11 +1,11 @@
 [package]
-  authors     = ["Typhon Development Team"]
-  description = "Standard library for the Typhon programming language"
-  edition     = "2024"
-  license     = "MIT OR Apache-2.0"
-  name        = "typhon-stdlib"
-  repository  = "https://github.com/typhon-language/typhon"
-  version     = "0.1.0"
+  authors.workspace    = true
+  description          = "Standard library for the Typhon programming language"
+  edition.workspace    = true
+  license.workspace    = true
+  name                 = "typhon-stdlib"
+  repository.workspace = true
+  version.workspace    = true
 
   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

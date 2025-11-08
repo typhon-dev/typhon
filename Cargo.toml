@@ -10,25 +10,38 @@
   panic         = "abort" # Abort on panic (smaller binary)
 
 [workspace]
-  members = [
-    "crates/typhon-cli",
-    "crates/typhon-compiler",
-    "crates/typhon-lsp",
-    "crates/typhon-repl",
-    "crates/typhon-runtime",
-    "crates/typhon-stdlib",
-  ]
+  members = ["crates/*"]
+  resolver = "3"
+
+  [workspace.dependencies]
+    [workspace.dependencies.typhon-cli]
+    path = "crates/typhon-cli"
+
+    [workspace.dependencies.typhon-compiler]
+    path = "crates/typhon-compiler"
+
+    [workspace.dependencies.typhon-lsp]
+    path = "crates/typhon-lsp"
+
+    [workspace.dependencies.typhon-repl]
+    path = "crates/typhon-repl"
+
+    [workspace.dependencies.typhon-runtime]
+    path = "crates/typhon-runtime"
+
+    [workspace.dependencies.typhon-stdlib]
+    path = "crates/typhon-stdlib"
 
   [workspace.package]
-    authors     = ["Typhon Development Team"]
+    authors     = ["Jonathan Howard <howard.jonathan.21@gmail.com>"]
     categories  = ["compilers", "development-tools", "programming-languages"]
     description = "A statically and strongly typed programming language based on Python 3"
     edition     = "2024"
     keywords    = ["compiler", "language", "llvm", "python", "static-typing"]
-    license     = "MIT"
+    license     = "Apache-2.0"
     name        = "typhon"
     readme      = "README.md"
-    repository  = "https://github.com/typhon-language/typhon"
+    repository  = "https://github.com/typhon-dev/typhon"
     version     = "0.1.0"
 
   [workspace.lints.rust]

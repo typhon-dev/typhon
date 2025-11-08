@@ -1,6 +1,6 @@
 ---
 description: Main guidance for AI assistants working with the typhon repository
-author: https://github.com/typhon-language/typhon
+author: https://github.com/typhon-dev/typhon
 version: 1.0
 tags: ["agents", "guidance"]
 ---
