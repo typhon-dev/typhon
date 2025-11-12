@@ -20,21 +20,19 @@
 //!
 //! Command-line interface for the Typhon programming language.
 
-use std::fs::File;
+use std::fs::{File, read_to_string};
 use std::io::Write;
 
-use anyhow::{
-    Context,
-    Result,
-};
-use clap::Parser;
+use anyhow::{Context, Result};
+use clap::Parser as ArgParser;
+use inkwell::context::Context as InkwellContext;
 use typhon_compiler::backend::CodeGenerator;
 use typhon_compiler::backend::llvm::LLVMContext;
 use typhon_compiler::driver::Driver;
-use typhon_compiler::frontend::parser::Parser as TyphonParser;
+use typhon_compiler::frontend::parser::Parser;
 
 /// The Typhon programming language compiler and runtime
-#[derive(Parser, Debug)]
+#[derive(ArgParser, Debug)]
 #[clap(version, about, long_about = None)]
 struct Args {
     /// Input file to compile
@@ -82,11 +80,11 @@ fn main() -> Result<()> {
 
 fn compile_file(input: &str, args: &Args) -> Result<()> {
     // Read the source file
-    let source = std::fs::read_to_string(input)?;
+    let source = read_to_string(input)?;
 
     // Compile the source
     if args.verbose {
-        println!("Compiling {}...", input);
+        println!("Compiling {input}...");
     }
 
     // Implement full compilation process using the Driver
@@ -98,18 +96,15 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
     // Or use the individual components for more control:
 
     // Lexical analysis and parsing
-    let mut parser = TyphonParser::new(&source);
+    let mut parser = Parser::new(&source);
     let module = parser.parse().context("Failed to parse source code")?;
 
     if args.verbose {
-        println!(
-            "Parsing successful. AST created with {} statements.",
-            module.statements.len()
-        );
+        println!("Parsing successful. AST created with {} statements.", module.statements.len());
     }
 
     // Create LLVM context for code generation
-    let context_box = Box::new(inkwell::context::Context::create());
+    let context_box = Box::new(InkwellContext::create());
     let context = Box::leak(context_box);
 
     // Create an LLVM context
@@ -120,9 +115,7 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
     let mut code_generator = CodeGenerator::new(llvm_context);
 
     // Generate code
-    code_generator
-        .compile(&module.statements)
-        .context("Failed to generate code")?;
+    code_generator.compile(&module.statements).context("Failed to generate code")?;
 
     // Get the generated LLVM IR
     let llvm_ir = llvm_context.module().to_string();
@@ -130,20 +123,18 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
     // Output the LLVM IR or compile to an executable
     if args.emit_llvm {
         // Output LLVM IR to a file
-        let output_path = args
-            .output
-            .clone()
-            .unwrap_or_else(|| format!("{}.ll", input.trim_end_matches(".ty")));
+        let output_path =
+            args.output.clone().unwrap_or_else(|| format!("{}.ll", input.trim_end_matches(".ty")));
 
         let mut output_file = File::create(&output_path)?;
-        write!(output_file, "{}", llvm_ir)?;
+        write!(output_file, "{llvm_ir}")?;
 
         if args.verbose {
-            println!("LLVM IR written to {}", output_path);
+            println!("LLVM IR written to {output_path}");
         }
     } else {
         // For now, just output LLVM IR since executable compilation isn't implemented
-        println!("{}", llvm_ir);
+        println!("{llvm_ir}");
 
         if args.verbose {
             println!("LLVM IR generated successfully.");

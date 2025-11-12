@@ -26,10 +26,7 @@ use std::path::Path;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::passes::{
-    PassBuilderOptions,
-    PassManager,
-};
+use inkwell::passes::{PassBuilderOptions, PassManager};
 use inkwell::targets::{
     CodeModel,
     FileType,
@@ -38,21 +35,10 @@ use inkwell::targets::{
     Target,
     TargetMachine,
 };
-use inkwell::types::{
-    BasicMetadataTypeEnum,
-    BasicTypeEnum,
-    FunctionType,
-    StructType,
-};
-use inkwell::{
-    AddressSpace,
-    OptimizationLevel,
-};
+use inkwell::types::{BasicMetadataTypeEnum, BasicTypeEnum, FunctionType, StructType};
+use inkwell::{AddressSpace, OptimizationLevel};
 
-use crate::backend::error::{
-    CodeGenError,
-    CodeGenResult,
-};
+use crate::backend::error::{CodeGenError, CodeGenResult};
 use crate::typesystem::types::{
     FunctionType as TyphonFunctionType,
     PrimitiveTypeKind,

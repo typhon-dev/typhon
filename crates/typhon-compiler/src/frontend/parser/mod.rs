@@ -20,10 +20,7 @@
 
 pub mod error;
 
-use self::error::{
-    ParseError,
-    ParseResult,
-};
+use self::error::{ParseError, ParseResult};
 use crate::common::SourceInfo;
 use crate::frontend::ast::{
     BinaryOperator,
@@ -37,10 +34,7 @@ use crate::frontend::ast::{
     UnaryOperator,
 };
 use crate::frontend::lexer::Lexer;
-use crate::frontend::lexer::token::{
-    Token,
-    TokenKind,
-};
+use crate::frontend::lexer::token::{Token, TokenKind};
 
 /// Parser for the Typhon programming language
 pub struct Parser<'a> {
@@ -62,20 +56,12 @@ impl<'a> Parser<'a> {
         let mut lexer = Lexer::new(source);
         let current = lexer.next();
 
-        Self {
-            lexer,
-            current,
-            previous: None,
-            source,
-            had_error: false,
-        }
+        Self { lexer, current, previous: None, source, had_error: false }
     }
 
     /// Parses the source code into a module.
     pub fn parse(&mut self) -> ParseResult<Module> {
         let source_info = SourceInfo::new((0..self.source.len()).into());
-        let name = String::new(); // Module name will be set elsewhere
-
         let mut statements = Vec::new();
 
         while self.current.is_some() && self.current.unwrap().kind != TokenKind::Eof {
@@ -83,7 +69,7 @@ impl<'a> Parser<'a> {
             statements.push(stmt);
         }
 
-        Ok(Module::new(name, statements, source_info))
+        Ok(Module::new(String::new(), statements, source_info))
     }
 
     /// Advances the parser to the next token.
@@ -110,12 +96,11 @@ impl<'a> Parser<'a> {
 
     /// Matches the current token against the given kinds.
     fn match_token(&mut self, kinds: &[TokenKind]) -> bool {
-        for &kind in kinds {
-            if self.check(kind) {
-                self.advance();
-                return true;
-            }
+        if kinds.iter().any(|&kind| self.check(kind)) {
+            self.advance();
+            return true;
         }
+
         false
     }
 
@@ -128,12 +113,7 @@ impl<'a> Parser<'a> {
             let line = self.lexer.line();
             let column = self.lexer.column();
 
-            Err(ParseError::unexpected_token(
-                token,
-                vec![kind],
-                line,
-                column,
-            ))
+            Err(ParseError::unexpected_token(token, vec![kind], line, column))
         }
     }
 
@@ -142,10 +122,7 @@ impl<'a> Parser<'a> {
         self.had_error = true;
 
         while let Some(token) = self.current {
-            if self
-                .previous
-                .is_some_and(|t| t.kind == TokenKind::Semicolon)
-            {
+            if self.previous.is_some_and(|t| t.kind == TokenKind::Semicolon) {
                 return;
             }
 
@@ -217,11 +194,7 @@ impl<'a> Parser<'a> {
                 let span = expr.source_info().span.start..value.source_info().span.end;
                 let source_info = SourceInfo::new(span.into());
 
-                Ok(Statement::Assignment {
-                    target: expr,
-                    value,
-                    source_info,
-                })
+                Ok(Statement::Assignment { target: expr, value, source_info })
             } else {
                 // Expression statement
                 Ok(Statement::Expression(expr))
@@ -367,13 +340,7 @@ impl<'a> Parser<'a> {
 
         let source_info = SourceInfo::new((name.source_info.span.start..body_end).into());
 
-        Ok(Statement::FunctionDef {
-            name,
-            parameters,
-            return_type,
-            body,
-            source_info,
-        })
+        Ok(Statement::FunctionDef { name, parameters, return_type, body, source_info })
     }
 
     /// Parses a class definition.
@@ -427,12 +394,7 @@ impl<'a> Parser<'a> {
 
         let source_info = SourceInfo::new((name.source_info.span.start..body_end).into());
 
-        Ok(Statement::ClassDef {
-            name,
-            bases,
-            body,
-            source_info,
-        })
+        Ok(Statement::ClassDef { name, bases, body, source_info })
     }
 
     /// Parses an if statement.
@@ -493,12 +455,7 @@ impl<'a> Parser<'a> {
         let source_info =
             SourceInfo::new((condition.source_info().span.start..source_info_end).into());
 
-        Ok(Statement::If {
-            condition,
-            body,
-            else_body,
-            source_info,
-        })
+        Ok(Statement::If { condition, body, else_body, source_info })
     }
 
     /// Parses a while statement.
@@ -532,11 +489,7 @@ impl<'a> Parser<'a> {
 
         let source_info = SourceInfo::new((condition.source_info().span.start..body_end).into());
 
-        Ok(Statement::While {
-            condition,
-            body,
-            source_info,
-        })
+        Ok(Statement::While { condition, body, source_info })
     }
 
     /// Parses a for statement.
@@ -574,12 +527,7 @@ impl<'a> Parser<'a> {
 
         let source_info = SourceInfo::new((target.source_info().span.start..body_end).into());
 
-        Ok(Statement::For {
-            target,
-            iter,
-            body,
-            source_info,
-        })
+        Ok(Statement::For { target, iter, body, source_info })
     }
 
     /// Parses a return statement.
@@ -591,9 +539,7 @@ impl<'a> Parser<'a> {
             value = Some(Box::new(self.parse_expression()?));
         }
 
-        let end = value
-            .as_ref()
-            .map_or(keyword.span.end, |expr| expr.source_info().span.end);
+        let end = value.as_ref().map_or(keyword.span.end, |expr| expr.source_info().span.end);
 
         let source_info = SourceInfo::new((keyword.span.start..end).into());
 
@@ -630,9 +576,7 @@ impl<'a> Parser<'a> {
         }
 
         let end = names.last().map_or(keyword.span.end, |(name, as_name)| {
-            as_name
-                .as_ref()
-                .map_or(name.source_info.span.end, |n| n.source_info.span.end)
+            as_name.as_ref().map_or(name.source_info.span.end, |n| n.source_info.span.end)
         });
 
         let source_info = SourceInfo::new((keyword.span.start..end).into());
@@ -691,22 +635,13 @@ impl<'a> Parser<'a> {
             }
         }
 
-        let end = names
-            .last()
-            .map_or(module.source_info.span.end, |(name, as_name)| {
-                as_name
-                    .as_ref()
-                    .map_or(name.source_info.span.end, |n| n.source_info.span.end)
-            });
+        let end = names.last().map_or(module.source_info.span.end, |(name, as_name)| {
+            as_name.as_ref().map_or(name.source_info.span.end, |n| n.source_info.span.end)
+        });
 
         let source_info = SourceInfo::new((keyword.span.start..end).into());
 
-        Ok(Statement::FromImport {
-            module,
-            names,
-            level,
-            source_info,
-        })
+        Ok(Statement::FromImport { module, names, level, source_info })
     }
 
     /// Parses a block of statements.
@@ -746,10 +681,7 @@ impl<'a> Parser<'a> {
                 return Ok(expr);
             }
 
-            return Err(ParseError::invalid_syntax(
-                "Invalid assignment target.",
-                equals.span,
-            ));
+            return Err(ParseError::invalid_syntax("Invalid assignment target.", equals.span));
         }
 
         Ok(expr)
@@ -917,12 +849,8 @@ impl<'a> Parser<'a> {
 
     /// Parses a unary expression.
     fn parse_unary(&mut self) -> ParseResult<Expression> {
-        if self.match_token(&[
-            TokenKind::Not,
-            TokenKind::Minus,
-            TokenKind::Plus,
-            TokenKind::Tilde,
-        ]) {
+        if self.match_token(&[TokenKind::Not, TokenKind::Minus, TokenKind::Plus, TokenKind::Tilde])
+        {
             let operator = match self.previous.unwrap().kind {
                 TokenKind::Not => UnaryOperator::Invert,
                 TokenKind::Minus => UnaryOperator::Neg,
@@ -935,11 +863,7 @@ impl<'a> Parser<'a> {
             let span = self.previous.unwrap().span.start..right.source_info().span.end;
             let source_info = SourceInfo::new(span.into());
 
-            return Ok(Expression::UnaryOp {
-                op: operator,
-                operand: Box::new(right),
-                source_info,
-            });
+            return Ok(Expression::UnaryOp { op: operator, operand: Box::new(right), source_info });
         }
 
         self.parse_primary()
@@ -976,10 +900,7 @@ impl<'a> Parser<'a> {
 
                 let source_info = SourceInfo::new(token.span);
 
-                Ok(Expression::Literal {
-                    value: Literal::Int(value),
-                    source_info,
-                })
+                Ok(Expression::Literal { value: Literal::Int(value), source_info })
             }
             TokenKind::FloatLiteral => {
                 self.advance();
@@ -990,22 +911,16 @@ impl<'a> Parser<'a> {
 
                 let source_info = SourceInfo::new(token.span);
 
-                Ok(Expression::Literal {
-                    value: Literal::Float(value),
-                    source_info,
-                })
+                Ok(Expression::Literal { value: Literal::Float(value), source_info })
             }
             TokenKind::StringLiteral | TokenKind::StringLiteral2 => {
                 self.advance();
+
                 let text = self.lexer.slice(token.span);
                 let value = text[1..text.len() - 1].to_string(); // Remove quotes
-
                 let source_info = SourceInfo::new(token.span);
 
-                Ok(Expression::Literal {
-                    value: Literal::String(value),
-                    source_info,
-                })
+                Ok(Expression::Literal { value: Literal::String(value), source_info })
             }
             _ => Err(ParseError::unexpected_token(
                 token,
@@ -1025,10 +940,8 @@ impl<'a> Parser<'a> {
     fn parse_type_expression(&mut self) -> ParseResult<TypeExpression> {
         // Start with a simple named type
         let token = self.consume(TokenKind::Identifier, "Expect type name.")?;
-        let name = Identifier::new(
-            self.lexer.slice(token.span).to_string(),
-            SourceInfo::new(token.span),
-        );
+        let name =
+            Identifier::new(self.lexer.slice(token.span).to_string(), SourceInfo::new(token.span));
         let source_info = SourceInfo::new(token.span);
 
         let mut type_expr = TypeExpression::Named { name, source_info };
@@ -1048,10 +961,7 @@ impl<'a> Parser<'a> {
                 }
             }
 
-            self.consume(
-                TokenKind::RightBracket,
-                "Expect ']' after generic type arguments.",
-            )?;
+            self.consume(TokenKind::RightBracket, "Expect ']' after generic type arguments.")?;
 
             let base_source_info = *type_expr.source_info();
             let base = Box::new(type_expr);
@@ -1059,11 +969,7 @@ impl<'a> Parser<'a> {
             let span = base_source_info.span.start..end;
             let source_info = SourceInfo::new(span.into());
 
-            type_expr = TypeExpression::Generic {
-                base,
-                args,
-                source_info,
-            };
+            type_expr = TypeExpression::Generic { base, args, source_info };
         }
 
         Ok(type_expr)

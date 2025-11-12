@@ -23,10 +23,7 @@ use std::ops::Range;
 
 use logos::Logos;
 
-use self::token::{
-    Token,
-    TokenKind,
-};
+use self::token::{Token, TokenKind};
 use crate::common::Span;
 
 pub mod token;

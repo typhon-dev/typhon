@@ -26,10 +26,7 @@ mod tests {
     use crate::backend::codegen::CodeGenerator;
     use crate::backend::llvm::LLVMContext;
     use crate::frontend::ast::*;
-    use crate::frontend::lexer::token::{
-        SourceInfo,
-        SourceSpan,
-    };
+    use crate::frontend::lexer::token::{SourceInfo, SourceSpan};
 
     // Helper function to create a source span
     fn create_source_span() -> SourceSpan {

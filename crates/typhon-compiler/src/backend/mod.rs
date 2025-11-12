@@ -30,9 +30,14 @@ pub mod llvm;
 #[cfg(test)]
 mod tests;
 
-pub use codegen::CodeGenerator;
-pub use error::{
-    CodeGenError,
-    CodeGenResult,
+pub use codegen::{
+    CodeGenContext,
+    CodeGenState,
+    CodeGenValue,
+    CodeGenerator,
+    CodeGenerator as NewCodeGenerator,
+    SymbolEntry,
+    SymbolTable,
 };
+pub use error::{CodeGenError, CodeGenResult};
 pub use llvm::LLVMContext;

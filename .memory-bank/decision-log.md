@@ -1,7 +1,7 @@
 ---
 title: Decision Log
 description: Records architectural and implementation decisions in the project
-tags: [memory-bank, documentation, decision-log, architecture, design]
+tags: [memory-bank, documentation, decision-log, architecture, implementation, decisions, design]
 ---
 <!-- markdownlint-disable-file no-duplicate-heading -->
 
@@ -272,6 +272,98 @@ Clear, comprehensive documentation improves project accessibility, facilitates o
 
 ---
 
+## Decision
+
+Split the monolithic codegen.rs file into multiple modules
+
+## Rationale
+
+The original codegen.rs file had grown to over 1,030 lines, making it difficult to maintain, understand, and extend. This refactoring was needed to:
+
+- Improve code organization and readability
+- Enable better separation of concerns
+- Make the codebase more accessible to new contributors
+- Facilitate future enhancements to specific components
+- Reduce the risk of merge conflicts when multiple developers work on the code generation module
+
+## Implementation Details
+
+1. Created a new directory structure in `crates/typhon-compiler/src/backend/codegen_new/`
+2. Split functionality into logical modules:
+   - `types.rs` - Core type definitions (CodeGenValue)
+   - `symbol_table.rs` - Symbol management
+   - `context.rs` - State management
+   - `memory.rs` - Memory operations
+   - `operations.rs` - Binary and unary operations
+   - `functions.rs` - Function generation
+   - `statements.rs` - Statement processing
+   - `expressions.rs` - Expression evaluation
+   - `visitor.rs` - AST traversal
+   - `mod.rs` - Public exports and documentation
+3. Implemented extension traits for each domain of functionality:
+   - `CodeGenMemoryOps`
+   - `CodeGenOperations`
+   - `CodeGenFunctions`
+   - `CodeGenStatements`
+   - `CodeGenExpressions`
+
+4. Maintained backward compatibility by preserving the original `codegen.rs` file alongside the new structure, with a transition plan for gradual adoption
+
+---
+
+## Decision
+
+Use extension traits for modular code generation functionality
+
+## Rationale
+
+- Extension traits provide a clean way to add functionality to existing types without inheritance
+- They align well with Rust's composition-over-inheritance philosophy
+- They allow for better organization of code by domain/concern
+- They make the code more testable by providing clear interfaces
+- They improve discoverability by grouping related functionality
+
+## Implementation Details
+
+1. Created a set of focused extension traits, each responsible for a specific domain:
+   - Memory management
+   - Operations (binary, unary)
+   - Function generation
+   - Statement handling
+   - Expression evaluation
+
+2. Implemented these traits for the CodeGenerator type, allowing the functionality to be added without modifying the core type
+
+3. Carefully managed dependencies between traits to minimize coupling:
+   - Core types have no dependencies
+   - More complex operations depend on simpler ones
+   - Each trait focuses on a specific responsibility
+
+4. Used trait boundaries to enforce architectural constraints where needed
+
+---
+
+## Decision
+
+Implement a dual-path approach for backward compatibility
+
+## Rationale
+
+- Complete replacement of the code generation system would be risky
+- A gradual transition allows for validation and comparison
+- Prevents breaking existing code during the migration
+- Allows time for thorough testing of the new implementation
+
+## Implementation Details
+
+1. Maintained the original `codegen.rs` file in its current location
+2. Created a new `codegen_new` directory for the refactored implementation
+3. Updated the module structure to expose both implementations
+4. Created a transition plan for gradually moving code to use the new implementation
+5. Added comprehensive tests to verify equivalent behavior between implementations
+
+---
+
 2025-10-20 04:39:00 - Initial creation of decision log.
 2025-10-20 05:05:00 - Added decisions on project structure, backend, and parsing libraries.
 2025-11-07 22:08:00 - Added decisions related to LLVM compatibility fixes and type system improvements.
@@ -279,3 +371,4 @@ Clear, comprehensive documentation improves project accessibility, facilitates o
 2025-11-08 18:50:00 - Added decisions about Python-style True/False/None keywords, dependency management, and file indentation.
 2025-11-08 21:32:00 - Added decision about fixing typhon-cli build errors related to VERSION constant and LLVMContext handling.
 2025-11-09 22:20:00 - Added decision about project documentation structure and organization.
+2025-11-12 14:20:00 - Added decision log entries for the backend code modularization refactoring.

@@ -82,3 +82,10 @@ impl SourceInfo {
         }
     }
 }
+
+// Implement Default trait for SourceInfo
+impl Default for SourceInfo {
+    fn default() -> Self {
+        SourceInfo::new(Span::new(0, 0))
+    }
+}
