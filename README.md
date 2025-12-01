@@ -1,4 +1,4 @@
-# Typhon
+# ![Typhon](docs/images/logo-hi-res.png)
 
 > [!NOTE]
 > **⚠️ Project Status: Alpha/Experimental**

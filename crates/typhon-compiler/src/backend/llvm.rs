@@ -1,27 +1,10 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/llvm.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! LLVM wrapper for the Typhon compiler.
 //!
 //! This module provides a safe wrapper around the LLVM C API for code generation.
 
 use std::env;
 use std::path::Path;
+use std::sync::Arc;
 
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -39,29 +22,23 @@ use inkwell::types::{BasicMetadataTypeEnum, BasicTypeEnum, FunctionType, StructT
 use inkwell::{AddressSpace, OptimizationLevel};
 
 use crate::backend::error::{CodeGenError, CodeGenResult};
-use crate::typesystem::types::{
-    FunctionType as TyphonFunctionType,
-    PrimitiveTypeKind,
-    Type as TyphonType,
-};
+use crate::typesystem::types::{FunctionType as TyphonFunctionType, PrimitiveTypeKind, Type};
 
 /// LLVM context wrapper.
-pub struct LLVMContext<'ctx> {
+pub struct LLVMContext {
     /// The LLVM context.
-    context: &'ctx Context,
+    context: Arc<Context>,
     /// The LLVM module.
-    module: Module<'ctx>,
+    module: Module,
     /// The LLVM builder.
-    builder: Builder<'ctx>,
+    builder: Builder,
     /// The LLVM pass manager.
-    pass_manager: PassManager<Module<'ctx>>,
+    pass_manager: PassManager<Module>,
 }
 
-impl<'ctx> LLVMContext<'ctx> {
+impl LLVMContext {
     /// Creates a new LLVM context.
-    ///
-    /// Note: The context parameter must outlive the returned LLVMContext.
-    pub fn new(context: &'ctx Context, module_name: &str) -> Self {
+    pub fn new(context: Arc<Context>, module_name: &str) -> Self {
         let module = context.create_module(module_name);
         let builder = context.create_builder();
         let pass_manager = PassManager::create(());
@@ -69,12 +46,7 @@ impl<'ctx> LLVMContext<'ctx> {
         // Initialize target
         Self::initialize_target();
 
-        Self {
-            context,
-            module,
-            builder,
-            pass_manager,
-        }
+        Self { context, module, builder, pass_manager }
     }
 
     /// Initializes the LLVM target.
@@ -101,33 +73,28 @@ impl<'ctx> LLVMContext<'ctx> {
 
     /// Gets the LLVM context.
     pub fn context(&self) -> &Context {
-        self.context
+        &self.context
     }
 
     /// Gets the LLVM module.
-    pub fn module(&self) -> &Module<'ctx> {
+    pub fn module(&self) -> &Module {
         &self.module
     }
 
     /// Gets the LLVM builder.
-    pub fn builder(&self) -> &Builder<'ctx> {
+    pub fn builder(&self) -> &Builder {
         &self.builder
     }
 
     /// Gets a mutable reference to the LLVM module.
-    pub fn module_mut(&mut self) -> &mut Module<'ctx> {
+    pub fn module_mut(&mut self) -> &mut Module {
         &mut self.module
     }
 
-    /// Gets a mutable reference to the LLVM builder.
-    pub fn builder_mut(&mut self) -> &mut Builder<'ctx> {
-        &mut self.builder
-    }
-
     /// Converts a Typhon type to an LLVM type.
-    pub fn convert_type(&self, ty: &TyphonType) -> CodeGenResult<BasicTypeEnum<'ctx>> {
+    pub fn convert_type(&self, ty: &Type) -> CodeGenResult<BasicTypeEnum> {
         match ty {
-            TyphonType::Primitive(p) => {
+            Type::Primitive(p) => {
                 match p.kind {
                     PrimitiveTypeKind::Int => Ok(self.context.i64_type().into()),
                     PrimitiveTypeKind::Float => Ok(self.context.f64_type().into()),
@@ -142,17 +109,17 @@ impl<'ctx> LLVMContext<'ctx> {
                     }
                 }
             }
-            TyphonType::Class(_) => {
+            Type::Class(_) => {
                 // Classes are represented as pointers to structures
                 let _struct_type = self.create_class_struct(ty)?;
                 Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
-            TyphonType::Function(func_type) => {
+            Type::Function(func_type) => {
                 // Function types are pointers to function values
                 let _function_type = self.create_function_type(func_type)?;
                 Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
-            TyphonType::Tuple(tuple_type) => {
+            Type::Tuple(tuple_type) => {
                 // Create a struct type for the tuple
                 let mut element_types = Vec::new();
                 for element_type in &tuple_type.element_types {
@@ -163,7 +130,7 @@ impl<'ctx> LLVMContext<'ctx> {
                 let tuple_struct = self.context.struct_type(&element_types, false);
                 Ok(tuple_struct.into())
             }
-            TyphonType::List(list_type) => {
+            Type::List(list_type) => {
                 // Lists are represented as a structure containing:
                 // - A pointer to the data
                 // - The length of the list
@@ -186,7 +153,7 @@ impl<'ctx> LLVMContext<'ctx> {
 
                 Ok(list_struct_type.into())
             }
-            TyphonType::Union(_) => {
+            Type::Union(_) => {
                 // Union types are implemented using a tagged union
                 // This is a simplification - a proper implementation would use LLVM's type-based alias analysis
                 Err(CodeGenError::unsupported_feature(
@@ -194,23 +161,23 @@ impl<'ctx> LLVMContext<'ctx> {
                     None,
                 ))
             }
-            TyphonType::TypeVar(_) => Err(CodeGenError::type_conversion_error(
+            Type::TypeVar(_) => Err(CodeGenError::type_conversion_error(
                 "Type variables should be resolved before code generation",
                 None,
             )),
-            TyphonType::GenericInstance(_) => Err(CodeGenError::type_conversion_error(
+            Type::GenericInstance(_) => Err(CodeGenError::type_conversion_error(
                 "Generic instances should be monomorphized before code generation",
                 None,
             )),
-            TyphonType::Any => {
+            Type::Any => {
                 // Any is represented as a pointer to i8 (void*)
                 Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
-            TyphonType::None => {
+            Type::None => {
                 // None is represented as a null pointer
                 Ok(self.context.ptr_type(AddressSpace::default()).into())
             }
-            TyphonType::Never => Err(CodeGenError::type_conversion_error(
+            Type::Never => Err(CodeGenError::type_conversion_error(
                 "Cannot convert Never type to LLVM type",
                 None,
             )),
@@ -218,8 +185,8 @@ impl<'ctx> LLVMContext<'ctx> {
     }
 
     /// Creates a class structure type.
-    fn create_class_struct<'a>(&'a self, ty: &TyphonType) -> CodeGenResult<StructType<'a>> {
-        if let TyphonType::Class(class_type) = ty {
+    fn create_class_struct(&self, ty: &Type) -> CodeGenResult<StructType> {
+        if let Type::Class(class_type) = ty {
             // Create fields for the class
             let mut field_types = Vec::new();
 
@@ -249,20 +216,14 @@ impl<'ctx> LLVMContext<'ctx> {
 
             Ok(struct_type)
         } else {
-            Err(CodeGenError::type_conversion_error(
-                "Expected a class type",
-                None,
-            ))
+            Err(CodeGenError::type_conversion_error("Expected a class type", None))
         }
     }
 
     /// Creates an LLVM function type from a Typhon function type.
-    fn create_function_type(
-        &self,
-        func_type: &TyphonFunctionType,
-    ) -> CodeGenResult<FunctionType<'ctx>> {
+    fn create_function_type(&self, func_type: &TyphonFunctionType) -> CodeGenResult<FunctionType> {
         // Convert parameter types
-        let mut param_types: Vec<BasicMetadataTypeEnum<'ctx>> = Vec::new();
+        let mut param_types: Vec<BasicMetadataTypeEnum> = Vec::new();
         for param in &func_type.parameters {
             let llvm_type = self.convert_type(&param.ty)?;
             param_types.push(llvm_type.into());
@@ -335,11 +296,9 @@ impl<'ctx> LLVMContext<'ctx> {
             })?;
 
         // Compile the module to an object file
-        target_machine
-            .write_to_file(&self.module, FileType::Object, path)
-            .map_err(|e| {
-                CodeGenError::code_gen_error(format!("Failed to write object file: {e}"), None)
-            })?;
+        target_machine.write_to_file(&self.module, FileType::Object, path).map_err(|e| {
+            CodeGenError::code_gen_error(format!("Failed to write object file: {e}"), None)
+        })?;
 
         Ok(())
     }

@@ -1,0 +1,20 @@
+# Complexity thresholds
+cognitive-complexity-threshold = 15
+too-many-arguments-threshold   = 6
+too-many-lines-threshold       = 120
+
+# Enum variant size configuration
+enum-variant-size-threshold = 100
+
+# Doc-related configuration
+doc-valid-idents = ["CPython", "LLVM", "LSP", "REPL", "TypeScript", "const", "mut"]
+
+# Naming restrictions
+disallowed-names = ["bar", "baz", "foo", "temp", "tmp"]
+
+# Path structure configuration
+absolute-paths-allowed-crates = ["alloc", "core", "std"]
+absolute-paths-max-segments   = 3
+
+# Method restrictions
+disallowed-methods = ["std::env::remove_var", "std::env::set_var"]

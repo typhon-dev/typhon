@@ -1,21 +1,3 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-runtime/src/object.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Object system for the Typhon runtime.
 
 use std::cell::RefCell;
@@ -51,16 +33,16 @@ pub enum ObjectType {
 impl fmt::Display for ObjectType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ObjectType::Int => write!(f, "int"),
-            ObjectType::Float => write!(f, "float"),
-            ObjectType::Bool => write!(f, "bool"),
-            ObjectType::String => write!(f, "str"),
-            ObjectType::List => write!(f, "list"),
-            ObjectType::Dict => write!(f, "dict"),
-            ObjectType::Function => write!(f, "function"),
-            ObjectType::Class => write!(f, "class"),
-            ObjectType::Instance => write!(f, "instance"),
-            ObjectType::None => write!(f, "NoneType"),
+            Self::Int => write!(f, "int"),
+            Self::Float => write!(f, "float"),
+            Self::Bool => write!(f, "bool"),
+            Self::String => write!(f, "str"),
+            Self::List => write!(f, "list"),
+            Self::Dict => write!(f, "dict"),
+            Self::Function => write!(f, "function"),
+            Self::Class => write!(f, "class"),
+            Self::Instance => write!(f, "instance"),
+            Self::None => write!(f, "NoneType"),
         }
     }
 }
@@ -92,18 +74,19 @@ pub enum Value {
 
 impl Value {
     /// Get the type of the value.
-    pub fn get_type(&self) -> ObjectType {
+    #[must_use]
+    pub const fn get_type(&self) -> ObjectType {
         match self {
-            Value::Int(_) => ObjectType::Int,
-            Value::Float(_) => ObjectType::Float,
-            Value::Bool(_) => ObjectType::Bool,
-            Value::String(_) => ObjectType::String,
-            Value::List(_) => ObjectType::List,
-            Value::Dict(_) => ObjectType::Dict,
-            Value::Function(_) => ObjectType::Function,
-            Value::Class(_) => ObjectType::Class,
-            Value::Instance(_) => ObjectType::Instance,
-            Value::None => ObjectType::None,
+            Self::Int(_) => ObjectType::Int,
+            Self::Float(_) => ObjectType::Float,
+            Self::Bool(_) => ObjectType::Bool,
+            Self::String(_) => ObjectType::String,
+            Self::List(_) => ObjectType::List,
+            Self::Dict(_) => ObjectType::Dict,
+            Self::Function(_) => ObjectType::Function,
+            Self::Class(_) => ObjectType::Class,
+            Self::Instance(_) => ObjectType::Instance,
+            Self::None => ObjectType::None,
         }
     }
 }
@@ -111,11 +94,11 @@ impl Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Int(i) => write!(f, "{i}"),
-            Value::Float(fl) => write!(f, "{fl}"),
-            Value::Bool(b) => write!(f, "{b}"),
-            Value::String(s) => write!(f, "{s}"),
-            Value::List(l) => {
+            Self::Int(i) => write!(f, "{i}"),
+            Self::Float(fl) => write!(f, "{fl}"),
+            Self::Bool(b) => write!(f, "{b}"),
+            Self::String(s) => write!(f, "{s}"),
+            Self::List(l) => {
                 let l = l.borrow();
                 write!(f, "[")?;
                 let mut first = true;
@@ -129,7 +112,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "]")
             }
-            Value::Dict(d) => {
+            Self::Dict(d) => {
                 let d = d.borrow();
                 write!(f, "{{")?;
                 let mut first = true;
@@ -143,10 +126,10 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
-            Value::Function(func) => write!(f, "<function {}>", func.name),
-            Value::Class(class) => write!(f, "<class {}>", class.name),
-            Value::Instance(instance) => write!(f, "<{} instance>", instance.class.name),
-            Value::None => write!(f, "None"),
+            Self::Function(func) => write!(f, "<function {}>", func.name),
+            Self::Class(class) => write!(f, "<class {}>", class.name),
+            Self::Instance(instance) => write!(f, "<{} instance>", instance.class.name),
+            Self::None => write!(f, "None"),
         }
     }
 }
@@ -158,7 +141,6 @@ pub struct Function {
     pub name: String,
     /// Code of the function.
     pub code: Vec<u8>,
-    // More fields would be added in a real implementation
 }
 
 /// A class in the Typhon runtime.

@@ -6,6 +6,7 @@ This directory contains documentation for the Typhon programming language, its c
 
 - **compiler/**: Documentation for the Typhon compiler architecture and implementation
   - **frontend/**: Lexer, parser, and syntax handling
+    - **parser.md**: Details on the new parsing approach using ASTParser trait
   - **typesystem/**: Type system and type checking
   - **backend/**: Code generation and LLVM integration
   - **optimization/**: Compiler optimization passes
@@ -27,6 +28,7 @@ This directory contains documentation for the Typhon programming language, its c
 - [Language Specification](./language/specification.md): Complete Typhon language specification
 - [Compiler Architecture](./compiler/architecture.md): Overview of the Typhon compiler design
 - [LSP Implementation Plan](./lsp/implementation-plan.md): Design and implementation plan for Typhon LSP
+- [Parser Implementation](./compiler/frontend/parser.md): Details on the new parsing approach using ASTParser trait
 
 ## Contributing to Documentation
 

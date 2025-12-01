@@ -1,3 +1,5 @@
+lints.workspace = true
+
 [dependencies]
   # Lexer
   logos.workspace             = true # Fast lexer generator
@@ -19,6 +21,10 @@
   llvm-sys.workspace = true # LLVM system bindings
   miette.workspace   = true # Error reporting
   strum.workspace    = true # Enum utilities
+
+  # Internal crates
+  typhon-ast.workspace    = true
+  typhon-parser.workspace = true
 
 [package]
   authors.workspace    = true

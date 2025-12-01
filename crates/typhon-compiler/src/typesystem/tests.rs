@@ -1,28 +1,10 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/typesystem/tests.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Tests for the Typhon type system.
 //!
 //! This module contains tests for the type checker and type inference.
 
 use std::rc::Rc;
 
-use crate::frontend::ast::{
+use typhon_parser::ast::{
     BinaryOperator,
     Expression,
     Identifier,
@@ -34,17 +16,12 @@ use crate::frontend::ast::{
     TypeExpression,
     UnaryOperator,
 };
-use crate::frontend::lexer::token::{
-    Span,
-    Token,
-    TokenKind,
-};
+use typhon_parser::common::Span;
+use typhon_parser::token::{Token, TokenKind};
+
 use crate::typesystem::checker::TypeChecker;
 use crate::typesystem::error::TypeErrorKind;
-use crate::typesystem::types::{
-    PrimitiveTypeKind,
-    Type,
-};
+use crate::typesystem::types::{PrimitiveTypeKind, Type};
 
 /// Creates a token span for testing.
 fn span(start: usize, end: usize) -> Span {
@@ -63,10 +40,7 @@ fn ident(name: &str, start: usize, end: usize) -> Identifier {
 
 /// Creates a literal expression for testing.
 fn lit_expr(value: Literal, start: usize, end: usize) -> Expression {
-    Expression::Literal {
-        value,
-        source_info: source_info(start, end),
-    }
+    Expression::Literal { value, source_info: source_info(start, end) }
 }
 
 /// Creates an integer literal expression for testing.
@@ -96,10 +70,7 @@ fn none_lit(start: usize, end: usize) -> Expression {
 
 /// Creates a variable reference expression for testing.
 fn var_expr(name: &str, start: usize, end: usize) -> Expression {
-    Expression::Variable {
-        name: ident(name, start, end),
-        source_info: source_info(start, end),
-    }
+    Expression::Variable { name: ident(name, start, end), source_info: source_info(start, end) }
 }
 
 /// Creates a binary operation expression for testing.
@@ -139,18 +110,12 @@ fn call_expr(func: Expression, args: Vec<Expression>, start: usize, end: usize) 
 
 /// Creates a list expression for testing.
 fn list_expr(elements: Vec<Expression>, start: usize, end: usize) -> Expression {
-    Expression::List {
-        elements,
-        source_info: source_info(start, end),
-    }
+    Expression::List { elements, source_info: source_info(start, end) }
 }
 
 /// Creates a type expression for testing.
 fn type_expr(name: &str, start: usize, end: usize) -> TypeExpression {
-    TypeExpression::Named {
-        name: ident(name, start, end),
-        source_info: source_info(start, end),
-    }
+    TypeExpression::Named { name: ident(name, start, end), source_info: source_info(start, end) }
 }
 
 /// Creates a variable declaration statement for testing.
@@ -207,10 +172,7 @@ fn param(
 
 /// Creates a return statement for testing.
 fn return_stmt(value: Option<Expression>, start: usize, end: usize) -> Statement {
-    Statement::Return {
-        value,
-        source_info: source_info(start, end),
-    }
+    Statement::Return { value, source_info: source_info(start, end) }
 }
 
 /// Creates an expression statement for testing.
@@ -220,11 +182,7 @@ fn expr_stmt(expr: Expression) -> Statement {
 
 /// Creates an assignment statement for testing.
 fn assign_stmt(target: Expression, value: Expression, start: usize, end: usize) -> Statement {
-    Statement::Assignment {
-        target,
-        value,
-        source_info: source_info(start, end),
-    }
+    Statement::Assignment { target, value, source_info: source_info(start, end) }
 }
 
 /// Creates an if statement for testing.
@@ -235,12 +193,7 @@ fn if_stmt(
     start: usize,
     end: usize,
 ) -> Statement {
-    Statement::If {
-        condition,
-        body,
-        else_body,
-        source_info: source_info(start, end),
-    }
+    Statement::If { condition, body, else_body, source_info: source_info(start, end) }
 }
 
 /// Tests type checking of a simple variable declaration.
@@ -259,14 +212,7 @@ fn test_var_decl() {
 /// Tests type checking of a variable declaration with mismatched types.
 #[test]
 fn test_var_decl_type_mismatch() {
-    let stmt = var_decl(
-        "x",
-        Some("int"),
-        Some(str_lit("hello", 4, 11)),
-        false,
-        0,
-        11,
-    );
+    let stmt = var_decl("x", Some("int"), Some(str_lit("hello", 4, 11)), false, 0, 11);
     let module = Module::new("test".to_string(), vec![stmt], source_info(0, 11));
 
     let mut checker = TypeChecker::new();
@@ -285,11 +231,7 @@ fn test_var_decl_type_mismatch() {
 fn test_var_decl_inference() {
     let decl_stmt = var_decl("x", None, Some(int_lit(42, 4, 6)), false, 0, 6);
     let ref_stmt = expr_stmt(var_expr("x", 7, 8));
-    let module = Module::new(
-        "test".to_string(),
-        vec![decl_stmt, ref_stmt],
-        source_info(0, 8),
-    );
+    let module = Module::new("test".to_string(), vec![decl_stmt, ref_stmt], source_info(0, 8));
 
     let mut checker = TypeChecker::new();
     let result = checker.check_module(&module);
@@ -304,10 +246,7 @@ fn test_func_def() {
     let func_body = vec![return_stmt(Some(int_lit(42, 34, 36)), 30, 37)];
     let func = func_def(
         "add",
-        vec![
-            param("a", Some("int"), None, 10, 16),
-            param("b", Some("int"), None, 18, 24),
-        ],
+        vec![param("a", Some("int"), None, 10, 16), param("b", Some("int"), None, 18, 24)],
         Some("int"),
         func_body,
         0,
@@ -329,10 +268,7 @@ fn test_func_invalid_return() {
     let func_body = vec![return_stmt(Some(str_lit("hello", 34, 41)), 30, 42)];
     let func = func_def(
         "add",
-        vec![
-            param("a", Some("int"), None, 10, 16),
-            param("b", Some("int"), None, 18, 24),
-        ],
+        vec![param("a", Some("int"), None, 10, 16), param("b", Some("int"), None, 18, 24)],
         Some("int"),
         func_body,
         0,
@@ -357,10 +293,7 @@ fn test_func_invalid_return() {
 fn test_func_call() {
     let func = func_def(
         "add",
-        vec![
-            param("a", Some("int"), None, 10, 16),
-            param("b", Some("int"), None, 18, 24),
-        ],
+        vec![param("a", Some("int"), None, 10, 16), param("b", Some("int"), None, 18, 24)],
         Some("int"),
         vec![return_stmt(Some(int_lit(42, 34, 36)), 30, 37)],
         0,
@@ -388,10 +321,7 @@ fn test_func_call() {
 fn test_func_call_invalid_args() {
     let func = func_def(
         "add",
-        vec![
-            param("a", Some("int"), None, 10, 16),
-            param("b", Some("int"), None, 18, 24),
-        ],
+        vec![param("a", Some("int"), None, 10, 16), param("b", Some("int"), None, 18, 24)],
         Some("int"),
         vec![return_stmt(Some(int_lit(42, 34, 36)), 30, 37)],
         0,
@@ -428,11 +358,7 @@ fn test_binary_ops() {
         25,
     ));
 
-    let module = Module::new(
-        "test".to_string(),
-        vec![decl1, decl2, add],
-        source_info(0, 25),
-    );
+    let module = Module::new("test".to_string(), vec![decl1, decl2, add], source_info(0, 25));
 
     let mut checker = TypeChecker::new();
     let result = checker.check_module(&module);
@@ -445,14 +371,7 @@ fn test_binary_ops() {
 #[test]
 fn test_binary_ops_invalid() {
     let decl1 = var_decl("a", Some("int"), Some(int_lit(1, 8, 9)), false, 0, 9);
-    let decl2 = var_decl(
-        "b",
-        Some("str"),
-        Some(str_lit("hello", 18, 25)),
-        false,
-        10,
-        25,
-    );
+    let decl2 = var_decl("b", Some("str"), Some(str_lit("hello", 18, 25)), false, 10, 25);
 
     let add = expr_stmt(binary_expr(
         var_expr("a", 26, 27),
@@ -462,11 +381,7 @@ fn test_binary_ops_invalid() {
         31,
     ));
 
-    let module = Module::new(
-        "test".to_string(),
-        vec![decl1, decl2, add],
-        source_info(0, 31),
-    );
+    let module = Module::new("test".to_string(), vec![decl1, decl2, add], source_info(0, 31));
 
     let mut checker = TypeChecker::new();
     let result = checker.check_module(&module);
@@ -481,11 +396,7 @@ fn test_list() {
     let list = var_decl(
         "nums",
         None,
-        Some(list_expr(
-            vec![int_lit(1, 12, 13), int_lit(2, 15, 16), int_lit(3, 18, 19)],
-            11,
-            20,
-        )),
+        Some(list_expr(vec![int_lit(1, 12, 13), int_lit(2, 15, 16), int_lit(3, 18, 19)], 11, 20)),
         false,
         0,
         20,
@@ -506,11 +417,7 @@ fn test_list_mixed_types() {
     let list = var_decl(
         "mixed",
         None,
-        Some(list_expr(
-            vec![int_lit(1, 13, 14), str_lit("hello", 16, 23)],
-            12,
-            24,
-        )),
+        Some(list_expr(vec![int_lit(1, 13, 14), str_lit("hello", 16, 23)], 12, 24)),
         false,
         0,
         24,
@@ -531,11 +438,7 @@ fn test_list_subscript() {
     let list_decl = var_decl(
         "nums",
         None,
-        Some(list_expr(
-            vec![int_lit(1, 12, 13), int_lit(2, 15, 16), int_lit(3, 18, 19)],
-            11,
-            20,
-        )),
+        Some(list_expr(vec![int_lit(1, 12, 13), int_lit(2, 15, 16), int_lit(3, 18, 19)], 11, 20)),
         false,
         0,
         20,
@@ -549,11 +452,7 @@ fn test_list_subscript() {
 
     let use_elem = var_decl("first", Some("int"), Some(subscript), false, 29, 48);
 
-    let module = Module::new(
-        "test".to_string(),
-        vec![list_decl, use_elem],
-        source_info(0, 48),
-    );
+    let module = Module::new("test".to_string(), vec![list_decl, use_elem], source_info(0, 48));
 
     let mut checker = TypeChecker::new();
     let result = checker.check_module(&module);

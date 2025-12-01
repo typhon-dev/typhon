@@ -1,21 +1,3 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/codegen/statements.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! This module handles statement code generation.
 
 use std::rc::Rc;
@@ -30,13 +12,13 @@ use crate::frontend::ast::{Expression, Identifier, Statement, TypeExpression};
 use crate::typesystem::types::Type;
 
 /// Extension trait for statement operations on CodeGenContext
-pub trait CodeGenStatements<'ctx> {
+pub trait CodeGenStatements {
     /// Visit a statement and generate LLVM IR for it.
     fn visit_statement(
         &mut self,
         stmt: &Statement,
-        symbol_table: &mut SymbolTable<'ctx>,
-    ) -> CodeGenResult<CodeGenValue<'ctx>>;
+        symbol_table: &mut SymbolTable,
+    ) -> CodeGenResult<CodeGenValue>;
 
     /// Complete variable declaration statement.
     fn complete_variable_decl_stmt(
@@ -45,24 +27,18 @@ pub trait CodeGenStatements<'ctx> {
         type_annotation: &Option<TypeExpression>,
         value: &Option<Box<Expression>>,
         mutable: bool,
-        symbol_table: &mut SymbolTable<'ctx>,
+        symbol_table: &mut SymbolTable,
     ) -> CodeGenResult<()>;
 }
 
-impl<'ctx> CodeGenStatements<'ctx> for CodeGenContext<'ctx> {
+impl CodeGenStatements for CodeGenContext {
     fn visit_statement(
         &mut self,
         stmt: &Statement,
-        symbol_table: &mut SymbolTable<'ctx>,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+        symbol_table: &mut SymbolTable,
+    ) -> CodeGenResult<CodeGenValue> {
         match stmt {
-            Statement::VariableDecl {
-                name,
-                type_annotation,
-                value,
-                mutable,
-                ..
-            } => {
+            Statement::VariableDecl { name, type_annotation, value, mutable, .. } => {
                 // Implement the variable declaration
                 self.complete_variable_decl_stmt(
                     name,
@@ -98,7 +74,7 @@ impl<'ctx> CodeGenStatements<'ctx> for CodeGenContext<'ctx> {
 
                         // Evaluate the value
                         let value_result = self.visit_expression(value, symbol_table)?;
-                        let value_basic = value_result.as_basic_value()?;
+                        let value_basic = value_result.as_basic_value_enum()?;
 
                         // Store the value
                         build_store(self, entry_value, value_basic);
@@ -129,7 +105,7 @@ impl<'ctx> CodeGenStatements<'ctx> for CodeGenContext<'ctx> {
         type_annotation: &Option<TypeExpression>,
         value: &Option<Box<Expression>>,
         mutable: bool,
-        symbol_table: &mut SymbolTable<'ctx>,
+        symbol_table: &mut SymbolTable,
     ) -> CodeGenResult<()> {
         // Get the LLVM type based on the type annotation or infer from the value
         let llvm_type;
@@ -158,7 +134,7 @@ impl<'ctx> CodeGenStatements<'ctx> for CodeGenContext<'ctx> {
 
         // If there's an initial value, generate code for it and store it
         if let Some(val) = value {
-            let init_value = self.visit_expression(val, symbol_table)?.as_basic_value()?;
+            let init_value = self.visit_expression(val, symbol_table)?.as_basic_value_enum()?;
             build_store(self, alloca, init_value);
         }
 

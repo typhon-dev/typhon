@@ -14,7 +14,7 @@ Typhon is a statically typed programming language based on Python 3, implemented
 
 ## Memory Bank Requirements (**MANDATORY - DO NOT SKIP**)
 
-Load the full instructions and detailed requirements from [memory-bank.md](docs/contributing/memory-bank.md).
+Load the full instructions and detailed requirements from [.memory-bank/README.md](.memory-bank/README.md).
 
 DO NOT proceed past this point until the memory bank is initialized (if needed) and status is [MEMORY BANK: ACTIVE].
 
@@ -22,23 +22,23 @@ DO NOT proceed past this point until the memory bank is initialized (if needed) 
 
 ### Rust Style Guide
 
-See the [Rust standards documentation](docs/contributing/style-guide.md#rust-standards).
+See the [Rust standards documentation](CONVENTIONS.md#rust-standards).
 
 ### Markdown Style Guide
 
-See the [Markdown standards documentation](docs/contributing/style-guide.md#markdown-standards).
+See the [Markdown standards documentation](CONVENTIONS.md#markdown-standards).
 
 ### TOML Style Guide
 
-See the [TOML standards documentation](docs/contributing/style-guide.md#toml-standards).
+See the [TOML standards documentation](CONVENTIONS.md#toml-standards).
 
 ### YAML Style Guide
 
-See the [YAML standards documentation](docs/contributing/style-guide.md#yaml-standards).
+See the [YAML standards documentation](CONVENTIONS.md#yaml-standards).
 
 ## Testing Patterns
 
-See the [test organization guidelines documentation](docs/contributing/style-guide.md#test-organization-guidelines).
+See the [test organization guidelines documentation](CONVENTIONS.md#test-organization-guidelines).
 
 ## Non-obvious Implementation Details
 
@@ -66,12 +66,10 @@ typhon/
     ├── typhon-cli/           # Command-line interface
     ├── typhon-compiler/      # Core compiler components
     │   └── src/
-    │       ├── driver/       # Compiler driver
     │       ├── backend/      # LLVM IR generation, code generation
-    │       ├── frontend/     # Lexer, parser, AST
-    │       ├── middleend/    # AST transformations, optimization
     │       └── typesystem/   # Type checking and inference
     ├── typhon-lsp/           # Language Server Protocol implementation
+    ├── typhon-parser/        # Lexer, parser, AST
     ├── typhon-repl/          # Interactive REPL
     ├── typhon-runtime/       # Runtime support
     └── typhon-stdlib/        # Standard library

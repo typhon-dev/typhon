@@ -10,68 +10,74 @@
   panic         = "abort" # Abort on panic (smaller binary)
 
 [workspace]
-  members = ["crates/*"]
+  members  = ["crates/*"]
   resolver = "3"
 
   [workspace.dependencies]
     # Internal crates
+    typhon-ast.path      = "crates/typhon-ast"
     typhon-cli.path      = "crates/typhon-cli"
     typhon-compiler.path = "crates/typhon-compiler"
     typhon-lsp.path      = "crates/typhon-lsp"
+    typhon-parser.path   = "crates/typhon-parser"
     typhon-repl.path     = "crates/typhon-repl"
     typhon-runtime.path  = "crates/typhon-runtime"
+    typhon-source.path   = "crates/typhon-source"
     typhon-stdlib.path   = "crates/typhon-stdlib"
 
     # External dependencies
-    anyhow = "1.0"
-    bitflags = "2.4.1"
-    chumsky = "0.9.3"
-    crossbeam = "0.8"
-    env_logger = "0.10"
-    fxhash = "0.2"
-    indenter = "0.3.3"
-    insta = "1.34"
-    log = "0.4"
-    logos = "0.14.0"
-    llvm-sys = "181.2.0"
-    parking_lot = "0.12"
-    paste = "1.0.14"
-    proptest = "1.3"
-    ropey = "1.6"
-    rustyline = "12.0"
-    rustc-hash = "1.1.0"
-    serde_json = "1.0"
-    strum_macros = "0.26.1"
-    tempfile = "3.8"
-    thiserror = "1.0.56"
-    tower-lsp = "0.20"
-    unicode-xid = "0.2.4"
+    anyhow            = "1.0"
+    bitflags          = "2.4.1"
+    bumpalo           = "3.19.0"
+    chumsky           = "0.9.3"
+    criterion         = "0.4"
+    crossbeam         = "0.8"
+    cute              = "0.3.0"
+    env_logger        = "0.10"
+    fxhash            = "0.2"
+    indenter          = "0.3.3"
+    insta             = "1.34"
+    llvm-sys          = "181.2.0"
+    log               = "0.4"
+    logos             = "0.14.0"
+    parking_lot       = "0.12"
+    paste             = "1.0.14"
+    proptest          = "1.3"
+    ropey             = "1.6"
+    rustc-hash        = "1.1.0"
+    rustyline         = "12.0"
+    serde_json        = "1.0"
+    strum_macros      = "0.26.1"
+    tempfile          = "3.8"
+    thiserror         = "1.0.56"
+    tower-lsp         = "0.20"
     unic-ucd-category = "0.9.0"
-    url = "2.4"
+    unicode-xid       = "0.2.4"
+    url               = "2.4"
 
     [workspace.dependencies.clap]
       features = ["derive"]
-      version = "4.4"
+      version  = "4.4"
 
     [workspace.dependencies.inkwell]
       features = ["llvm18-1"]
-      version = "0.6.0"
+      version  = "0.6.0"
 
     [workspace.dependencies.miette]
-      version = "7.0.0"
       features = ["fancy"]
+      version  = "7.0.0"
 
     [workspace.dependencies.serde]
       features = ["derive"]
-      version = "1.0"
+      version  = "1.0"
 
     [workspace.dependencies.strum]
       features = ["derive"]
-      version = "0.26.1"
+      version  = "0.26.1"
 
     [workspace.dependencies.tokio]
       features = ["full"]
-      version = "1.28"
+      version  = "1.28"
 
   [workspace.package]
     authors     = ["Jonathan Howard <howard.jonathan.21@gmail.com>"]
@@ -85,55 +91,123 @@
     version     = "0.1.0"
 
   [workspace.lints.rust]
-    unreachable_pub = "warn"
-    unsafe_code     = "warn"
+    # Correctness and safety-related lints
+    absolute_paths_not_starting_with_crate  = "deny"
+    dead_code                               = "warn"
+    deprecated_in_future                    = "warn"
+    elided_lifetimes_in_paths               = "warn"
+    explicit_outlives_requirements          = "warn"
+    invalid_doc_attributes                  = "deny"
+    let_underscore_drop                     = "warn"
+    macro_use_extern_crate                  = "warn"
+    meta_variable_misuse                    = "warn"
+    missing_abi                             = "warn"
+    missing_copy_implementations            = "warn"
+    missing_debug_implementations           = "warn"
+    non_ascii_idents                        = "warn"
+    noop_method_call                        = "warn"
+    rust_2021_incompatible_closure_captures = "warn"
+    rust_2021_incompatible_or_patterns      = "warn"
+    rust_2021_prefixes_incompatible_syntax  = "warn"
+    rust_2021_prelude_collisions            = "warn"
+    single_use_lifetimes                    = "warn"
+    trivial_casts                           = "warn"
+    trivial_numeric_casts                   = "warn"
+    unreachable_pub                         = "warn"
+    unsafe_code                             = "warn"
+    unsafe_op_in_unsafe_fn                  = "deny"
+    unused_crate_dependencies               = "warn"
+    unused_extern_crates                    = "warn"
+    unused_import_braces                    = "warn"
+    unused_lifetimes                        = "warn"
+    unused_macro_rules                      = "warn"
+    unused_qualifications                   = "warn"
+    unused_results                          = "warn"
+    variant_size_differences                = "warn"
+
+    [workspace.lints.rust.keyword_idents]
+      level    = "warn"
+      priority = -1
+
+    [workspace.lints.rust.nonstandard_style]
+      level    = "deny"
+      priority = -1
 
     [workspace.lints.rust.unexpected_cfgs]
       check-cfg = ["cfg(codspeed)", "cfg(fuzzing)"]
       level     = "warn"
 
+  [workspace.lints.rustdoc]
+    # Documentation quality lints
+    bare_urls                    = "deny"
+    broken_intra_doc_links       = "deny"
+    invalid_codeblock_attributes = "warn"
+    invalid_html_tags            = "warn"
+    invalid_rust_codeblocks      = "warn"
+    private_doc_tests            = "warn"
+    private_intra_doc_links      = "warn"
+    unescaped_backticks          = "warn"
+
   [workspace.lints.clippy]
-    # Allowed pedantic lints
-    char_lit_as_u8               = "allow"
-    collapsible_else_if          = "allow"
-    collapsible_if               = "allow"
-    implicit_hasher              = "allow"
-    map_unwrap_or                = "allow"
-    match_same_arms              = "allow"
-    missing_errors_doc           = "allow"
-    missing_panics_doc           = "allow"
-    module_name_repetitions      = "allow"
-    must_use_candidate           = "allow"
-    needless_continue            = "allow" # An explicit continue can be more readable, especially if the alternative is an empty block.
-    similar_names                = "allow"
-    single_match_else            = "allow"
-    too_many_lines               = "allow"
-    unnecessary_debug_formatting = "allow" # too many instances, the display also doesn't quote the path which is often desired in logs where we use them the most often.
-    # Without the hashes we run into a `rustfmt` bug in some snapshot tests, see #13250
-    needless_raw_string_hashes = "allow"
-    # Disallowed restriction lints
+    # Elevate certain lints to deny level
+    derive_partial_eq_without_eq   = "deny"
+    missing_safety_doc             = "deny"
+    suspicious_operation_groupings = "deny"
+    undocumented_unsafe_blocks     = "deny"
+
+    # Keep the existing disallowed restriction lints
     dbg_macro                       = "warn"
     empty_drop                      = "warn"
     empty_structs_with_brackets     = "warn"
     exit                            = "warn"
     get_unwrap                      = "warn"
-    ignore_without_reason           = "allow" # Too many exsisting instances, and there's no auto fix.
     print_stderr                    = "warn"
     print_stdout                    = "warn"
     rc_buffer                       = "warn"
     rc_mutex                        = "warn"
     rest_pat_in_fully_bound_structs = "warn"
-    # nursery rules
+
+    # Keep the nursery rules
     debug_assert_with_mut_call = "warn"
     redundant_clone            = "warn"
     unused_peekable            = "warn"
+
+    # Enable all clippy categories with appropriate levels
+    [workspace.lints.clippy.all]
+      level    = "warn" # Enable all Clippy lints at warning level
+      priority = -1
+
+    [workspace.lints.clippy.cargo]
+      level    = "warn"
+      priority = -1
+
+    [workspace.lints.clippy.complexity]
+      level    = "warn"
+      priority = -1
+
+    [workspace.lints.clippy.correctness]
+      level    = "deny" # Correctness issues should be fixed
+      priority = -1
+
+    [workspace.lints.clippy.nursery]
+      level    = "warn"
+      priority = -1
 
     [workspace.lints.clippy.pedantic]
       level    = "warn"
       priority = -2
 
-      # Diagnostics are not actionable: Enable once https://github.com/rust-lang/rust-clippy/issues/13774 is resolved.
-      large_stack_arrays = "allow"
+    [workspace.lints.clippy.perf]
+      level    = "warn"
+      priority = -1
+
+    [workspace.lints.clippy.style]
+      level    = "warn"
+      priority = -1
+
+    [workspace.lints.clippy.suspicious]
+      level    = "warn"
+      priority = -1
 
   [workspace.metadata.cargo-machete]
     check_internal_dependencies = false

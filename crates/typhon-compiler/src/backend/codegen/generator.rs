@@ -1,22 +1,3 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/codegen/memory.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
-
 use std::sync::{Arc, Mutex};
 
 use inkwell::types::{AnyType, AnyTypeEnum, BasicTypeEnum};
@@ -43,59 +24,57 @@ use crate::frontend::{
 };
 
 /// Represents the current state of code generation.
-pub struct CodeGenState<'ctx> {
+pub struct CodeGenState {
     /// The symbol table.
-    pub symbol_table: SymbolTable<'ctx>,
+    pub symbol_table: SymbolTable,
     /// The current function being generated.
-    pub current_function: Option<FunctionValue<'ctx>>,
+    pub current_function: Option<FunctionValue>,
     /// Whether a return statement has been generated.
     pub returned: bool,
 }
 
-impl<'ctx> Default for CodeGenState<'ctx> {
+impl Default for CodeGenState {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'ctx> CodeGenState<'ctx> {
+impl CodeGenState {
     /// Create a new code generation state.
     pub fn new() -> Self {
         Self { symbol_table: SymbolTable::new(), current_function: None, returned: false }
     }
 }
+
 /// Code generator for Typhon AST.
-pub struct CodeGenerator<'ctx> {
+pub struct CodeGenerator {
     /// The immutable context.
-    pub context: CodeGenContext<'ctx>,
+    pub context: CodeGenContext,
     /// The mutable state.
-    pub state: Arc<Mutex<CodeGenState<'ctx>>>,
+    pub state: Arc<Mutex<CodeGenState>>,
     /// The node visitor implementation.
     pub visitor: DefaultNodeVisitor,
 }
 
-impl<'ctx> CodeGenerator<'ctx> {
+impl CodeGenerator {
     /// Create a new code generator.
-    pub fn new(llvm_context: &'ctx LLVMContext<'ctx>) -> Self {
-        let context = CodeGenContext::new(llvm_context);
+    pub fn new(llvm_context: Arc<LLVMContext>) -> Self {
+        let context = CodeGenContext::new(llvm_context.clone());
         let state = CodeGenState::new();
 
-        CodeGenerator {
-            context,
-            state: Arc::new(Mutex::new(state)),
-            visitor: DefaultNodeVisitor {},
-        }
+        Self { context, state: Arc::new(Mutex::new(state)), visitor: DefaultNodeVisitor {} }
     }
 
     /// Build a load instruction.
-    pub fn build_load(&self, ptr: BasicValueEnum<'ctx>, name: &str) -> BasicValueEnum<'ctx> {
+    pub fn build_load(&self, ptr: BasicValueEnum, name: &str) -> BasicValueEnum {
         // Check if the pointer is actually a pointer type
         let ptr_value = ptr.into_pointer_value();
+
         // Get the type of the pointed-to value
         let pointee_type = ptr_value.get_type().as_any_type_enum();
+
         // Build the load based on the pointee type
         let builder = self.context.llvm_context.builder();
-
         match pointee_type {
             AnyTypeEnum::IntType(_) => builder
                 .build_load(pointee_type.into_int_type(), ptr_value, name)
@@ -117,7 +96,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     /// Build a store instruction.
-    pub fn build_store(&self, ptr: BasicValueEnum<'ctx>, value: BasicValueEnum<'ctx>) {
+    pub fn build_store(&self, ptr: BasicValueEnum, value: BasicValueEnum) {
         // Check if the pointer is actually a pointer type
         let ptr_value = ptr.into_pointer_value();
         let builder = self.context.llvm_context.builder();
@@ -128,7 +107,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Compile an AST to LLVM IR.
     pub fn compile(&mut self, statements: &[Statement]) -> CodeGenResult<()> {
         let symbol_table = &mut SymbolTable::new();
-        let context = &mut CodeGenContext::new(self.context.llvm_context);
+        let context = &mut CodeGenContext::new(self.context.llvm_context.clone());
         self.context.clone_into(context);
 
         // Process each top-level statement
@@ -148,7 +127,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     /// Build an alloca instruction.
-    pub fn create_alloca(&self, name: &str, ty: BasicTypeEnum<'ctx>) -> BasicValueEnum<'ctx> {
+    pub fn create_alloca(&self, name: &str, ty: BasicTypeEnum) -> BasicValueEnum {
         // Get the state with a scoped lock
         let state = self.state.lock().unwrap();
 
@@ -185,7 +164,7 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     /// Create a global string constant.
-    pub fn create_global_string(&self, string: &str, name: &str) -> BasicValueEnum<'ctx> {
+    pub fn create_global_string(&self, string: &str, name: &str) -> BasicValueEnum {
         // Get builder directly from our context
         let builder = self.context.llvm_context.builder();
 
@@ -197,13 +176,13 @@ impl<'ctx> CodeGenerator<'ctx> {
     }
 
     /// Get the current function being generated.
-    pub fn current_function(&self) -> Option<FunctionValue<'ctx>> {
+    pub fn current_function(&self) -> Option<FunctionValue> {
         let state = self.state.lock().expect("Failed to lock state");
         state.current_function
     }
 
     /// Set the current function being generated.
-    pub fn set_current_function(&mut self, function: Option<FunctionValue<'ctx>>) {
+    pub fn set_current_function(&mut self, function: Option<FunctionValue>) {
         let mut state = self.state.lock().expect("Failed to lock state");
         state.current_function = function;
     }
@@ -211,39 +190,39 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Visit a binary operation.
     fn visit_binary_op(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         left: &Expression,
         op: &BinaryOperator,
         right: &Expression,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_binary_op(context, symbol_table, left, op, right)
     }
 
     /// Visit an expression node.
     fn visit_expression(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         expr: &Expression,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_expression(context, symbol_table, expr)
     }
 
     /// Visit a literal node.
     fn visit_literal(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
+        context: &mut CodeGenContext,
         lit: &Literal,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_literal(context, lit)
     }
 
     /// Visit a module node.
     fn visit_module(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         module: &Module,
     ) -> CodeGenResult<()> {
         self.visitor.visit_module(context, symbol_table, module)
@@ -252,17 +231,17 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Visit a statement node.
     fn visit_statement(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         stmt: &Statement,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_statement(context, symbol_table, stmt)
     }
 
     /// Visit a type expression node.
     fn visit_type_expression(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
+        context: &mut CodeGenContext,
         type_expr: &TypeExpression,
     ) -> CodeGenResult<()> {
         self.visitor.visit_type_expression(context, type_expr)
@@ -271,21 +250,21 @@ impl<'ctx> CodeGenerator<'ctx> {
     /// Visit a unary operation.
     fn visit_unary_op(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         op: &UnaryOperator,
         operand: &Expression,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_unary_op(context, symbol_table, op, operand)
     }
 
     /// Visit a variable reference.
     fn visit_variable(
         &mut self,
-        context: &mut CodeGenContext<'ctx>,
-        symbol_table: &mut SymbolTable<'ctx>,
+        context: &mut CodeGenContext,
+        symbol_table: &mut SymbolTable,
         name: &Identifier,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         self.visitor.visit_variable(context, symbol_table, name)
     }
 }

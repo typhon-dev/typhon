@@ -8,6 +8,10 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
 
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+
   // Coverage
   "coverage-gutters.coverageBaseDir": "target",
   "coverage-gutters.coverageFileNames": ["lcov.info"],
@@ -50,6 +54,17 @@
   "rust-analyzer.imports.granularity.enforce": true,
   "rust-analyzer.lens.enable": true,
   "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"],
+  "rust-analyzer.linkedProjects": [
+    "crates/typhon-ast/Cargo.toml",
+    "crates/typhon-cli/Cargo.toml",
+    "crates/typhon-compiler/Cargo.toml",
+    "crates/typhon-lsp/Cargo.toml",
+    "crates/typhon-parser/Cargo.toml",
+    "crates/typhon-repl/Cargo.toml",
+    "crates/typhon-runtime/Cargo.toml",
+    "crates/typhon-source/Cargo.toml",
+    "crates/typhon-stdlib/Cargo.toml"
+  ],
 
   "shellformat.useEditorConfig": true
 }

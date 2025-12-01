@@ -1,24 +1,6 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/codegen/context.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
-
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue};
 
@@ -29,20 +11,20 @@ use crate::common::SourceInfo;
 use crate::frontend::ast::{BinaryOperator, Literal, UnaryOperator};
 use crate::typesystem::types::Type;
 
-#[derive(Clone)]
 /// Separate immutable context for code generation
-pub struct CodeGenContext<'ctx> {
+#[derive(Clone)]
+pub struct CodeGenContext {
     /// The LLVM context.
-    pub llvm_context: &'ctx LLVMContext<'ctx>,
+    pub llvm_context: Arc<LLVMContext>,
     /// Set of imported modules to avoid duplicate imports
     pub imported_modules: HashSet<PathBuf>,
     /// Map of function declarations
     pub declared_functions: HashMap<String, Type>,
 }
 
-impl<'ctx> CodeGenContext<'ctx> {
+impl CodeGenContext {
     /// Create a new code generation context.
-    pub fn new(llvm_context: &'ctx LLVMContext<'ctx>) -> Self {
+    pub fn new(llvm_context: Arc<LLVMContext>) -> Self {
         Self { llvm_context, imported_modules: HashSet::new(), declared_functions: HashMap::new() }
     }
 
@@ -50,10 +32,10 @@ impl<'ctx> CodeGenContext<'ctx> {
     pub fn build_binary_op(
         &mut self,
         op: BinaryOperator,
-        left: BasicValueEnum<'ctx>,
-        right: BasicValueEnum<'ctx>,
+        left: BasicValueEnum,
+        right: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>> {
+    ) -> CodeGenResult<BasicValueEnum> {
         // Ensure both operands are of the same type
         if left.get_type() != right.get_type() {
             return Err(crate::backend::error::CodeGenError::code_gen_error(
@@ -242,9 +224,9 @@ impl<'ctx> CodeGenContext<'ctx> {
     pub fn build_unary_op(
         &mut self,
         op: UnaryOperator,
-        operand: BasicValueEnum<'ctx>,
+        operand: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>> {
+    ) -> CodeGenResult<BasicValueEnum> {
         let builder = self.llvm_context.builder();
 
         // Handle integer operations
@@ -318,7 +300,7 @@ impl<'ctx> CodeGenContext<'ctx> {
     }
 
     /// Get the current function being built
-    pub fn current_function(&self) -> Option<FunctionValue<'ctx>> {
+    pub fn current_function(&self) -> Option<FunctionValue> {
         // Get the current basic block
         let builder = self.llvm_context.builder();
         let current_block = builder.get_insert_block();
@@ -332,7 +314,7 @@ impl<'ctx> CodeGenContext<'ctx> {
         &mut self,
         literal: &Literal,
         source_info: &SourceInfo,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         // Create the values outside the context borrow to avoid lifetime issues
         match literal {
             Literal::Int(i) => {

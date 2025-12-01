@@ -1,32 +1,10 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-lsp/src/document.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Document management for the Typhon Language Server.
 
 use std::collections::HashMap;
 use std::ops::Range as StdRange;
 
 use ropey::Rope;
-use tower_lsp::lsp_types::{
-    Position,
-    Range,
-    Url,
-};
+use tower_lsp::lsp_types::{Position, Range, Url};
 
 /// Represents a text document in the editor.
 pub struct Document {
@@ -41,11 +19,7 @@ pub struct Document {
 impl Document {
     /// Creates a new document with the given URI, text, and version.
     pub fn new(uri: Url, text: String, version: i32) -> Self {
-        Self {
-            uri,
-            version,
-            content: Rope::from_str(&text),
-        }
+        Self { uri, version, content: Rope::from_str(&text) }
     }
 
     /// Returns the URI of the document.
@@ -134,15 +108,12 @@ pub struct DocumentManager {
 impl DocumentManager {
     /// Creates a new document manager.
     pub fn new() -> Self {
-        Self {
-            documents: HashMap::new(),
-        }
+        Self { documents: HashMap::new() }
     }
 
     /// Adds a document to the manager.
     pub fn add_document(&mut self, uri: Url, text: String, version: i32) {
-        self.documents
-            .insert(uri.clone(), Document::new(uri, text, version));
+        self.documents.insert(uri.clone(), Document::new(uri, text, version));
     }
 
     /// Removes a document from the manager.

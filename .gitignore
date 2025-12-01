@@ -8,10 +8,10 @@
 !/.markdownlint.yml
 !/.markdownlintignore
 !/.pre-commit-config.yaml
-!/.rooignore
 !/.taplo.toml
 !/.yamllint
 !/clippy.toml
+!/rust-toolchain.toml
 !/rustfmt.toml
 !/Taskfile.yml
 
@@ -41,7 +41,6 @@
 !LICENSE
 !MAINTAINERS.md
 !Makefile
-!mcp.json
 !PULL_REQUEST_TEMPLATE.md
 !README.md
 !ROADMAP.md
@@ -53,9 +52,6 @@
 !/.github/
 !/.github/scripts/
 !/.github/workflows/
-!/.memory-bank/
-!/.roo/
-!/.roo/**/
 !/.taskfiles/
 !/.vscode/
 !/crates/

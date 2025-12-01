@@ -1,35 +1,16 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-cli/src/main.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Typhon CLI
 //!
 //! Command-line interface for the Typhon programming language.
 
 use std::fs::{File, read_to_string};
 use std::io::Write;
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use clap::Parser as ArgParser;
-use inkwell::context::Context as InkwellContext;
-use typhon_compiler::backend::CodeGenerator;
-use typhon_compiler::backend::llvm::LLVMContext;
+use typhon_compiler::backend::{CodeGenerator, CompilerContext};
 use typhon_compiler::driver::Driver;
-use typhon_compiler::frontend::parser::Parser;
+use typhon_parser::parser::Parser;
 
 /// The Typhon programming language compiler and runtime
 #[derive(ArgParser, Debug)]
@@ -38,19 +19,15 @@ struct Args {
     /// Input file to compile
     #[clap(value_parser)]
     input: Option<String>,
-
     /// Output file
     #[clap(short, long, value_parser)]
     output: Option<String>,
-
     /// Emit LLVM IR
     #[clap(long)]
     emit_llvm: bool,
-
     /// Optimization level
     #[clap(short = 'O', long, default_value = "0")]
     opt_level: u8,
-
     /// Show verbose output
     #[clap(short, long)]
     verbose: bool,
@@ -87,38 +64,26 @@ fn compile_file(input: &str, args: &Args) -> Result<()> {
         println!("Compiling {input}...");
     }
 
+    let compiler_context = Arc::new(CompilerContext::new());
+
     // Implement full compilation process using the Driver
-    let _driver = Driver::new();
-
-    // We can either use the driver's high-level API
-    // driver.compile_file(Path::new(input)).context("Failed to compile file using driver")?;
-
-    // Or use the individual components for more control:
+    let driver = Driver::new(compiler_context.clone(), input);
 
     // Lexical analysis and parsing
-    let mut parser = Parser::new(&source);
-    let module = parser.parse().context("Failed to parse source code")?;
+    driver.compile_file(Path::new(input)).context("Failed to compile file using driver")?;
 
     if args.verbose {
         println!("Parsing successful. AST created with {} statements.", module.statements.len());
     }
 
-    // Create LLVM context for code generation
-    let context_box = Box::new(InkwellContext::create());
-    let context = Box::leak(context_box);
-
-    // Create an LLVM context
-    let llvm_context_box = Box::new(LLVMContext::new(context, "typhon_module"));
-    let llvm_context = Box::leak(llvm_context_box);
-
     // Create code generator
-    let mut code_generator = CodeGenerator::new(llvm_context);
+    let mut code_generator = CodeGenerator::new(compiler_context.clone());
 
     // Generate code
     code_generator.compile(&module.statements).context("Failed to generate code")?;
 
     // Get the generated LLVM IR
-    let llvm_ir = llvm_context.module().to_string();
+    let llvm_ir = compiler_context.module().to_string();
 
     // Output the LLVM IR or compile to an executable
     if args.emit_llvm {

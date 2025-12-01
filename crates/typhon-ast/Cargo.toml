@@ -1,0 +1,15 @@
+lints.workspace = true
+
+[dependencies]
+  bumpalo.workspace = true
+
+  typhon-source.workspace = true
+
+[package]
+  authors.workspace    = true
+  description          = "Abstract Syntax Tree (AST) for the Typhon programming language"
+  edition.workspace    = true
+  license.workspace    = true
+  name                 = "typhon-ast"
+  repository.workspace = true
+  version.workspace    = true

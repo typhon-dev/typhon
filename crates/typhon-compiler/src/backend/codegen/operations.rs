@@ -1,22 +1,3 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/codegen/operations.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
-
 use inkwell::builder::BuilderError;
 use inkwell::values::{BasicValue, BasicValueEnum};
 use inkwell::{FloatPredicate, IntPredicate};
@@ -27,33 +8,33 @@ use crate::backend::error::CodeGenResult;
 use crate::frontend::ast::{BinaryOperator, UnaryOperator};
 
 /// Extension trait for binary and unary operations on CodeGenerator
-pub trait CodeGenOperations<'ctx> {
+pub trait CodeGenOperations {
     /// Build a binary operation.
     fn build_binary_op(
         &self,
         op: BinaryOperator,
-        left: BasicValueEnum<'ctx>,
-        right: BasicValueEnum<'ctx>,
+        left: BasicValueEnum,
+        right: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>>;
+    ) -> CodeGenResult<BasicValueEnum>;
 
     /// Build a unary operation.
     fn build_unary_op(
         &self,
         op: UnaryOperator,
-        operand: BasicValueEnum<'ctx>,
+        operand: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>>;
+    ) -> CodeGenResult<BasicValueEnum>;
 }
 
-impl<'ctx> CodeGenOperations<'ctx> for CodeGenerator<'ctx> {
+impl CodeGenOperations for CodeGenerator {
     fn build_binary_op(
         &self,
         op: BinaryOperator,
-        left: BasicValueEnum<'ctx>,
-        right: BasicValueEnum<'ctx>,
+        left: BasicValueEnum,
+        right: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>> {
+    ) -> CodeGenResult<BasicValueEnum> {
         // Ensure both operands are of the same type
         if left.get_type() != right.get_type() {
             return Err(crate::backend::error::CodeGenError::code_gen_error(
@@ -138,7 +119,6 @@ impl<'ctx> CodeGenOperations<'ctx> for CodeGenerator<'ctx> {
                     builder.build_right_shift(left_int, right_int, true, name),
                     "Failed to build right shift operation",
                 ),
-
                 _ => Err(crate::backend::error::CodeGenError::unsupported_feature(
                     format!("Unsupported binary operation: {op:?}"),
                     None,
@@ -211,9 +191,9 @@ impl<'ctx> CodeGenOperations<'ctx> for CodeGenerator<'ctx> {
     fn build_unary_op(
         &self,
         op: UnaryOperator,
-        operand: BasicValueEnum<'ctx>,
+        operand: BasicValueEnum,
         name: &str,
-    ) -> CodeGenResult<BasicValueEnum<'ctx>> {
+    ) -> CodeGenResult<BasicValueEnum> {
         let builder = self.context.llvm_context.builder();
 
         // Handle integer operations
@@ -282,10 +262,10 @@ impl<'ctx> CodeGenOperations<'ctx> for CodeGenerator<'ctx> {
     }
 }
 
-fn op_result<'ctx>(
-    result: Result<impl BasicValue<'ctx>, BuilderError>,
+fn op_result(
+    result: Result<BasicValue, BuilderError>,
     message: &str,
-) -> CodeGenResult<BasicValueEnum<'ctx>> {
+) -> CodeGenResult<BasicValueEnum> {
     match result {
         Ok(result) => Ok(result.as_basic_value_enum()),
         Err(_) => Err(CodeGenError::code_gen_error(message, None)),

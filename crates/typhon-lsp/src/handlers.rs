@@ -1,27 +1,6 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-lsp/src/handlers.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Handler implementations for LSP requests.
 
-use tower_lsp::jsonrpc::{
-    Error as JsonRpcError,
-    Result as JsonRpcResult,
-};
+use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
 use tower_lsp::lsp_types::*;
 use typhon_compiler::frontend::lexer::Lexer;
 use typhon_compiler::frontend::parser::Parser;
@@ -205,11 +184,7 @@ pub fn completion_handler(
         None => Vec::new(),
     };
 
-    if items.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(CompletionResponse::Array(items)))
-    }
+    if items.is_empty() { Ok(None) } else { Ok(Some(CompletionResponse::Array(items))) }
 }
 
 /// Handle a hover request.
@@ -287,7 +262,7 @@ pub fn definition_handler(
     params: &TextDocumentPositionParams,
 ) -> JsonRpcResult<Option<GotoDefinitionResponse>> {
     // This is a placeholder implementation
-    // In a real implementation, we would:
+
     // 1. Parse the document
     // 2. Find the symbol at the position
     // 3. Look up its definition in the symbol table
@@ -303,7 +278,7 @@ pub fn references_handler(
     include_declaration: bool,
 ) -> JsonRpcResult<Option<Vec<Location>>> {
     // This is a placeholder implementation
-    // In a real implementation, we would:
+
     // 1. Parse the document
     // 2. Find the symbol at the position
     // 3. Search for all references to the symbol
@@ -349,8 +324,8 @@ pub fn document_symbol_handler(
                 children: None,
             });
 
-            // In a real implementation, we would recursively visit the AST
-            // and extract symbols for functions, classes, variables, etc.
+            // TODO: recursively visit the AST and extract
+            // symbols for functions, classes, variables, etc.
 
             if symbols.is_empty() {
                 Ok(None)
@@ -358,6 +333,6 @@ pub fn document_symbol_handler(
                 Ok(Some(DocumentSymbolResponse::Nested(symbols)))
             }
         }
-        Err(_) => Ok(None),
+        Err(()) => Ok(None),
     }
 }

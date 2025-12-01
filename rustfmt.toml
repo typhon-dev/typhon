@@ -1,9 +1,13 @@
 edition       = "2024"
 style_edition = "2024"
 
-group_imports        = "StdExternalCrate"
-imports_granularity  = "Module"
-imports_layout       = "HorizontalVertical"
-reorder_impl_items   = true
-unstable_features    = true
-use_small_heuristics = "Max"
+brace_style              = "PreferSameLine"
+fn_single_line           = true
+group_imports            = "StdExternalCrate"
+imports_granularity      = "Module"
+imports_layout           = "HorizontalVertical"
+reorder_impl_items       = true
+unstable_features        = true
+use_field_init_shorthand = true
+use_small_heuristics     = "Max"
+where_single_line        = true

@@ -1,0 +1,28 @@
+lints.workspace = true
+
+[[bench]]
+  harness = false
+  name    = "parser"
+
+[dependencies]
+  anyhow.workspace     = true
+  bumpalo.workspace    = true
+  cute.workspace       = true
+  logos.workspace      = true
+  rustc-hash.workspace = true
+  thiserror.workspace  = true
+
+  typhon-ast.workspace    = true
+  typhon-source.workspace = true
+
+[dev-dependencies]
+  criterion.workspace = true
+
+[package]
+  authors.workspace    = true
+  description          = "Parser for the Typhon programming language"
+  edition.workspace    = true
+  license.workspace    = true
+  name                 = "typhon-parser"
+  repository.workspace = true
+  version.workspace    = true

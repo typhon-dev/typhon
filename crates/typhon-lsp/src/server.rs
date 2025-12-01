@@ -1,35 +1,11 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-lsp/src/server.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! LSP server implementation for the Typhon programming language.
 
 use std::sync::Arc;
 
 use parking_lot::RwLock;
-use tower_lsp::jsonrpc::{
-    Error as JsonRpcError,
-    Result as JsonRpcResult,
-};
+use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
 use tower_lsp::lsp_types::*;
-use tower_lsp::{
-    Client,
-    LanguageServer,
-};
+use tower_lsp::{Client, LanguageServer};
 use typhon_compiler::frontend::lexer::Lexer;
 use typhon_compiler::frontend::parser::Parser;
 use typhon_compiler::typesystem::TypeChecker;
@@ -55,31 +31,22 @@ pub struct TyphonLanguageServer {
 impl TyphonLanguageServer {
     /// Create a new Typhon language server.
     pub fn new(client: Client) -> Self {
-        Self {
-            client,
-            document_manager: Arc::new(RwLock::new(DocumentManager::new())),
-        }
+        Self { client, document_manager: Arc::new(RwLock::new(DocumentManager::new())) }
     }
 
     /// Helper method to log information to the client.
     pub async fn log_info(&self, message: impl Into<String>) {
-        self.client
-            .log_message(MessageType::INFO, message.into())
-            .await;
+        self.client.log_message(MessageType::INFO, message.into()).await;
     }
 
     /// Helper method to log errors to the client.
     pub async fn log_error(&self, message: impl Into<String>) {
-        self.client
-            .log_message(MessageType::ERROR, message.into())
-            .await;
+        self.client.log_message(MessageType::ERROR, message.into()).await;
     }
 
     /// Helper to publish diagnostics for a document.
     async fn publish_diagnostics(&self, uri: Url, diagnostics: Vec<Diagnostic>) {
-        self.client
-            .publish_diagnostics(uri, diagnostics, None)
-            .await;
+        self.client.publish_diagnostics(uri, diagnostics, None).await;
     }
 
     /// Run diagnostics on a document and publish the results.
@@ -196,8 +163,7 @@ impl LanguageServer for TyphonLanguageServer {
 
         // Run diagnostics on the opened document
         if let Err(e) = self.run_diagnostics(&uri).await {
-            self.log_error(format!("Error running diagnostics: {}", e))
-                .await;
+            self.log_error(format!("Error running diagnostics: {}", e)).await;
         }
     }
 
@@ -218,8 +184,7 @@ impl LanguageServer for TyphonLanguageServer {
 
         // Run diagnostics on the changed document
         if let Err(e) = self.run_diagnostics(&uri).await {
-            self.log_error(format!("Error running diagnostics: {}", e))
-                .await;
+            self.log_error(format!("Error running diagnostics: {}", e)).await;
         }
     }
 

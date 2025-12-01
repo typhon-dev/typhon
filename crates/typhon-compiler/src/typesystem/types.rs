@@ -1,39 +1,15 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/typesystem/types.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! Type definitions and type utilities for the Typhon type system.
 //!
 //! This module defines the core types supported by Typhon, including primitive types,
 //! user-defined class types, function types, generic types, and compound types like
 //! unions and tuples.
 
-use std::collections::{
-    HashMap,
-    HashSet,
-};
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::rc::Rc;
 
 use crate::common::SourceInfo;
-use crate::typesystem::{
-    TypeError,
-    TypeErrorKind,
-};
+use crate::typesystem::{TypeError, TypeErrorKind};
 
 /// A unique identifier for a type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -130,11 +106,7 @@ impl Type {
         return_type: Rc<Type>,
         source_info: Option<SourceInfo>,
     ) -> Self {
-        Type::Function(Rc::new(FunctionType::new(
-            parameters,
-            return_type,
-            source_info,
-        )))
+        Type::Function(Rc::new(FunctionType::new(parameters, return_type, source_info)))
     }
 
     /// Creates a new union type.
@@ -222,18 +194,12 @@ pub struct PrimitiveType {
 impl PrimitiveType {
     /// Creates a new primitive type.
     pub fn new(kind: PrimitiveTypeKind) -> Self {
-        Self {
-            kind,
-            source_info: None,
-        }
+        Self { kind, source_info: None }
     }
 
     /// Creates a new primitive type with source information.
     pub fn with_source_info(kind: PrimitiveTypeKind, source_info: SourceInfo) -> Self {
-        Self {
-            kind,
-            source_info: Some(source_info),
-        }
+        Self { kind, source_info: Some(source_info) }
     }
 }
 
@@ -336,12 +302,7 @@ pub struct ParameterType {
 impl ParameterType {
     /// Creates a new parameter type.
     pub fn new(name: Option<String>, ty: Rc<Type>, optional: bool) -> Self {
-        Self {
-            name,
-            ty,
-            optional,
-            default_value: None,
-        }
+        Self { name, ty, optional, default_value: None }
     }
 
     /// Sets the default value for the parameter.
@@ -383,11 +344,7 @@ impl FunctionType {
         return_type: Rc<Type>,
         source_info: Option<SourceInfo>,
     ) -> Self {
-        Self {
-            parameters,
-            return_type,
-            source_info,
-        }
+        Self { parameters, return_type, source_info }
     }
 }
 
@@ -418,18 +375,12 @@ pub struct UnionType {
 impl UnionType {
     /// Creates a new union type.
     pub fn new(types: Vec<Rc<Type>>) -> Self {
-        Self {
-            types,
-            source_info: None,
-        }
+        Self { types, source_info: None }
     }
 
     /// Creates a new union type with source information.
     pub fn with_source_info(types: Vec<Rc<Type>>, source_info: SourceInfo) -> Self {
-        Self {
-            types,
-            source_info: Some(source_info),
-        }
+        Self { types, source_info: Some(source_info) }
     }
 
     /// Flattens nested union types.
@@ -445,10 +396,7 @@ impl UnionType {
             }
         }
 
-        Self {
-            types: flattened,
-            source_info: self.source_info,
-        }
+        Self { types: flattened, source_info: self.source_info }
     }
 
     /// Simplifies the union by removing duplicates and handling special cases.
@@ -481,10 +429,7 @@ impl UnionType {
             }
         }
 
-        Rc::new(Type::Union(UnionType {
-            types: unique_types,
-            source_info: flattened.source_info,
-        }))
+        Rc::new(Type::Union(UnionType { types: unique_types, source_info: flattened.source_info }))
     }
 }
 
@@ -518,18 +463,12 @@ pub struct TupleType {
 impl TupleType {
     /// Creates a new tuple type.
     pub fn new(element_types: Vec<Rc<Type>>) -> Self {
-        Self {
-            element_types,
-            source_info: None,
-        }
+        Self { element_types, source_info: None }
     }
 
     /// Creates a new tuple type with source information.
     pub fn with_source_info(element_types: Vec<Rc<Type>>, source_info: SourceInfo) -> Self {
-        Self {
-            element_types,
-            source_info: Some(source_info),
-        }
+        Self { element_types, source_info: Some(source_info) }
     }
 }
 
@@ -563,18 +502,12 @@ pub struct ListType {
 impl ListType {
     /// Creates a new list type.
     pub fn new(element_type: Rc<Type>) -> Self {
-        Self {
-            element_type,
-            source_info: None,
-        }
+        Self { element_type, source_info: None }
     }
 
     /// Creates a new list type with source information.
     pub fn with_source_info(element_type: Rc<Type>, source_info: SourceInfo) -> Self {
-        Self {
-            element_type,
-            source_info: Some(source_info),
-        }
+        Self { element_type, source_info: Some(source_info) }
     }
 }
 
@@ -598,11 +531,7 @@ pub struct TypeVar {
 impl TypeVar {
     /// Creates a new type variable.
     pub fn new(name: String, constraints: Vec<Rc<Type>>) -> Self {
-        Self {
-            name,
-            constraints,
-            source_info: None,
-        }
+        Self { name, constraints, source_info: None }
     }
 
     /// Creates a new type variable with source information.
@@ -611,11 +540,7 @@ impl TypeVar {
         constraints: Vec<Rc<Type>>,
         source_info: SourceInfo,
     ) -> Self {
-        Self {
-            name,
-            constraints,
-            source_info: Some(source_info),
-        }
+        Self { name, constraints, source_info: Some(source_info) }
     }
 
     /// Returns whether the type variable has constraints.
@@ -638,11 +563,7 @@ pub struct GenericParam {
 impl GenericParam {
     /// Creates a new generic parameter.
     pub fn new(name: String, constraints: Vec<Rc<Type>>) -> Self {
-        Self {
-            name,
-            constraints,
-            source_info: None,
-        }
+        Self { name, constraints, source_info: None }
     }
 
     /// Creates a new generic parameter with source information.
@@ -651,11 +572,7 @@ impl GenericParam {
         constraints: Vec<Rc<Type>>,
         source_info: SourceInfo,
     ) -> Self {
-        Self {
-            name,
-            constraints,
-            source_info: Some(source_info),
-        }
+        Self { name, constraints, source_info: Some(source_info) }
     }
 
     /// Returns whether the generic parameter has constraints.
@@ -678,11 +595,7 @@ pub struct GenericInstance {
 impl GenericInstance {
     /// Creates a new generic type instance.
     pub fn new(base: Rc<Type>, type_args: Vec<Rc<Type>>) -> Self {
-        Self {
-            base,
-            type_args,
-            source_info: None,
-        }
+        Self { base, type_args, source_info: None }
     }
 
     /// Creates a new generic type instance with source information.
@@ -691,11 +604,7 @@ impl GenericInstance {
         type_args: Vec<Rc<Type>>,
         source_info: SourceInfo,
     ) -> Self {
-        Self {
-            base,
-            type_args,
-            source_info: Some(source_info),
-        }
+        Self { base, type_args, source_info: Some(source_info) }
     }
 }
 
@@ -767,20 +676,18 @@ impl TypeEnv {
 
     /// Gets a variable from the environment.
     pub fn get_variable(&self, name: &str) -> Option<Rc<Type>> {
-        self.variables.get(name).cloned().or_else(|| {
-            self.parent
-                .as_ref()
-                .and_then(|parent| parent.get_variable(name))
-        })
+        self.variables
+            .get(name)
+            .cloned()
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.get_variable(name)))
     }
 
     /// Gets a type definition from the environment.
     pub fn get_type_def(&self, name: &str) -> Option<Rc<Type>> {
-        self.type_defs.get(name).cloned().or_else(|| {
-            self.parent
-                .as_ref()
-                .and_then(|parent| parent.get_type_def(name))
-        })
+        self.type_defs
+            .get(name)
+            .cloned()
+            .or_else(|| self.parent.as_ref().and_then(|parent| parent.get_type_def(name)))
     }
 
     /// Gets the next type ID and increments the counter.
@@ -836,10 +743,7 @@ pub enum TypeCompatibility {
 impl TypeCompatibility {
     /// Returns whether the compatibility is identical or compatible.
     pub fn is_compatible(self) -> bool {
-        matches!(
-            self,
-            TypeCompatibility::Identical | TypeCompatibility::Compatible
-        )
+        matches!(self, TypeCompatibility::Identical | TypeCompatibility::Compatible)
     }
 
     /// Returns whether the compatibility is identical.
@@ -930,11 +834,7 @@ pub fn check_type_compatibility(left: &Type, right: &Type) -> TypeCompatibility 
                 all_identical = all_identical && param_compat.is_identical();
             }
 
-            if all_identical {
-                TypeCompatibility::Identical
-            } else {
-                TypeCompatibility::Compatible
-            }
+            if all_identical { TypeCompatibility::Identical } else { TypeCompatibility::Compatible }
         }
 
         // Union types
@@ -1001,10 +901,8 @@ pub fn check_type_compatibility(left: &Type, right: &Type) -> TypeCompatibility 
 
             let mut all_identical = true;
 
-            for (left_ty, right_ty) in left_tuple
-                .element_types
-                .iter()
-                .zip(&right_tuple.element_types)
+            for (left_ty, right_ty) in
+                left_tuple.element_types.iter().zip(&right_tuple.element_types)
             {
                 let elem_compat = check_type_compatibility(left_ty, right_ty);
                 if !elem_compat.is_compatible() {
@@ -1013,11 +911,7 @@ pub fn check_type_compatibility(left: &Type, right: &Type) -> TypeCompatibility 
                 all_identical = all_identical && elem_compat.is_identical();
             }
 
-            if all_identical {
-                TypeCompatibility::Identical
-            } else {
-                TypeCompatibility::Compatible
-            }
+            if all_identical { TypeCompatibility::Identical } else { TypeCompatibility::Compatible }
         }
 
         // List types
@@ -1082,11 +976,7 @@ pub fn check_type_compatibility(left: &Type, right: &Type) -> TypeCompatibility 
                 all_identical = all_identical && arg_compat.is_identical();
             }
 
-            if all_identical {
-                TypeCompatibility::Identical
-            } else {
-                TypeCompatibility::Compatible
-            }
+            if all_identical { TypeCompatibility::Identical } else { TypeCompatibility::Compatible }
         }
 
         // Default: incompatible

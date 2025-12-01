@@ -1,0 +1,13 @@
+lints.workspace = true
+
+[dependencies]
+  rustc-hash.workspace = true # Fast hash maps
+
+[package]
+  authors.workspace    = true
+  description          = "Source file handling and position tracking for the Typhon programming language."
+  edition.workspace    = true
+  license.workspace    = true
+  name                 = "typhon-source"
+  repository.workspace = true
+  version.workspace    = true

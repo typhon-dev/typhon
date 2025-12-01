@@ -1,21 +1,3 @@
-// -------------------------------------------------------------------------
-// SPDX-FileCopyrightText: Copyright © 2025 The Typhon Project
-// SPDX-FileName: crates/typhon-compiler/src/backend/codegen/expressions.rs
-// SPDX-FileType: SOURCE
-// SPDX-License-Identifier: Apache-2.0
-// -------------------------------------------------------------------------
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// -------------------------------------------------------------------------
 //! This module handles expression code generation.
 
 use inkwell::values::BasicValue;
@@ -29,33 +11,35 @@ use crate::common::SourceInfo;
 use crate::frontend::ast::{Expression, Literal};
 
 /// Extension trait for expression operations on CodeGenContext
-pub trait CodeGenExpressions<'ctx> {
+pub trait CodeGenExpressions {
     /// Visit an expression and generate LLVM IR for it.
     fn visit_expression(
         &mut self,
         expr: &Expression,
-        symbol_table: &SymbolTable<'ctx>,
-    ) -> CodeGenResult<CodeGenValue<'ctx>>;
+        symbol_table: &SymbolTable,
+    ) -> CodeGenResult<CodeGenValue>;
 
     /// Visit a literal and generate LLVM IR for it.
     fn visit_literal(
         &mut self,
         literal: &Literal,
         source_info: &SourceInfo,
-    ) -> CodeGenResult<CodeGenValue<'ctx>>;
+    ) -> CodeGenResult<CodeGenValue>;
 }
 
-impl<'ctx> CodeGenExpressions<'ctx> for CodeGenContext<'ctx> {
+impl CodeGenExpressions for CodeGenContext {
     fn visit_expression(
         &mut self,
         expr: &Expression,
-        symbol_table: &SymbolTable<'ctx>,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+        symbol_table: &SymbolTable,
+    ) -> CodeGenResult<CodeGenValue> {
         match expr {
             Expression::Literal { value, source_info } => self.visit_literal(value, source_info),
             Expression::BinaryOp { left, op, right, .. } => {
-                let left_value = self.visit_expression(left, symbol_table)?.as_basic_value()?;
-                let right_value = self.visit_expression(right, symbol_table)?.as_basic_value()?;
+                let left_value =
+                    self.visit_expression(left, symbol_table)?.as_basic_value_enum()?;
+                let right_value =
+                    self.visit_expression(right, symbol_table)?.as_basic_value_enum()?;
 
                 // Binary operation implementation
                 let result = self.build_binary_op(*op, left_value, right_value, "binop")?;
@@ -63,7 +47,7 @@ impl<'ctx> CodeGenExpressions<'ctx> for CodeGenContext<'ctx> {
             }
             Expression::UnaryOp { op, operand, .. } => {
                 let operand_value =
-                    self.visit_expression(operand, symbol_table)?.as_basic_value()?;
+                    self.visit_expression(operand, symbol_table)?.as_basic_value_enum()?;
 
                 // Unary operation implementation
                 let result = self.build_unary_op(*op, operand_value, "unop")?;
@@ -94,7 +78,7 @@ impl<'ctx> CodeGenExpressions<'ctx> for CodeGenContext<'ctx> {
         &mut self,
         literal: &Literal,
         source_info: &SourceInfo,
-    ) -> CodeGenResult<CodeGenValue<'ctx>> {
+    ) -> CodeGenResult<CodeGenValue> {
         // Create the values outside the context borrow to avoid lifetime issues
         match literal {
             Literal::Int(i) => {
