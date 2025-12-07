@@ -18,9 +18,43 @@ use crate::parser::context::{Context, ContextType};
 impl Parser<'_> {
     /// Parse a dotted name (e.g. `module.submodule.name`).
     ///
+    /// Dotted names are used in import statements and module references to
+    /// specify hierarchical module paths.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// dotted_name: identifier ("." identifier)*
+    /// identifier: IDENTIFIER | "_"
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Single name:
+    ///
+    /// ```python
+    /// import os
+    /// ```
+    ///
+    /// Dotted name:
+    ///
+    /// ```python
+    /// import os.path.join
+    /// ```
+    ///
+    /// With underscore:
+    ///
+    /// ```python
+    /// from typing import _SpecialForm
+    /// ```
+    ///
     /// ## Errors
     ///
-    /// This function will return a `ParserError` if the dotted name cannot be parsed.
+    /// Returns [`ParseError`] if:
+    ///
+    /// - First token is not an identifier or underscore
+    /// - Token after `.` is not an identifier or underscore
+    /// - Missing identifier after `.`
     fn parse_dotted_name(&mut self) -> ParseResult<Vec<String>> {
         let mut parts = Vec::new();
 
@@ -32,11 +66,11 @@ impl Parser<'_> {
 
         // Add the first part
         parts.push(self.current_token().lexeme.to_string());
-        let _ = self.advance();
+        self.skip();
 
         // Parse additional parts separated by dots
         while self.check(TokenKind::Dot) {
-            let _ = self.advance(); // Consume the dot
+            self.skip(); // Consume the dot
 
             // Expect an identifier or underscore after the dot
             if !self.matches(&[TokenKind::Identifier, TokenKind::Underscore]) {
@@ -45,7 +79,7 @@ impl Parser<'_> {
 
             // Add the part
             parts.push(self.current_token().lexeme.to_string());
-            let _ = self.advance();
+            self.skip();
         }
 
         Ok(parts)
@@ -53,20 +87,82 @@ impl Parser<'_> {
 
     /// Parse a from-import statement (e.g. `from module import name [as alias]`).
     ///
+    /// From-import statements allow importing specific names from a module,
+    /// with support for relative imports (using leading dots) and aliases.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// from_import: "from" ["." | "..."]* dotted_name "import" import_targets
+    /// import_targets: "(" import_names ")"
+    ///               | import_names
+    ///               | "*"
+    /// import_names: import_name ("," import_name)* [","]
+    /// import_name: identifier ["as" identifier]
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple import:
+    ///
+    /// ```python
+    /// from os import path
+    /// ```
+    ///
+    /// Multiple imports:
+    ///
+    /// ```python
+    /// from typing import List, Dict, Optional
+    /// ```
+    ///
+    /// With aliases:
+    ///
+    /// ```python
+    /// from collections import OrderedDict as OD
+    /// ```
+    ///
+    /// Relative import:
+    ///
+    /// ```python
+    /// from ..utils import helper
+    /// ```
+    ///
+    /// Star import:
+    ///
+    /// ```python
+    /// from module import *
+    /// ```
+    ///
+    /// Multi-line import:
+    ///
+    /// ```python
+    /// from typing import (
+    ///     List,
+    ///     Dict,
+    ///     Optional,
+    /// )
+    /// ```
+    ///
     /// ## Errors
     ///
-    /// This function will return a `ParserError` if the from-import statement cannot be parsed.
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Module name is invalid
+    /// - Missing `import` keyword
+    /// - Invalid import names
+    /// - Missing closing `)` for parenthesized imports
+    /// - Invalid alias syntax
     pub fn parse_from_import_statement(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span().start;
 
         // Consume the 'from' token
-        let _ = self.advance();
+        self.skip();
 
         // Parse relative import dots
         let mut level = 0;
         while self.check(TokenKind::Dot) {
-            let _ = self.advance();
+            self.skip();
             level += 1;
         }
 
@@ -78,7 +174,7 @@ impl Parser<'_> {
 
         // Check for optional opening parenthesis (for multi-line imports)
         let has_parens = if self.check(TokenKind::LeftParen) {
-            let _ = self.advance(); // Consume '('
+            self.skip(); // Consume '('
             true
         } else {
             false
@@ -87,7 +183,7 @@ impl Parser<'_> {
         // Parse the imported names
         let names = if self.check(TokenKind::Star) {
             // Handle "from module import *"
-            let _ = self.advance(); // Consume '*'
+            self.skip(); // Consume '*'
             vec![("*".to_string(), None)]
         } else {
             // Parse a comma-separated list of names with optional aliases
@@ -132,9 +228,50 @@ impl Parser<'_> {
     ///
     /// The caller is responsible for handling parentheses.
     ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// import_names: import_name ("," import_name)* [","]
+    /// import_name: identifier ["as" identifier]
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Single name:
+    ///
+    /// ```python
+    /// from os import path
+    /// ```
+    ///
+    /// Multiple names:
+    ///
+    /// ```python
+    /// from typing import List, Dict, Set
+    /// ```
+    ///
+    /// With aliases:
+    ///
+    /// ```python
+    /// from collections import OrderedDict as OD, defaultdict as dd
+    /// ```
+    ///
+    /// Trailing comma (in parenthesized context):
+    ///
+    /// ```python
+    /// from typing import (
+    ///     List,
+    ///     Dict,
+    /// )
+    /// ```
+    ///
     /// ## Errors
     ///
-    /// This function will return a `ParserError` if the import names cannot be parsed.
+    /// Returns [`ParseError`] if:
+    ///
+    /// - First token is not an identifier
+    /// - Missing identifier after comma
+    /// - Missing identifier after `as`
+    /// - Invalid syntax in name list
     fn parse_import_names(&mut self) -> ParseResult<Vec<(String, Option<String>)>> {
         let mut names = Vec::new();
 
@@ -147,11 +284,11 @@ impl Parser<'_> {
         loop {
             // Parse a name
             let name = self.current_token().lexeme.to_string();
-            let _ = self.advance();
+            self.skip();
 
             // Check for alias
             let alias = if self.check(TokenKind::As) {
-                let _ = self.advance(); // Consume 'as'
+                self.skip(); // Consume 'as'
 
                 // Expect an identifier or underscore for the alias
                 if !self.matches(&[TokenKind::Identifier, TokenKind::Underscore]) {
@@ -159,7 +296,7 @@ impl Parser<'_> {
                 }
 
                 let alias_name = self.current_token().lexeme.to_string();
-                let _ = self.advance();
+                self.skip();
 
                 Some(alias_name)
             } else {
@@ -175,7 +312,7 @@ impl Parser<'_> {
                 break;
             }
 
-            let _ = self.advance(); // Consume the comma
+            self.skip(); // Consume the comma
 
             // Check if we've reached the closing paren (trailing comma case)
             // The lexer handles implicit line continuation inside parens, so newlines
@@ -196,22 +333,63 @@ impl Parser<'_> {
 
     /// Parse an import statement (e.g. `import module [as name]`).
     ///
+    /// Import statements bring entire modules into the current namespace,
+    /// with optional aliasing for convenience.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// import_stmt: "import" dotted_name ["as" identifier]
+    /// dotted_name: identifier ("." identifier)*
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple import:
+    ///
+    /// ```python
+    /// import os
+    /// ```
+    ///
+    /// Dotted import:
+    ///
+    /// ```python
+    /// import os.path
+    /// ```
+    ///
+    /// With alias:
+    ///
+    /// ```python
+    /// import numpy as np
+    /// ```
+    ///
+    /// Deep module path:
+    ///
+    /// ```python
+    /// import collections.abc.Mapping
+    /// ```
+    ///
     /// ## Errors
     ///
-    /// This function will return a `ParserError` if the import statement cannot be parsed.
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Module name is invalid
+    /// - Missing identifier after `.` in dotted name
+    /// - Missing identifier after `as`
+    /// - Missing statement terminator (newline or semicolon)
     pub fn parse_import_statement(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
 
         // Consume the 'import' token
-        let _ = self.advance();
+        self.skip();
 
         // Parse the module name (dotted name)
         let module_parts = self.parse_dotted_name()?;
 
         // Check for 'as' to handle aliases
         let alias = if self.check(TokenKind::As) {
-            let _ = self.advance(); // Consume 'as'
+            self.skip(); // Consume 'as'
 
             // Expect an identifier or underscore for the alias
             if !self.matches(&[TokenKind::Identifier, TokenKind::Underscore]) {
@@ -219,7 +397,7 @@ impl Parser<'_> {
             }
 
             let alias_name = self.current_token().lexeme.to_string();
-            let _ = self.advance(); // Consume the identifier
+            self.skip(); // Consume the identifier
 
             Some(alias_name)
         } else {
@@ -265,17 +443,39 @@ impl Parser<'_> {
 
         // Continue parsing statements until we reach the end of the file
         while !self.check(TokenKind::EndOfFile) {
+            // Skip any leading newlines (e.g., after comments or blank lines)
+            self.skip_newlines();
+
+            // Check if we've reached EOF after skipping newlines
+            if self.check(TokenKind::EndOfFile) {
+                break;
+            }
+
             // Handle any indentation tokens at the module level
             self.handle_indentation()?;
 
-            // Parse the statement
-            let stmt = self.parse_statement()?;
-            statements.push(stmt);
+            // Check if this is a declaration (function, class, type, or decorated)
+            if self.check(TokenKind::At)
+                || self.check(TokenKind::Def)
+                || self.check(TokenKind::Class)
+                || self.check(TokenKind::Async)
+                || (self.check(TokenKind::Identifier) && self.current_token().lexeme == "type")
+            {
+                // Parse as declaration
+                let decl = self.parse_declaration()?;
+                statements.push(decl);
+
+                // After parsing a declaration at module level, consume any dedent tokens
+                // that close the declaration's body (e.g., function body, class body)
+                self.skip_while(&[TokenKind::Dedent]);
+            } else {
+                // Otherwise parse as regular statement
+                let stmt = self.parse_statement()?;
+                statements.push(stmt);
+            }
 
             // Skip newlines between statements
-            while self.check(TokenKind::Newline) {
-                let _ = self.advance();
-            }
+            self.skip_newlines();
         }
 
         // Create a module node
@@ -304,11 +504,11 @@ impl Parser<'_> {
 
         // Set parent-child relationships
         for stmt in &statements {
-            let _ = self.ast.set_parent(*stmt, node_id);
+            self.set_parent(*stmt, node_id);
         }
 
         // Pop the module context
-        let _ = self.context_stack.pop();
+        drop(self.context_stack.pop());
 
         Ok(node_id)
     }

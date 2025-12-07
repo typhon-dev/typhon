@@ -634,6 +634,102 @@ impl fmt::Display for LiteralExpr {
 }
 
 // ============================================================================
+// Slice Expression
+// ============================================================================
+
+/// Represents a slice expression in the AST (e.g. `start:stop:step`).
+///
+/// Python slices have the syntax `[start:stop:step]` where each component is optional:
+/// - `[:]` - full slice (all elements)
+/// - `[:stop]` - slice from beginning to stop
+/// - `[start:]` - slice from start to end
+/// - `[start:stop]` - slice from start to stop
+/// - `[start:stop:step]` - slice with custom step
+///
+/// ## Examples
+///
+/// ```python
+/// arr[:]           # SliceExpr { start: None, stop: None, step: None }
+/// arr[1:]          # SliceExpr { start: Some(1), stop: None, step: None }
+/// arr[:5]          # SliceExpr { start: None, stop: Some(5), step: None }
+/// arr[1:5]         # SliceExpr { start: Some(1), stop: Some(5), step: None }
+/// arr[::2]         # SliceExpr { start: None, stop: None, step: Some(2) }
+/// arr[1:10:2]      # SliceExpr { start: Some(1), stop: Some(10), step: Some(2) }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct SliceExpr {
+    /// The start index (optional)
+    pub start: Option<NodeID>,
+    /// The stop index (optional)
+    pub stop: Option<NodeID>,
+    /// The step value (optional)
+    pub step: Option<NodeID>,
+    /// The ID of this node in the AST arena
+    pub id: NodeID,
+    /// The ID of the parent node in the AST arena (if any)
+    pub parent: Option<NodeID>,
+    /// The span of this node in the source code
+    pub span: Span,
+}
+
+impl SliceExpr {
+    /// Creates a new slice expression
+    #[must_use]
+    pub const fn new(
+        start: Option<NodeID>,
+        stop: Option<NodeID>,
+        step: Option<NodeID>,
+        id: NodeID,
+        span: Span,
+    ) -> Self {
+        Self { start, stop, step, id, parent: None, span }
+    }
+}
+
+impl ASTNode for SliceExpr {
+    fn id(&self) -> NodeID { self.id }
+
+    fn parent(&self) -> Option<NodeID> { self.parent }
+
+    fn with_parent(mut self, parent: NodeID) -> Self {
+        self.parent = Some(parent);
+        self
+    }
+
+    fn kind(&self) -> NodeKind { NodeKind::Expression }
+
+    fn span(&self) -> Span { self.span }
+
+    fn children(&self) -> Vec<NodeID> {
+        let mut children = Vec::new();
+        if let Some(start) = self.start {
+            children.push(start);
+        }
+        if let Some(stop) = self.stop {
+            children.push(stop);
+        }
+        if let Some(step) = self.step {
+            children.push(step);
+        }
+        children
+    }
+}
+
+impl_visitable!(SliceExpr, visit_slice_expr);
+
+impl fmt::Display for SliceExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Slice({}:{}:{})",
+            if self.start.is_some() { "start" } else { "" },
+            if self.stop.is_some() { "stop" } else { "" },
+            if self.step.is_some() { "step" } else { "" }
+        )
+    }
+}
+
+// ============================================================================
 // Starred Expressions
 // ============================================================================
 
@@ -925,6 +1021,78 @@ impl_visitable!(UnaryOpExpr, visit_unary_op_expr);
 
 impl fmt::Display for UnaryOpExpr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "Unary({:?})", self.op) }
+}
+
+// ============================================================================
+// Variable Expressions
+// ============================================================================
+
+/// A variable reference in an expression
+///
+/// Represents a reference to a variable in an expression context.
+/// This is kept separate from `BasicIdent` because it has a different `NodeKind`
+/// (`Expression` instead of `Identifier`) to distinguish usage context.
+#[derive(Debug, Clone)]
+pub struct VariableExpr {
+    /// The variable name
+    pub name: String,
+    /// The ID of this node in the AST arena
+    pub id: NodeID,
+    /// The ID of the parent node in the AST arena (if any)
+    pub parent: Option<NodeID>,
+    /// The span of this node in the source code
+    pub span: Span,
+}
+
+impl VariableExpr {
+    /// Creates a new variable reference
+    #[must_use]
+    pub const fn new(name: String, id: NodeID, span: Span) -> Self {
+        Self { name, id, parent: None, span }
+    }
+
+    /// Returns true if this is a private variable (starts with single underscore)
+    #[must_use]
+    pub fn is_private(&self) -> bool { self.name.starts_with('_') && !self.name.starts_with("__") }
+
+    /// Returns true if this is a constant variable (all uppercase with optional underscores)
+    #[must_use]
+    pub fn is_const(&self) -> bool {
+        !self.name.is_empty()
+            && self.name.chars().all(|c| c.is_uppercase() || c == '_' || c.is_numeric())
+            && self.name.chars().any(char::is_alphabetic)
+    }
+
+    /// Returns true if this is a mangled variable (starts with `__` but doesn't end with `__`)
+    #[must_use]
+    pub fn is_mangled(&self) -> bool { self.name.starts_with("__") && !self.name.ends_with("__") }
+
+    /// Returns true if this is a dunder/magic method reference (starts and ends with `__`)
+    #[must_use]
+    pub fn is_dunder(&self) -> bool {
+        self.name.starts_with("__") && self.name.ends_with("__") && self.name.len() > 4
+    }
+}
+
+impl ASTNode for VariableExpr {
+    fn id(&self) -> NodeID { self.id }
+
+    fn parent(&self) -> Option<NodeID> { self.parent }
+
+    fn with_parent(mut self, parent: NodeID) -> Self {
+        self.parent = Some(parent);
+        self
+    }
+
+    fn kind(&self) -> NodeKind { NodeKind::Expression }
+
+    fn span(&self) -> Span { self.span }
+}
+
+impl_visitable!(VariableExpr, visit_variable_expr);
+
+impl fmt::Display for VariableExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.name) }
 }
 
 // ============================================================================

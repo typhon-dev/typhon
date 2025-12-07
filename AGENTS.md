@@ -12,12 +12,6 @@ This file provides guidance to agents when working with code in this repository.
 
 Typhon is a statically typed programming language based on Python 3, implemented in Rust with LLVM as the backend.
 
-## Memory Bank Requirements (**MANDATORY - DO NOT SKIP**)
-
-Load the full instructions and detailed requirements from [.memory-bank/README.md](.memory-bank/README.md).
-
-DO NOT proceed past this point until the memory bank is initialized (if needed) and status is [MEMORY BANK: ACTIVE].
-
 ## Coding Standards, Patterns, and Conventions
 
 ### Rust Style Guide

@@ -183,6 +183,8 @@ pub enum AnyNode {
     SetExpr(SetExpr),
     /// Set comprehension expressions (e.g. `{value for value in items}`)
     SetComprehensionExpr(SetComprehensionExpr),
+    /// Slice expressions (e.g. `start:stop:step`)
+    SliceExpr(SliceExpr),
     /// Starred expressions (e.g `*args`, `**kwargs`)
     StarredExpr(StarredExpr),
     /// Subscript operations (e.g. `arr[i]`)
@@ -203,10 +205,10 @@ pub enum AnyNode {
     UnaryOpExpr(UnaryOpExpr),
     /// Union type (e.g. `int | str`)
     UnionType(UnionType),
-    /// A variable reference in an expression.
-    VariableIdent(VariableIdent),
     /// Variable definitions
     VariableDecl(VariableDecl),
+    /// A variable reference in an expression.
+    VariableExpr(VariableExpr),
     /// While loops
     WhileStmt(WhileStmt),
     /// Wildcard pattern (e.g. `case _:`)
@@ -218,6 +220,9 @@ pub enum AnyNode {
     /// Yield from expressions
     YieldFromExpr(YieldFromExpr),
 }
+
+// Generate get_as() method implementation using macro
+for_each_node_variant!(impl_get_as_for_anynode);
 
 /// A trait for AST nodes that can be stored in the arena.
 pub trait ASTNode: fmt::Display {

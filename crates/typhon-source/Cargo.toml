@@ -5,9 +5,12 @@ lints.workspace = true
 
 [package]
   authors.workspace    = true
+  categories           = ["compilers", "parser-implementations"]
   description          = "Source file handling and position tracking for the Typhon programming language."
   edition.workspace    = true
+  keywords             = ["compiler", "diagnostics", "source", "typhon"]
   license.workspace    = true
   name                 = "typhon-source"
+  readme               = "README.md"
   repository.workspace = true
   version.workspace    = true

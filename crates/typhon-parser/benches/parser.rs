@@ -107,12 +107,12 @@ if __name__ == "__main__":
 "#;
 
 /// Benchmark parsing a simple function
-fn bench_simple_function(c: &mut Criterion) {
+fn bench_simple_function(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    c.bench_function("parse_simple_function", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("parse_simple_function", |bencher| {
+        bencher.iter(|| {
             let mut parser =
                 Parser::new(black_box(SIMPLE_FUNCTION), file_id, source_manager.clone());
             parser.parse_module()
@@ -121,12 +121,12 @@ fn bench_simple_function(c: &mut Criterion) {
 }
 
 /// Benchmark parsing fibonacci function
-fn bench_fibonacci(c: &mut Criterion) {
+fn bench_fibonacci(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    c.bench_function("parse_fibonacci", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("parse_fibonacci", |bencher| {
+        bencher.iter(|| {
             let mut parser = Parser::new(black_box(FIBONACCI), file_id, source_manager.clone());
             parser.parse_module()
         });
@@ -134,12 +134,12 @@ fn bench_fibonacci(c: &mut Criterion) {
 }
 
 /// Benchmark parsing class definition
-fn bench_class_definition(c: &mut Criterion) {
+fn bench_class_definition(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    c.bench_function("parse_class_definition", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("parse_class_definition", |bencher| {
+        bencher.iter(|| {
             let mut parser =
                 Parser::new(black_box(CLASS_DEFINITION), file_id, source_manager.clone());
             parser.parse_module()
@@ -148,12 +148,12 @@ fn bench_class_definition(c: &mut Criterion) {
 }
 
 /// Benchmark parsing complex expressions
-fn bench_complex_expressions(c: &mut Criterion) {
+fn bench_complex_expressions(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    c.bench_function("parse_complex_expressions", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("parse_complex_expressions", |bencher| {
+        bencher.iter(|| {
             let mut parser =
                 Parser::new(black_box(COMPLEX_EXPRESSIONS), file_id, source_manager.clone());
             parser.parse_module()
@@ -162,12 +162,12 @@ fn bench_complex_expressions(c: &mut Criterion) {
 }
 
 /// Benchmark parsing control flow statements
-fn bench_control_flow(c: &mut Criterion) {
+fn bench_control_flow(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    c.bench_function("parse_control_flow", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("parse_control_flow", |bencher| {
+        bencher.iter(|| {
             let mut parser = Parser::new(black_box(CONTROL_FLOW), file_id, source_manager.clone());
             parser.parse_module()
         });
@@ -175,15 +175,14 @@ fn bench_control_flow(c: &mut Criterion) {
 }
 
 /// Benchmark parsing comprehensive code
-fn bench_comprehensive(c: &mut Criterion) {
+fn bench_comprehensive(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    let mut group = c.benchmark_group("parse_comprehensive");
-    group.throughput(Throughput::Bytes(COMPREHENSIVE.len() as u64));
-
-    group.bench_function("comprehensive", |b| {
-        b.iter(|| {
+    let mut group = crit.benchmark_group("parse_comprehensive");
+    let _ = group.throughput(Throughput::Bytes(COMPREHENSIVE.len() as u64));
+    let _ = group.bench_function("comprehensive", |bencher| {
+        bencher.iter(|| {
             let mut parser = Parser::new(black_box(COMPREHENSIVE), file_id, source_manager.clone());
             parser.parse_module()
         });
@@ -193,11 +192,11 @@ fn bench_comprehensive(c: &mut Criterion) {
 }
 
 /// Benchmark parsing with varying code sizes
-fn bench_scaling(c: &mut Criterion) {
+fn bench_scaling(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    let mut group = c.benchmark_group("parse_scaling");
+    let mut group = crit.benchmark_group("parse_scaling");
 
     for size in &[10, 50, 100, 500] {
         // Generate code with N simple functions
@@ -206,38 +205,39 @@ fn bench_scaling(c: &mut Criterion) {
         });
 
         let _ = group.throughput(Throughput::Bytes(code.len() as u64));
-        let _ = group.bench_with_input(BenchmarkId::from_parameter(size), &code, |b, code| {
-            b.iter(|| {
-                let mut parser = Parser::new(black_box(code), file_id, source_manager.clone());
-                parser.parse_module()
+        let _ =
+            group.bench_with_input(BenchmarkId::from_parameter(size), &code, |bencher, code| {
+                bencher.iter(|| {
+                    let mut parser = Parser::new(black_box(code), file_id, source_manager.clone());
+                    parser.parse_module()
+                });
             });
-        });
     }
 
     group.finish();
 }
 
 /// Benchmark AST traversal operations
-fn bench_ast_traversal(c: &mut Criterion) {
+fn bench_ast_traversal(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
     // Parse once to get AST - use simple function for faster parsing
-    let mut parser = Parser::new(SIMPLE_FUNCTION, file_id, source_manager.clone());
+    let mut parser = Parser::new(SIMPLE_FUNCTION, file_id, source_manager);
     let module_id = parser.parse_module().expect("Failed to parse");
 
-    // Clone AST reference for benchmarking
-    let ast = parser.ast().clone();
+    // Get AST reference for benchmarking
+    let ast = parser.ast();
 
-    let _ = c.bench_function("ast_pre_order_traversal", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("ast_pre_order_traversal", |bencher| {
+        bencher.iter(|| {
             let nodes = black_box(ast.collect_nodes_pre_order(module_id));
             nodes.len()
         });
     });
 
-    c.bench_function("ast_post_order_traversal", |b| {
-        b.iter(|| {
+    let _ = crit.bench_function("ast_post_order_traversal", |bencher| {
+        bencher.iter(|| {
             let nodes = black_box(ast.collect_nodes_post_order(module_id));
             nodes.len()
         });
@@ -245,23 +245,23 @@ fn bench_ast_traversal(c: &mut Criterion) {
 }
 
 /// Benchmark node allocation patterns
-fn bench_node_allocation(c: &mut Criterion) {
+fn bench_node_allocation(crit: &mut Criterion) {
     let source_manager = Arc::new(SourceManager::new());
     let file_id = FileID::new(0);
 
-    let mut group = c.benchmark_group("node_allocation");
+    let mut group = crit.benchmark_group("node_allocation");
 
     // Measure allocation overhead for different constructs
-    group.bench_function("allocate_simple_function", |b| {
-        b.iter(|| {
+    let _ = group.bench_function("allocate_simple_function", |bencher| {
+        bencher.iter(|| {
             let mut parser =
                 Parser::new(black_box(SIMPLE_FUNCTION), file_id, source_manager.clone());
             parser.parse_module()
         });
     });
 
-    group.bench_function("allocate_complex_class", |b| {
-        b.iter(|| {
+    let _ = group.bench_function("allocate_complex_class", |bencher| {
+        bencher.iter(|| {
             let mut parser =
                 Parser::new(black_box(CLASS_DEFINITION), file_id, source_manager.clone());
             parser.parse_module()

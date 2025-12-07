@@ -282,7 +282,7 @@ impl LexErrorBuilder {
 #[derive(Clone, Debug, Error)]
 pub enum ParseError {
     /// Unexpected token encountered
-    #[error("Unexpected token '{token_kind}' at {span}")]
+    #[error("Unexpected token '{token_kind}' at {}:{} (expected one of: {:?})", .span.start.line, .span.start.column, .expected)]
     UnexpectedToken {
         /// Expected token kinds
         expected: Vec<TokenKind>,

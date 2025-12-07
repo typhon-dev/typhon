@@ -107,6 +107,7 @@ macro_rules! for_each_node_variant {
             SequencePattern(SequencePattern) => visit_sequence_pattern,
             SetExpr(SetExpr) => visit_set_expr,
             SetComprehensionExpr(SetComprehensionExpr) => visit_set_comprehension_expr,
+            SliceExpr(SliceExpr) => visit_slice_expr,
             StarredExpr(StarredExpr) => visit_starred_expr,
             SubscriptionExpr(SubscriptionExpr) => visit_subscription_expr,
             TemplateStringExpr(TemplateStringExpr) => visit_template_string_expr,
@@ -117,8 +118,8 @@ macro_rules! for_each_node_variant {
             TypeDecl(TypeDecl) => visit_type_decl,
             UnaryOpExpr(UnaryOpExpr) => visit_unary_op_expr,
             UnionType(UnionType) => visit_union_type,
-            VariableIdent(VariableIdent) => visit_variable_ident,
             VariableDecl(VariableDecl) => visit_variable_decl,
+            VariableExpr(VariableExpr) => visit_variable_expr,
             WhileStmt(WhileStmt) => visit_while_stmt,
             WildcardPattern(WildcardPattern) => visit_wildcard_pattern,
             WithStmt(WithStmt) => visit_with_stmt,
@@ -319,9 +320,9 @@ macro_rules! impl_display_for_anynode {
     };
 }
 
-/// Generates the complete `get_as<T>()` method implementation.
+/// Generates the complete `get_as<T>()` method implementation for `AnyNode`.
 ///
-/// This macro creates the method body that performs runtime type checking and safe
+/// This macro creates a method that performs runtime type checking and safe
 /// pointer casting to return strongly-typed references to specific node types.
 ///
 /// ## Safety
@@ -330,44 +331,58 @@ macro_rules! impl_display_for_anynode {
 /// actually safe because:
 ///
 /// 1. We verify the type matches using `type_name::<T>()` before casting
-/// 2. The pointer is derived from a valid reference that lives long enough
+/// 2. The pointer is derived from a valid reference with sufficient lifetime
 /// 3. The cast preserves the memory layout since we're casting to the exact type
 ///
 /// ## Example
 ///
 /// ```ignore
-/// for_each_node_variant!(impl_get_as_method);
+/// for_each_node_variant!(impl_get_as_for_anynode);
 /// ```
 ///
-/// This generates the complete `get_as<T>()` method body.
+/// This generates the complete `get_as<T>()` method for `AnyNode`.
 #[macro_export]
-macro_rules! impl_get_as_method {
+macro_rules! impl_get_as_for_anynode {
     ($($variant:ident($type:ty) => $visit:ident),* $(,)?) => {
-        {
-            // Get the node first
-            let node = self.get_node(node_id).ok_or($crate::visitor::VisitorError::NodeNotFound(node_id))?;
-            let expected_type = std::any::type_name::<T>().to_string();
+        impl $crate::nodes::AnyNode {
+            /// Gets a strongly-typed reference to the inner node data.
+            ///
+            /// This method performs runtime type checking and returns a reference to the
+            /// specific node type if the variant matches the requested type.
+            ///
+            /// ## Type Parameters
+            ///
+            /// - `T` - The specific node type to retrieve, such as `BinaryOpExpr`, `FunctionDecl`, etc.
+            ///
+            /// ## Returns
+            ///
+            /// A result containing a reference to the node of type `T`, or an error message
+            /// if the type doesn't match.
+            ///
+            /// ## Example
+            ///
+            /// ```ignore
+            /// let any_node: AnyNode = /* ... */;
+            /// let binary_op: &BinaryOpExpr = any_node.get_as::<BinaryOpExpr>()?;
+            /// ```
+            ///
+            /// ## Errors
+            ///
+            /// Returns an error if the node type doesn't match the requested type `T`.
+            #[allow(unsafe_code, clippy::undocumented_unsafe_blocks)]
+            pub fn get_as<T: 'static>(&self) -> Result<&T, String> {
+                let expected_type = std::any::type_name::<T>();
 
-            // Match on the node data to get the appropriate type
-            match &node.data {
-                $(
-                    $crate::nodes::AnyNode::$variant(inner)
-                        if std::any::type_name::<$type>() == expected_type =>
-                    {
-                        // SAFETY: We've verified the type matches via type_name comparison.
-                        // The pointer is derived from a valid reference with sufficient lifetime.
-                        // The cast is safe because we're casting to the exact type we checked for.
-                        #[allow(unsafe_code, clippy::undocumented_unsafe_blocks)]
-                        Ok(unsafe { &*std::ptr::from_ref::<$type>(inner).cast::<T>() })
-                    }
-                )*
-                _ => {
-                    let actual = format!("{:?}", node.kind);
-                    Err($crate::visitor::VisitorError::TypeMismatch {
-                        node_id,
-                        expected: expected_type,
-                        actual,
-                    })
+                match self {
+                    $(
+                        Self::$variant(inner) if std::any::type_name::<$type>() == expected_type => {
+                            // SAFETY: We've verified the type matches via type_name comparison.
+                            // The pointer is derived from a valid reference with sufficient lifetime.
+                            // The cast is safe because we're casting to the exact type we checked for.
+                            Ok(unsafe { &*std::ptr::from_ref::<$type>(inner).cast::<T>() })
+                        }
+                    )*
+                    _ => Err(format!("Type mismatch: expected {}, got {:?}", expected_type, self.kind())),
                 }
             }
         }

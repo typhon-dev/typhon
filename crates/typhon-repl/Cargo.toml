@@ -19,9 +19,12 @@ lints.workspace = true
 
 [package]
   authors.workspace    = true
+  categories           = ["command-line-utilities", "development-tools"]
   description          = "Interactive REPL for the Typhon programming language"
   edition.workspace    = true
+  keywords             = ["interactive", "repl", "shell", "typhon"]
   license.workspace    = true
   name                 = "typhon-repl"
+  readme               = "README.md"
   repository.workspace = true
   version.workspace    = true

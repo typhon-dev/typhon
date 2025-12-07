@@ -1,6 +1,7 @@
 //! Comprehension expression parsing
 //!
 //! This module handles parsing of:
+//!
 //! - List comprehensions: `[expr for x in iter if cond]`
 //! - Set comprehensions: `{expr for x in iter if cond}`
 //! - Dict comprehensions: `{k: v for x in iter if cond}`
@@ -20,7 +21,7 @@ use typhon_source::types::Span;
 
 use crate::diagnostics::ParseResult;
 use crate::lexer::TokenKind;
-use crate::parser::Parser;
+use crate::parser::{Context, ContextType, Parser};
 
 impl Parser<'_> {
     /// Parse a single comprehension for clause
@@ -29,21 +30,21 @@ impl Parser<'_> {
     pub(crate) fn parse_comprehension_for(&mut self) -> ParseResult<ComprehensionFor> {
         let start = self.current_token().span().start;
 
-        // Parse target
-        let target = self.parse_expression()?;
+        // Parse target (stops at 'in' keyword)
+        let target = self.parse_for_target()?;
 
         // Expect 'in'
         self.expect(TokenKind::In)?;
 
-        // Parse iterable
-        let iterable = self.parse_expression()?;
+        // Parse iterable (stop at 'if' keyword to avoid parsing ternary expressions)
+        let iterable = self.parse_comprehension_condition()?;
 
         // Parse conditions (if any)
         let mut conditions = Vec::new();
-        while self.check(TokenKind::If) {
-            let _ = self.advance(); // Consume 'if'
-            let condition = self.parse_expression()?;
-            conditions.push(condition);
+
+        while self.expect(TokenKind::If).is_ok() {
+            // Use parse_comprehension_condition() to exclude ternary expressions
+            conditions.push(self.parse_comprehension_condition()?);
         }
 
         let end = self.current_token().span().end;
@@ -64,10 +65,8 @@ impl Parser<'_> {
         generators.push(generator);
 
         // Parse additional generators (optional)
-        while self.check(TokenKind::For) {
-            let _ = self.advance(); // Consume 'for'
-            let generator = self.parse_comprehension_for()?;
-            generators.push(generator);
+        while self.expect(TokenKind::For).is_ok() {
+            generators.push(self.parse_comprehension_for()?);
         }
 
         Ok(generators)
@@ -89,6 +88,13 @@ impl Parser<'_> {
     where
         F: FnOnce(&mut Self, Vec<ComprehensionFor>, Span) -> (NodeKind, AnyNode),
     {
+        // Push comprehension context to prevent ternary expressions in filters
+        self.context_stack.push(Context::new(
+            ContextType::Comprehension,
+            None,
+            self.context_stack.current_indent_level(),
+        ));
+
         // Expect 'for'
         self.expect(TokenKind::For)?;
 
@@ -98,6 +104,9 @@ impl Parser<'_> {
         // Expect closing delimiter
         self.expect(closing_token)?;
         let end = self.current_token().span().end;
+
+        // Pop comprehension context
+        drop(self.context_stack.pop());
 
         let span = Span::new(start, end);
 

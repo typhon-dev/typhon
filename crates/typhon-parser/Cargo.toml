@@ -20,9 +20,12 @@ lints.workspace = true
 
 [package]
   authors.workspace    = true
+  categories           = ["compilers", "parser-implementations"]
   description          = "Parser for the Typhon programming language"
   edition.workspace    = true
+  keywords             = ["compiler", "lexer", "parser", "typhon"]
   license.workspace    = true
   name                 = "typhon-parser"
+  readme               = "README.md"
   repository.workspace = true
   version.workspace    = true

@@ -17,7 +17,7 @@ mod expressions;
 mod identifier;
 mod module;
 mod pattern;
-mod statement;
+mod statements;
 mod types;
 
 use std::sync::Arc;
@@ -59,6 +59,8 @@ pub struct Parser<'src> {
     current: Token<'src>,
     /// Lookahead token
     peek: Token<'src>,
+    /// Additional lookahead buffer for `peek_nth()`
+    lookahead_buffer: Vec<Token<'src>>,
     /// Diagnostic reporter for error messages
     diagnostics: DiagnosticReporter,
     /// Track indentation for Python-style blocks
@@ -89,14 +91,15 @@ impl<'src> Parser<'src> {
             lexer,
             current: default_token.clone(),
             peek: default_token,
+            lookahead_buffer: Vec::new(),
             diagnostics,
             indent_stack: vec![0],
             context_stack: ContextStack::new(),
         };
 
         // Initialize current and peek tokens
-        let _ = parser.advance();
-        let _ = parser.advance();
+        parser.skip();
+        parser.skip();
 
         parser
     }
@@ -106,62 +109,55 @@ impl<'src> Parser<'src> {
         // Save the current token
         let previous = std::mem::replace(&mut self.current, self.peek.clone());
 
-        // Get the next token from the lexer
-        self.peek = match self.lexer.next() {
-            Some(token) => token,
-            None => {
-                Token::with_empty_lexeme(TokenKind::EndOfFile, self.source.len()..self.source.len())
+        // Get the next token - either from buffer or lexer
+        self.peek = if self.lookahead_buffer.is_empty() {
+            match self.lexer.next() {
+                Some(token) => token,
+                None => Token::with_empty_lexeme(
+                    TokenKind::EndOfFile,
+                    self.source.len()..self.source.len(),
+                ),
             }
+        } else {
+            self.lookahead_buffer.remove(0)
         };
 
         previous
     }
 
-    /// Look at the current token without consuming it
-    #[inline]
-    pub const fn current_token(&self) -> &Token<'src> { &self.current }
-
-    /// Look at the next token without consuming it
-    #[inline]
-    pub const fn peek_token(&self) -> &Token<'src> { &self.peek }
-
-    /// Look ahead n tokens without consuming them
-    pub const fn peek_n(&mut self, n: usize) -> Option<&Token<'src>> {
-        if n == 0 {
-            Some(&self.current)
-        } else if n == 1 {
-            Some(&self.peek)
-        } else {
-            // For deeper lookahead, we'd need a more complex implementation
-            None
-        }
+    /// Allocate an AST node
+    pub fn alloc_node(&mut self, kind: NodeKind, data: AnyNode, span: Span) -> NodeID {
+        self.ast.alloc_node(kind, data, span)
     }
+
+    /// Get access to the AST arena
+    #[inline]
+    pub const fn ast(&self) -> &AST { &self.ast }
+
+    /// Get mutable access to the AST arena
+    #[inline]
+    pub const fn ast_mut(&mut self) -> &mut AST { &mut self.ast }
 
     /// Check if the current token is of the specified kind
     #[inline]
     pub fn check(&self, kind: TokenKind) -> bool { self.current_token().kind() == &kind }
 
-    /// Match the current token against a set of kinds
-    #[inline]
-    pub fn matches(&self, kinds: &[TokenKind]) -> bool {
-        kinds.contains(self.current_token().kind())
-    }
+    /// Returns the lexer's current column number.
+    pub const fn column(&self) -> usize { self.lexer.column() }
 
     /// Consume the current token if it matches the expected kind
     ///
+    /// This is similar to [`expect()`](Self::expect) but returns the consumed token instead of `()`.
+    /// Use this when you need access to the token's lexeme or span after consuming it.
+    ///
     /// ## Errors
     ///
-    /// TODO: add context
-    pub fn expect(&mut self, kind: TokenKind) -> ParseResult<()> {
-        if self.check(kind) {
-            let _ = self.advance();
-
-            Ok(())
-        } else {
-            Err(self.unexpected_token(kind))
-        }
+    /// Returns an error if the current token doesn't match the expected kind.
+    pub fn consume(&mut self, kind: TokenKind) -> ParseResult<Token<'src>> {
+        if self.check(kind) { Ok(self.advance()) } else { Err(self.unexpected_token(kind)) }
     }
 
+    /// Look at the current token without consuming it
     /// Create a source span from start and end positions
     #[inline]
     pub fn create_source_span(&self, start: usize, end: usize) -> SourceSpan {
@@ -179,24 +175,12 @@ impl<'src> Parser<'src> {
         SourceSpan::new(start_pos, end_pos, self.file_id)
     }
 
-    /// Convert a token's span to a source span
     #[inline]
-    pub const fn token_to_span(&self, token: &Token<'src>) -> Span {
-        Span::new(token.span.start, token.span.end)
-    }
+    pub const fn current_token(&self) -> &Token<'src> { &self.current }
 
-    /// Create an unexpected token error
-    pub fn unexpected_token(&self, expected: TokenKind) -> ParseError {
-        let span = self.create_source_span(self.current.span.start, self.current.span.end);
-
-        // Create a token that doesn't have a lifetime tied to 'src
-        let token_kind = self.current.kind;
-        let token_span = self.current.span.clone();
-        let token = Token::with_empty_lexeme(token_kind, token_span);
-
-        // Create a builder and construct the error
-        ParseErrorBuilder::new().token(token).expected(expected).span(span).build()
-    }
+    /// Get the diagnostics reporter
+    #[inline]
+    pub const fn diagnostics(&self) -> &DiagnosticReporter { &self.diagnostics }
 
     /// Report an error with the given message
     pub fn error(&self, message: &str) -> ParseError {
@@ -204,29 +188,6 @@ impl<'src> Parser<'src> {
 
         ParseError::invalid_syntax(message, span)
     }
-
-    /// Report an error to the diagnostic reporter
-    pub fn report_error(&mut self, error: ParseError) {
-        // Add the error to the diagnostic reporter
-        self.diagnostics.add_diagnostic(error.into());
-    }
-
-    /// Get access to the AST arena
-    #[inline]
-    pub const fn ast(&self) -> &AST { &self.ast }
-
-    /// Get mutable access to the AST arena
-    #[inline]
-    pub const fn ast_mut(&mut self) -> &mut AST { &mut self.ast }
-
-    /// Allocate an AST node
-    pub fn alloc_node(&mut self, kind: NodeKind, data: AnyNode, span: Span) -> NodeID {
-        self.ast.alloc_node(kind, data, span)
-    }
-
-    /// Get the diagnostics reporter
-    #[inline]
-    pub const fn diagnostics(&self) -> &DiagnosticReporter { &self.diagnostics }
 
     /// Create a diagnostic error with recovery information
     pub fn error_with_recovery(&self, message: &str, expected_tokens: &[TokenKind]) -> ParseError {
@@ -242,6 +203,56 @@ impl<'src> Parser<'src> {
 
         // Otherwise, just return a regular error
         self.error(message)
+    }
+
+    /// Consume the current token if it matches the expected kind
+    ///
+    /// This is similar to [`consume()`](Self::consume) but doesn't return the token.
+    /// Use this when you need to verify and skip a token without using its contents.
+    ///
+    /// ## Errors
+    ///
+    /// Returns an error if the current token doesn't match the expected kind.
+    pub fn expect(&mut self, kind: TokenKind) -> ParseResult<()> {
+        if self.check(kind) {
+            self.skip();
+
+            Ok(())
+        } else {
+            Err(self.unexpected_token(kind))
+        }
+    }
+
+    /// Expect a statement end (newline or semicolon)
+    ///
+    /// ## Errors
+    ///
+    /// Returns an error if the current token is not a valid statement terminator.
+    /// Valid terminators include: newline, semicolon, EOF, dedent, or the start of a new statement.
+    pub fn expect_statement_end(&mut self) -> ParseResult<()> {
+        // Check for explicit statement terminators that should be consumed
+        if self.matches(&[TokenKind::Newline, TokenKind::Semicolon]) {
+            self.skip();
+
+            return Ok(());
+        }
+
+        // Check for implicit terminators that should NOT be consumed
+        // These indicate the start of a new statement or end of a block
+        if self.matches(&[
+            TokenKind::Dedent,
+            TokenKind::EndOfFile,
+            TokenKind::Identifier, // Start of next statement (e.g., next variable declaration)
+            TokenKind::Def,        // Start of method definition
+            TokenKind::Class,      // Start of class definition
+            TokenKind::Async,      // Start of async statement
+            TokenKind::At,         // Start of decorated statement
+        ]) {
+            // Don't consume - let the next parse_statement() handle it
+            return Ok(());
+        }
+
+        Err(self.error("Expected newline or semicolon after statement"))
     }
 
     /// Find the next valid expression token during error recovery
@@ -265,7 +276,7 @@ impl<'src> Parser<'src> {
                 }
             } else if lookahead == 1 {
                 if valid_tokens.contains(&self.peek.kind) {
-                    let _ = self.advance(); // Advance to the peek token
+                    self.skip();
                     return Some(self.current.clone());
                 }
             } else {
@@ -279,71 +290,180 @@ impl<'src> Parser<'src> {
 
         // If we didn't find a sync token within the limit, just advance one token
         // to avoid getting stuck in an infinite loop
-        let _ = self.advance();
+        self.skip();
         None
     }
 
-    /// Skip until next statement boundary after encountering an error
+    /// Safely get the span of a node by its ID
+    ///
+    /// This is a helper method to replace `.get_node().unwrap()` patterns throughout the parser.
+    /// It returns a `ParseError` if the node ID is invalid, which should never happen in correct code.
+    ///
+    /// ## Errors
+    ///
+    /// Returns a `ParseError` with an internal error message if the node ID is invalid.
+    pub fn get_node_span(&self, node_id: NodeID) -> ParseResult<Span> {
+        self.ast
+            .get_node(node_id)
+            .ok_or_else(|| {
+                self.error(&format!("Internal error: invalid node ID {}", node_id.index()))
+            })
+            .map(|node| node.span)
+    }
+
+    /// Returns the lexer's current line number.
+    pub const fn line(&self) -> usize { self.lexer.line() }
+
+    /// Match the current token against a set of kinds
+    #[inline]
+    pub fn matches(&self, kinds: &[TokenKind]) -> bool {
+        kinds.contains(self.current_token().kind())
+    }
+
+    /// Look ahead n tokens without consuming them
+    ///
+    /// Returns a reference to the token at position n ahead of the current token:
+    /// - n=0 returns the current token
+    /// - n=1 returns the peek token
+    /// - n=2+ fetches additional tokens from the lexer and caches them
+    ///
+    /// The lookahead buffer is automatically maintained and cleared as tokens are consumed.
+    pub fn peek_nth(&mut self, n: usize) -> Option<&Token<'src>> {
+        match n {
+            0 => Some(&self.current),
+            1 => Some(&self.peek),
+            _ => {
+                // Calculate how many additional tokens we need
+                let buffer_index = n - 2;
+
+                // Fill the buffer up to the requested position
+                while self.lookahead_buffer.len() <= buffer_index {
+                    let token = match self.lexer.next() {
+                        Some(t) => t,
+                        None => Token::with_empty_lexeme(
+                            TokenKind::EndOfFile,
+                            self.source.len()..self.source.len(),
+                        ),
+                    };
+
+                    self.lookahead_buffer.push(token);
+                }
+
+                self.lookahead_buffer.get(buffer_index)
+            }
+        }
+    }
+
+    /// Look at the next token without consuming it
+    #[inline]
+    pub const fn peek_token(&self) -> &Token<'src> { &self.peek }
+
+    /// Report an error to the diagnostic reporter
+    pub fn report_error(&mut self, error: ParseError) {
+        // Add the error to the diagnostic reporter
+        self.diagnostics.add_diagnostic(error.into());
+    }
+
+    /// Sets the parent of a node without returning the result
+    ///
+    /// This is a convenience wrapper around `ast.set_parent()` for cases
+    /// where you don't need to check if the operation succeeded.
+    #[inline]
+    pub fn set_parent(&mut self, child: NodeID, parent: NodeID) {
+        let _ = self.ast.set_parent(child, parent);
+    }
+
+    /// Skip the current token without returning it
+    ///
+    /// This is a convenience method for cases where you need to advance
+    /// but don't care about the token being consumed.
+    #[inline]
+    fn skip(&mut self) { let _ = self.advance(); }
+
+    /// Skip the current token without returning it
+    /// if it matches one of the expected kinds
+    ///
+    /// This is a convenience method for cases where you need to conditionally
+    /// advance and don't care about the token being consumed.
+    #[inline]
+    pub fn skip_if(&mut self, kinds: &[TokenKind]) {
+        if self.matches(kinds) {
+            self.skip();
+        }
+    }
+
+    /// Skip over any consecutive newline tokens
+    ///
+    /// This is a utility method to consume blank lines in contexts where they
+    /// should be ignored, such as:
+    /// - Between the colon and Indent token when starting a block
+    /// - Between statements at the same indentation level
+    /// - After certain keywords that allow blank lines before their body
+    ///
+    /// This method does not affect the parser state beyond consuming Newline tokens.
+    pub fn skip_newlines(&mut self) {
+        while self.check(TokenKind::Newline) {
+            self.skip();
+        }
+    }
+
+    /// Skip over consecutive tokens that match any of the specified kinds
+    ///
+    /// This is a utility method to consume multiple consecutive tokens of specific types.
+    /// It continues skipping as long as the current token matches any kind in the provided slice.
+    ///
+    /// Common use cases:
+    /// - Skipping stray indent/dedent tokens during indentation transitions
+    /// - Consuming multiple separator tokens
+    /// - Cleaning up whitespace-related tokens
+    ///
+    /// This method does not affect the parser state beyond consuming matching tokens.
+    pub fn skip_while(&mut self, kinds: &[TokenKind]) {
+        while self.matches(kinds) {
+            self.skip();
+        }
+    }
+
+    /// Synchronizes the parser after encountering an error.
     ///
     /// This method skips tokens until it finds a token that could reasonably
     /// be the start of a new statement, like a newline, semicolon, or keyword.
     /// It's primarily used for coarse-grained error recovery at the statement level.
-    pub fn skip_to_statement_boundary(&mut self) {
-        while self.current.kind != TokenKind::EndOfFile {
+    pub fn synchronize(&mut self) {
+        while !self.check(TokenKind::EndOfFile) {
             // Statements typically end with a newline or semicolon
-            if self.current.kind == TokenKind::Newline || self.current.kind == TokenKind::Semicolon
-            {
-                let _ = self.advance();
-
-                return;
-            }
-
             // Declarations and blocks can serve as synchronization points
-            match self.current.kind {
-                TokenKind::Class
-                | TokenKind::Def
-                | TokenKind::If
-                | TokenKind::While
-                | TokenKind::For
-                | TokenKind::Return => return,
-                _ => {
-                    let _ = self.advance();
-                }
+            if self.matches(&[
+                TokenKind::Class,
+                TokenKind::Def,
+                TokenKind::For,
+                TokenKind::If,
+                TokenKind::Newline,
+                TokenKind::Return,
+                TokenKind::Semicolon,
+                TokenKind::While,
+            ]) {
+                self.skip();
             }
         }
     }
 
-    /// Expect a statement end (newline or semicolon)
-    ///
-    /// ## Errors
-    ///
-    /// Returns an error if the current token is not a valid statement terminator.
-    /// Valid terminators include: newline, semicolon, EOF, dedent, or the start of a new statement.
-    pub fn expect_statement_end(&mut self) -> ParseResult<()> {
-        // Check for explicit statement terminators
-        if self.check(TokenKind::Newline) || self.check(TokenKind::Semicolon) {
-            let _ = self.advance();
+    /// Convert a token's span to a source span
+    #[inline]
+    pub const fn token_to_span(&self, token: &Token<'src>) -> Span {
+        Span::new(token.span.start, token.span.end)
+    }
 
-            return Ok(());
-        }
+    /// Create an unexpected token error
+    pub fn unexpected_token(&self, expected: TokenKind) -> ParseError {
+        let span = self.create_source_span(self.current.span.start, self.current.span.end);
 
-        // Allow EOF, dedent, or the start of a new statement as implicit terminators
-        // This handles cases where there's no explicit newline token available.
-        // For example, after a statement ends at EOF, or when implicit line continuation
-        // via brackets consumed the newlines.
-        if self.matches(&[
-            TokenKind::Async,
-            TokenKind::Class,
-            TokenKind::Dedent,
-            TokenKind::Def,
-            TokenKind::EndOfFile,
-            TokenKind::From,
-            TokenKind::Identifier,
-            TokenKind::Import,
-        ]) {
-            return Ok(());
-        }
+        // Create a token that doesn't have a lifetime tied to 'src
+        let token_kind = self.current.kind;
+        let token_span = self.current.span.clone();
+        let token = Token::with_empty_lexeme(token_kind, token_span);
 
-        Err(self.error("Expected newline or semicolon after statement"))
+        // Create a builder and construct the error
+        ParseErrorBuilder::new().token(token).expected(expected).span(span).build()
     }
 }

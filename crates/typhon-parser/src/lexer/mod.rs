@@ -260,6 +260,9 @@ impl<'src> Iterator for Lexer<'src> {
                         let token = Token::with_empty_lexeme(TokenKind::Indent, span.into());
                         self.prev_token = Some(token.clone());
 
+                        // Mark that we're no longer at line start
+                        self.at_line_start = false;
+
                         return Some(token);
                     }
                     // Indentation decreased - pop levels and generate DEDENT tokens
@@ -303,6 +306,10 @@ impl<'src> Iterator for Lexer<'src> {
                             self.pending_tokens.extend(dedent_tokens);
                             let token = self.pending_tokens.pop_front().unwrap();
                             self.prev_token = Some(token.clone());
+
+                            // Mark that we're no longer at line start
+                            self.at_line_start = false;
+
                             return Some(token);
                         }
                     }

@@ -454,6 +454,7 @@ impl Display for TokenKind {
         }
     }
 }
+
 /// Represents a token in the Typhon language.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Token<'src> {

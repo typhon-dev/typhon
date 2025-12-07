@@ -22,9 +22,12 @@ lints.workspace = true
 
 [package]
   authors.workspace    = true
+  categories           = ["development-tools"]
   description          = "Language server implementation for the Typhon programming language"
   edition.workspace    = true
+  keywords             = ["ide", "language-server", "lsp", "typhon"]
   license.workspace    = true
   name                 = "typhon-lsp"
+  readme               = "README.md"
   repository.workspace = true
   version.workspace    = true

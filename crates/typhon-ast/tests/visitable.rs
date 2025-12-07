@@ -159,8 +159,8 @@ impl Visitor<()> for TestVisitor {
         Ok(())
     }
 
-    fn visit_variable_ident(&mut self, _node_id: NodeID) -> VisitorResult<()> {
-        self.visited_nodes.push("visit_variable_ident");
+    fn visit_variable_expr(&mut self, _node_id: NodeID) -> VisitorResult<()> {
+        self.visited_nodes.push("visit_variable_expr");
         Ok(())
     }
 

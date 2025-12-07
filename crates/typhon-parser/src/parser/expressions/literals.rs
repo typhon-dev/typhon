@@ -14,7 +14,7 @@ use typhon_ast::nodes::{
     StarredExpr,
     TemplateStringExpr,
     TemplateStringPart,
-    VariableIdent,
+    VariableExpr,
 };
 use typhon_source::types::Span;
 
@@ -68,42 +68,100 @@ impl Parser<'_> {
         };
 
         // Consume the f-string token
-        let _ = self.advance();
+        self.skip();
 
-        // Parse f-string parts
+        // Parse f-string parts with proper handling of format
+        // specifiers, conversions, and nested braces
         let mut parts = Vec::new();
-
-        // Find all expressions in the f-string (between { and })
-        let mut start_idx = 0;
-        let mut in_expr = false;
+        let mut literal_start = 0;
+        let mut brace_depth = 0;
         let mut expr_start = 0;
+        let mut expr_end = 0;
 
-        // Basic parser for f-string parts
-        for (i, c) in lexeme.chars().enumerate() {
-            if c == '{' && !in_expr {
-                // End the current literal part if there is one
-                if i > start_idx {
-                    let literal = &lexeme[start_idx..i];
-                    parts.push(FmtStringPart::Literal(literal.to_string()));
+        let chars: Vec<(usize, char)> = lexeme.char_indices().collect();
+        let mut i = 0;
+
+        while i < chars.len() {
+            let (idx, c) = chars[i];
+
+            match c {
+                '{' => {
+                    // Check for escaped brace {{
+                    if i + 1 < chars.len() && chars[i + 1].1 == '{' {
+                        // Escaped brace - skip both
+                        i += 2;
+
+                        continue;
+                    }
+
+                    if brace_depth == 0 {
+                        // Starting a new expression
+                        // Add any literal text before this
+                        if idx > literal_start {
+                            let literal = &lexeme[literal_start..idx];
+                            parts.push(FmtStringPart::Literal(literal.to_string()));
+                        }
+
+                        expr_start = idx + 1;
+                        expr_end = idx + 1;
+                    }
+
+                    brace_depth += 1;
                 }
-                in_expr = true;
-                expr_start = i + 1;
-            } else if c == '}' && in_expr {
-                // Parse the embedded expression
-                let expr_str = &lexeme[expr_start..i];
-                let expr_node = self.parse_embedded_expression(expr_str)?;
+                '}' => {
+                    // Check for escaped brace }}
+                    if i + 1 < chars.len() && chars[i + 1].1 == '}' {
+                        // Escaped brace - skip both
+                        i += 2;
 
-                parts.push(FmtStringPart::Expression(expr_node));
+                        continue;
+                    }
 
-                in_expr = false;
-                start_idx = i + 1;
+                    if brace_depth > 0 {
+                        brace_depth -= 1;
+
+                        if brace_depth == 0 {
+                            // End of expression - parse it
+                            let expr_str = &lexeme[expr_start..expr_end];
+
+                            // Parse the expression (without format spec or conversion)
+                            let expr_node = self.parse_embedded_expression(expr_str)?;
+                            parts.push(FmtStringPart::Expression(expr_node));
+
+                            literal_start = idx + 1;
+                        }
+                    }
+                }
+                '!' if brace_depth == 1 => {
+                    // Conversion specifier at depth 1 - stop collecting expression
+                    // The conversion (!r, !s, !a) and everything after is ignored
+                    expr_end = idx;
+                }
+                ':' if brace_depth == 1 => {
+                    // Format specifier at depth 1 - stop collecting expression
+                    // The format spec (:...) is ignored
+                    if expr_end == expr_start {
+                        // Only set expr_end if we haven't hit '!' yet
+                        expr_end = idx;
+                    }
+                }
+                _ => {
+                    // Regular character - extend expression if we're collecting
+                    if brace_depth > 0 && expr_end == idx {
+                        expr_end = idx + 1;
+                    }
+                }
             }
+
+            i += 1;
         }
 
         // Add any remaining literal text
-        if start_idx < lexeme.len() && !in_expr {
-            let literal = &lexeme[start_idx..];
-            parts.push(FmtStringPart::Literal(literal.to_string()));
+        if literal_start < lexeme.len() {
+            let literal = &lexeme[literal_start..];
+            if !literal.is_empty() {
+                parts.push(FmtStringPart::Literal(literal.to_string()));
+            }
         }
 
         // Create the f-string node
@@ -117,7 +175,40 @@ impl Parser<'_> {
         Ok(node_id)
     }
 
-    /// Parse an identifier expression (variable name)
+    /// Parse an identifier expression (variable name).
+    ///
+    /// Creates a [`VariableExpr`] node representing a reference to a variable,
+    /// function, class, or other named entity in the current scope.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// identifier_expr: IDENTIFIER
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple variable reference:
+    ///
+    /// ```python
+    /// x
+    /// my_variable
+    /// _private
+    /// ```
+    ///
+    /// In expressions:
+    ///
+    /// ```python
+    /// result = x + y
+    /// print(name)
+    /// obj.method()
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Current token is not an identifier
     pub(crate) fn parse_identifier_expr(&mut self) -> ParseResult<NodeID> {
         if self.current_token().kind() != &TokenKind::Identifier {
             let span = self.current_token().span().clone();
@@ -135,21 +226,64 @@ impl Parser<'_> {
         let span = Span::new(start, end);
 
         // Advance past the identifier
-        let _ = self.advance();
+        self.skip();
 
         // Create the variable identifier
-        let variable = VariableIdent::new(name.to_string(), NodeID::new(0, 0), span);
+        let variable = VariableExpr::new(name.to_string(), NodeID::new(0, 0), span);
 
-        // Allocate the node
-        let node_id =
-            self.alloc_node(NodeKind::Declaration, AnyNode::VariableIdent(variable), span);
+        // Allocate the node - VariableExpr is an Expression, not a Declaration
+        let node_id = self.alloc_node(NodeKind::Expression, AnyNode::VariableExpr(variable), span);
 
         Ok(node_id)
     }
 
-    /// Parse a lambda expression
+    /// Parse a lambda expression.
     ///
-    /// Handles lambda expressions of the form: `lambda args: expression`
+    /// Lambda expressions are anonymous functions that can capture variables from
+    /// their enclosing scope. They consist of optional parameters and a single expression body.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// lambda_expr: "lambda" [parameter_list] ":" expression
+    /// parameter_list: identifier ("," identifier)*
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// No parameters:
+    ///
+    /// ```python
+    /// lambda: 42
+    /// ```
+    ///
+    /// Single parameter:
+    ///
+    /// ```python
+    /// lambda x: x * 2
+    /// ```
+    ///
+    /// Multiple parameters:
+    ///
+    /// ```python
+    /// lambda x, y: x + y
+    /// lambda a, b, c: a * b + c
+    /// ```
+    ///
+    /// In higher-order functions:
+    ///
+    /// ```python
+    /// map(lambda x: x ** 2, numbers)
+    /// sorted(items, key=lambda item: item.priority)
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Missing colon `:` after parameters
+    /// - Parameter is not a valid identifier
+    /// - Body expression is invalid
     pub(crate) fn parse_lambda_expr(&mut self) -> ParseResult<NodeID> {
         let start = self.current_token().span().start;
 
@@ -167,7 +301,7 @@ impl Parser<'_> {
 
             // Parse additional parameters
             while self.check(TokenKind::Comma) {
-                let _ = self.advance(); // Consume ','
+                self.skip(); // Consume ','
                 let param = self.parse_identifier()?;
                 params.push(param);
             }
@@ -194,7 +328,70 @@ impl Parser<'_> {
         Ok(node_id)
     }
 
-    /// Parse a literal expression (numbers, strings, booleans, None)
+    /// Parse a literal expression (numbers, strings, booleans, None, ellipsis).
+    ///
+    /// Handles all Python literal types including integers, floats, strings (with various
+    /// prefixes like raw strings), booleans, None, and the ellipsis (`...`) literal.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// literal: INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL
+    ///        | RAW_STRING_LITERAL | MULTILINE_STRING_LITERAL | BYTES_LITERAL
+    ///        | "True" | "False" | "None" | "..."
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Integer literals:
+    ///
+    /// ```python
+    /// 42
+    /// 0x2A
+    /// 0b101010
+    /// 0o52
+    /// ```
+    ///
+    /// Float literals:
+    ///
+    /// ```python
+    /// 3.14
+    /// 2.5e-3
+    /// 1.0
+    /// ```
+    ///
+    /// String literals:
+    ///
+    /// ```python
+    /// "hello"
+    /// 'world'
+    /// r"raw\nstring"
+    /// """multiline
+    /// string"""
+    /// b"bytes"
+    /// ```
+    ///
+    /// Boolean and None:
+    ///
+    /// ```python
+    /// True
+    /// False
+    /// None
+    /// ```
+    ///
+    /// Ellipsis:
+    ///
+    /// ```python
+    /// ...
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Integer literal cannot be parsed (invalid format, out of range)
+    /// - Float literal cannot be parsed (invalid format)
+    /// - Current token is not a valid literal type
     pub(crate) fn parse_literal(&mut self) -> ParseResult<NodeID> {
         let start = self.current_token().span().start;
         let end = self.current_token().span().end;
@@ -233,6 +430,7 @@ impl Parser<'_> {
                 }
             }
             TokenKind::StringLiteral
+            | TokenKind::RawStringLiteral
             | TokenKind::MultilineStringLiteral
             | TokenKind::BytesLiteral => {
                 // Handle string literals, removing quotes
@@ -243,6 +441,7 @@ impl Parser<'_> {
             TokenKind::True => LiteralValue::Bool(true),
             TokenKind::False => LiteralValue::Bool(false),
             TokenKind::None => LiteralValue::None,
+            TokenKind::Ellipsis => LiteralValue::Ellipsis,
             _ => {
                 return Err(ParseErrorBuilder::new()
                     .message(format!(
@@ -255,7 +454,7 @@ impl Parser<'_> {
         };
 
         // Advance past the literal token
-        let _ = self.advance();
+        self.skip();
 
         // Create the Literal node
         let literal = LiteralExpr::new(literal_value, lexeme.to_string(), NodeID::new(0, 0), span);
@@ -327,7 +526,7 @@ impl Parser<'_> {
         };
 
         // Consume the template string token
-        let _ = self.advance();
+        self.skip();
 
         // Parse template parts
         let mut parts = Vec::new();
@@ -338,13 +537,14 @@ impl Parser<'_> {
         let mut expr_start = 0;
 
         // Basic parser for template string parts
-        for (i, c) in lexeme.chars().enumerate() {
+        for (i, c) in lexeme.char_indices() {
             if c == '{' && !in_expr {
                 // End the current literal part if there is one
                 if i > start_idx {
                     let literal = &lexeme[start_idx..i];
                     parts.push(TemplateStringPart::Literal(literal.to_string()));
                 }
+
                 in_expr = true;
                 expr_start = i + 1;
             } else if c == '}' && in_expr {
@@ -387,10 +587,16 @@ impl Parser<'_> {
 
         // Parse additional elements
         while self.check(TokenKind::Comma) {
-            let _ = self.advance(); // Consume ','
+            self.skip(); // Consume ','
 
             // Check if we're at the end of the tuple (trailing comma)
             if self.check(TokenKind::RightParen) {
+                break;
+            }
+
+            // If we're parsing a for-loop target, stop at 'in' keyword
+            // This handles cases like: `for x, y in items`
+            if self.context_stack.in_for_target() && self.check(TokenKind::In) {
                 break;
             }
 

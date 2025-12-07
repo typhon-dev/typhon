@@ -84,7 +84,7 @@
     categories  = ["compilers", "development-tools", "programming-languages"]
     description = "A statically and strongly typed programming language based on Python 3"
     edition     = "2024"
-    keywords    = ["compiler", "language", "llvm", "python", "static-typing"]
+    keywords    = ["compiler", "language", "llvm", "static-typing"]
     license     = "Apache-2.0"
     readme      = "README.md"
     repository  = "https://github.com/typhon-dev/typhon"

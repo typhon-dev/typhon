@@ -16,7 +16,7 @@ use typhon_ast::nodes::{
     NodeID,
     NodeKind,
     SequencePattern,
-    VariableIdent,
+    VariableExpr,
     WildcardPattern,
 };
 use typhon_source::types::Span;
@@ -31,23 +31,56 @@ impl Parser<'_> {
     /// Case statements are part of match statements and contain patterns to match against.
     /// They can optionally have a guard condition (an 'if' followed by an expression).
     ///
-    /// ```python
-    /// case [x, y] if x > 0:  # Pattern with guard
-    ///     # code executed when pattern matches and guard is true
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// case_statement: "case" pattern ["if" expression] ":" block
     /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple pattern:
+    ///
+    /// ```python
+    /// case 42:
+    ///     print("Matched 42")
+    /// ```
+    ///
+    /// Pattern with guard:
+    ///
+    /// ```python
+    /// case [x, y] if x > 0:
+    ///     print("Matched positive x")
+    /// ```
+    ///
+    /// Complex pattern:
+    ///
+    /// ```python
+    /// case {"name": name, "age": age} if age >= 18:
+    ///     print(f"Adult: {name}")
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Pattern parsing fails
+    /// - Guard expression is invalid (when present)
+    /// - Missing `:` after pattern
+    /// - Block parsing fails
     fn parse_case_statement(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
 
         // Consume the 'case' token
-        let _ = self.advance();
+        self.skip();
 
         // Parse the pattern
         let pattern = self.parse_pattern()?;
 
         // Check for optional guard condition
         let guard = if self.check(TokenKind::If) {
-            let _ = self.advance(); // consume 'if'
+            self.skip(); // consume 'if'
             Some(self.parse_expression()?)
         } else {
             None
@@ -66,7 +99,8 @@ impl Parser<'_> {
         } else {
             // Use the position after the last statement
             let last_stmt = body.last().unwrap();
-            self.ast.get_node(*last_stmt).unwrap().span.end
+
+            self.get_node_span(*last_stmt)?.end
         };
 
         // Create a span for the entire case statement
@@ -79,20 +113,66 @@ impl Parser<'_> {
         let node_id = self.ast.alloc_node(NodeKind::Pattern, AnyNode::MatchCase(case_stmt), span);
 
         // Set parent-child relationships
-        let _ = self.ast.set_parent(pattern, node_id);
+        self.set_parent(pattern, node_id);
 
         if let Some(guard_expr) = guard {
-            let _ = self.ast.set_parent(guard_expr, node_id);
+            self.set_parent(guard_expr, node_id);
         }
 
         for stmt in &body {
-            let _ = self.ast.set_parent(*stmt, node_id);
+            self.set_parent(*stmt, node_id);
         }
 
         Ok(node_id)
     }
 
     /// Parse a literal pattern (e.g. `case 42:` or `case "string":`).
+    ///
+    /// Literal patterns match exact values including numbers, strings, booleans,
+    /// and None. The value must exactly equal the literal for the pattern to match.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// literal_pattern: int_literal
+    ///                | float_literal
+    ///                | string_literal
+    ///                | "True"
+    ///                | "False"
+    ///                | "None"
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Integer literal:
+    ///
+    /// ```python
+    /// case 42:
+    ///     print("The answer")
+    /// ```
+    ///
+    /// String literal:
+    ///
+    /// ```python
+    /// case "error":
+    ///     handle_error()
+    /// ```
+    ///
+    /// Boolean and None:
+    ///
+    /// ```python
+    /// case True:
+    ///     enable_feature()
+    /// case None:
+    ///     set_default()
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Literal expression parsing fails
+    /// - Invalid literal value
     fn parse_literal_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
@@ -101,7 +181,7 @@ impl Parser<'_> {
         let value = self.parse_expression()?;
 
         // Get the end position
-        let end_pos = self.ast.get_node(value).unwrap().span.end;
+        let end_pos = self.get_node_span(value)?.end;
 
         // Create a span
         let span = Span::new(start_pos, end_pos);
@@ -114,12 +194,45 @@ impl Parser<'_> {
             self.ast.alloc_node(NodeKind::Pattern, AnyNode::LiteralPattern(literal_pattern), span);
 
         // Set parent-child relationship
-        let _ = self.ast.set_parent(value, node_id);
+        self.set_parent(value, node_id);
 
         Ok(node_id)
     }
 
     /// Parse an identifier pattern (e.g. `case variable:`).
+    ///
+    /// Identifier patterns bind the matched value to a variable name. The pattern
+    /// always matches and assigns the value to the identifier for use in the case body.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// identifier_pattern: identifier
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple binding:
+    ///
+    /// ```python
+    /// case value:
+    ///     print(f"Got: {value}")
+    /// ```
+    ///
+    /// With type checking in body:
+    ///
+    /// ```python
+    /// case x:
+    ///     if isinstance(x, int):
+    ///         process_int(x)
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Identifier parsing fails
+    /// - Invalid identifier name
     fn parse_identifier_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
@@ -128,7 +241,7 @@ impl Parser<'_> {
         let name = self.parse_identifier()?;
 
         // Get the end position
-        let end_pos = self.ast.get_node(name).unwrap().span.end;
+        let end_pos = self.get_node_span(name)?.end;
 
         // Create a span
         let span = Span::new(start_pos, end_pos);
@@ -144,12 +257,37 @@ impl Parser<'_> {
         );
 
         // Set parent-child relationship
-        let _ = self.ast.set_parent(name, node_id);
+        self.set_parent(name, node_id);
 
         Ok(node_id)
     }
 
     /// Parse a wildcard pattern (e.g. `case _:`).
+    ///
+    /// The wildcard pattern matches any value but doesn't bind it to a name.
+    /// It's commonly used as the default case in match statements.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// wildcard_pattern: "_"
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Default case:
+    ///
+    /// ```python
+    /// match value:
+    ///     case 1:
+    ///         print("One")
+    ///     case _:
+    ///         print("Something else")
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// This method does not return errors under normal circumstances.
     #[allow(clippy::unnecessary_wraps)]
     fn parse_wildcard_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the span of the '_' token
@@ -157,7 +295,7 @@ impl Parser<'_> {
         let span = self.token_to_span(&token);
 
         // Consume the '_' token
-        let _ = self.advance();
+        self.skip();
 
         // Create a WildcardPattern node
         let wildcard_pattern = WildcardPattern::new(NodeID::placeholder(), span);
@@ -173,6 +311,49 @@ impl Parser<'_> {
     }
 
     /// Parse a sequence pattern (e.g. `case [a, b, *rest]:`).
+    ///
+    /// Sequence patterns match list-like structures. They can capture individual
+    /// elements and use a starred pattern to capture remaining elements.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// sequence_pattern: "[" [pattern_list] "]"
+    /// pattern_list: pattern ("," pattern)* ["," ["*" pattern]] [","]
+    ///             | "*" pattern [","]
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Fixed-length pattern:
+    ///
+    /// ```python
+    /// case [x, y]:
+    ///     print(f"Two elements: {x}, {y}")
+    /// ```
+    ///
+    /// With starred pattern:
+    ///
+    /// ```python
+    /// case [first, *rest]:
+    ///     print(f"First: {first}, Rest: {rest}")
+    /// ```
+    ///
+    /// Complex pattern:
+    ///
+    /// ```python
+    /// case [x, y, *middle, z]:
+    ///     print(f"Start: {x},{y}, Middle: {middle}, End: {z}")
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Missing `]` to close sequence
+    /// - Multiple starred patterns (only one allowed)
+    /// - Invalid pattern syntax
+    /// - Pattern parsing fails
     fn parse_sequence_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
@@ -199,7 +380,7 @@ impl Parser<'_> {
                         ));
                     }
 
-                    let _ = self.advance(); // consume '*'
+                    self.skip(); // consume '*'
                     starred = Some(self.parse_pattern()?);
                 } else {
                     patterns.push(self.parse_pattern()?);
@@ -207,7 +388,7 @@ impl Parser<'_> {
 
                 // Check if there are more patterns
                 if self.check(TokenKind::Comma) {
-                    let _ = self.advance(); // consume ','
+                    self.skip(); // consume ','
 
                     // Allow trailing comma
                     if self.check(TokenKind::RightBracket) {
@@ -241,17 +422,62 @@ impl Parser<'_> {
 
         // Set parent-child relationships
         for pattern in &patterns {
-            let _ = self.ast.set_parent(*pattern, node_id);
+            self.set_parent(*pattern, node_id);
         }
 
         if let Some(star_pattern) = starred {
-            let _ = self.ast.set_parent(star_pattern, node_id);
+            self.set_parent(star_pattern, node_id);
         }
 
         Ok(node_id)
     }
 
     /// Parse a mapping pattern (e.g. `case {"key": value, **rest}:`).
+    ///
+    /// Mapping patterns match dictionary-like structures. They can match specific
+    /// key-value pairs and use a double-starred pattern to capture remaining items.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// mapping_pattern: "{" [mapping_items] "}"
+    /// mapping_items: mapping_item ("," mapping_item)* ["," ["**" pattern]] [","]
+    ///              | "**" pattern [","]
+    /// mapping_item: expression ":" pattern
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Simple key-value pattern:
+    ///
+    /// ```python
+    /// case {"type": "error"}:
+    ///     handle_error()
+    /// ```
+    ///
+    /// Multiple keys:
+    ///
+    /// ```python
+    /// case {"name": name, "age": age}:
+    ///     print(f"{name} is {age} years old")
+    /// ```
+    ///
+    /// With double-starred pattern:
+    ///
+    /// ```python
+    /// case {"required": value, **rest}:
+    ///     print(f"Required: {value}, Rest: {rest}")
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Missing `}` to close mapping
+    /// - Multiple double-starred patterns (only one allowed)
+    /// - Missing `:` between key and value
+    /// - Invalid key expression
+    /// - Invalid value pattern
     fn parse_mapping_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
@@ -278,7 +504,7 @@ impl Parser<'_> {
                         ));
                     }
 
-                    let _ = self.advance(); // consume '**'
+                    self.skip(); // consume '**'
                     starred = Some(self.parse_pattern()?);
                 } else {
                     // Parse the key
@@ -295,7 +521,7 @@ impl Parser<'_> {
 
                 // Check if there are more pairs
                 if self.check(TokenKind::Comma) {
-                    let _ = self.advance(); // consume ','
+                    self.skip(); // consume ','
 
                     // Allow trailing comma
                     if self.check(TokenKind::RightBrace) {
@@ -326,18 +552,73 @@ impl Parser<'_> {
 
         // Set parent-child relationships
         for item in &items {
-            let _ = self.ast.set_parent(item.key, node_id);
-            let _ = self.ast.set_parent(item.value, node_id);
+            self.set_parent(item.key, node_id);
+            self.set_parent(item.value, node_id);
         }
 
         if let Some(star_pattern) = starred {
-            let _ = self.ast.set_parent(star_pattern, node_id);
+            self.set_parent(star_pattern, node_id);
         }
 
         Ok(node_id)
     }
 
-    /// Parse a class pattern (e.g. `case Point(x=0, y=0`):').
+    /// Parse a class pattern (e.g. `case Point(x=0, y=0):`).
+    ///
+    /// Class patterns match instances of classes by checking attributes. They support
+    /// both positional and keyword arguments, with positional arguments required to
+    /// come before keyword arguments.
+    ///
+    /// ## Grammar
+    ///
+    /// ```ebnf
+    /// class_pattern: identifier "(" [pattern_arguments] ")"
+    /// pattern_arguments: positional_patterns ["," keyword_patterns] [","]
+    ///                  | keyword_patterns [","]
+    /// positional_patterns: pattern ("," pattern)*
+    /// keyword_patterns: keyword_pattern ("," keyword_pattern)*
+    /// keyword_pattern: identifier "=" pattern
+    /// ```
+    ///
+    /// ## Examples
+    ///
+    /// Positional arguments:
+    ///
+    /// ```python
+    /// case Point(0, 0):
+    ///     print("Origin")
+    /// ```
+    ///
+    /// Keyword arguments:
+    ///
+    /// ```python
+    /// case Point(x=0, y=0):
+    ///     print("Origin with keywords")
+    /// ```
+    ///
+    /// Mixed arguments:
+    ///
+    /// ```python
+    /// case Point(x, y=0):
+    ///     print(f"Point on x-axis at {x}")
+    /// ```
+    ///
+    /// Nested patterns:
+    ///
+    /// ```python
+    /// case Rectangle(Point(x1, y1), Point(x2, y2)):
+    ///     print(f"Rectangle from ({x1},{y1}) to ({x2},{y2})")
+    /// ```
+    ///
+    /// ## Errors
+    ///
+    /// Returns [`ParseError`] if:
+    ///
+    /// - Class name is invalid
+    /// - Missing `(` or `)` around arguments
+    /// - Positional patterns appear after keyword patterns
+    /// - Invalid pattern syntax
+    /// - Missing `=` in keyword argument
     fn parse_class_pattern(&mut self) -> ParseResult<NodeID> {
         // Get the start position
         let start_pos = self.current_token().span.start;
@@ -365,17 +646,17 @@ impl Parser<'_> {
                     let name_str = name_token.lexeme.to_string();
 
                     // Create a Variable node for the name
-                    let variable = VariableIdent::new(name_str, NodeID::placeholder(), name_span);
+                    let variable = VariableExpr::new(name_str, NodeID::placeholder(), name_span);
 
                     // Add the variable node to the AST
                     let name_node_id = self.ast.alloc_node(
                         NodeKind::Expression,
-                        AnyNode::VariableIdent(variable),
+                        AnyNode::VariableExpr(variable),
                         name_span,
                     );
 
-                    let _ = self.advance(); // consume the identifier
-                    let _ = self.advance(); // consume the '=' token
+                    self.skip(); // consume the identifier
+                    self.skip(); // consume the '=' token
 
                     // Parse the pattern value
                     let pattern = self.parse_pattern()?;
@@ -398,7 +679,7 @@ impl Parser<'_> {
 
                 // Check if there are more arguments
                 if self.check(TokenKind::Comma) {
-                    let _ = self.advance(); // consume ','
+                    self.skip(); // consume ','
 
                     // Allow trailing comma
                     if self.check(TokenKind::RightParen) {
@@ -433,15 +714,15 @@ impl Parser<'_> {
             self.ast.alloc_node(NodeKind::Pattern, AnyNode::ClassPattern(class_pattern), span);
 
         // Set parent-child relationships
-        let _ = self.ast.set_parent(class_name, node_id);
+        self.set_parent(class_name, node_id);
 
         for pattern in &patterns {
-            let _ = self.ast.set_parent(*pattern, node_id);
+            self.set_parent(*pattern, node_id);
         }
 
         for keyword in &keywords {
-            let _ = self.ast.set_parent(keyword.name, node_id);
-            let _ = self.ast.set_parent(keyword.pattern, node_id);
+            self.set_parent(keyword.name, node_id);
+            self.set_parent(keyword.pattern, node_id);
         }
 
         Ok(node_id)
@@ -466,7 +747,7 @@ impl Parser<'_> {
         let start_pos = self.current_token().span.start;
 
         // Consume the 'match' token
-        let _ = self.advance();
+        self.skip();
 
         // Parse the subject expression
         let subject = self.parse_expression()?;
@@ -498,9 +779,7 @@ impl Parser<'_> {
             }
 
             // Skip newlines between case statements
-            while self.check(TokenKind::Newline) {
-                let _ = self.advance();
-            }
+            self.skip_newlines();
         }
 
         // Expect a dedent at the end of the match block
@@ -513,7 +792,8 @@ impl Parser<'_> {
         } else {
             // Use the end position of the last case statement
             let last_case = cases.last().unwrap();
-            self.ast.get_node(*last_case).unwrap().span.end
+
+            self.get_node_span(*last_case)?.end
         };
 
         // Create a span for the entire match statement
@@ -527,9 +807,9 @@ impl Parser<'_> {
             self.ast.alloc_node(NodeKind::Statement, AnyNode::MatchStmt(match_stmt), span);
 
         // Set parent-child relationships
-        let _ = self.ast.set_parent(subject, node_id);
+        self.set_parent(subject, node_id);
         for case in &cases {
-            let _ = self.ast.set_parent(*case, node_id);
+            self.set_parent(*case, node_id);
         }
 
         Ok(node_id)

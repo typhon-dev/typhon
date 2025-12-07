@@ -141,86 +141,86 @@ impl Parser<'_> {
 
         Ok(match op_kind {
             TokenKind::Plus => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Add
             }
             TokenKind::Minus => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Sub
             }
             TokenKind::Star => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Mul
             }
             TokenKind::Slash => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Div
             }
             TokenKind::DoubleSlash => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::FloorDiv
             }
             TokenKind::Percent => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Mod
             }
             TokenKind::DoubleStar => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Pow
             }
             TokenKind::LeftShift => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::LShift
             }
             TokenKind::RightShift => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::RShift
             }
             TokenKind::Ampersand => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::BitAnd
             }
             TokenKind::Pipe => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::BitOr
             }
             TokenKind::Caret => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::BitXor
             }
             TokenKind::Equal => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Eq
             }
             TokenKind::NotEqual => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::NotEq
             }
             TokenKind::LessThan => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Lt
             }
             TokenKind::LessEqual => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::LtEq
             }
             TokenKind::GreaterThan => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Gt
             }
             TokenKind::GreaterEqual => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::GtEq
             }
             TokenKind::In => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::In
             }
             TokenKind::Is => {
                 // Check for "is not"
-                let _ = self.advance(); // consume 'is'
+                self.skip(); // consume 'is'
                 if self.current_token().kind() == &TokenKind::Not {
-                    let _ = self.advance(); // consume 'not'
+                    self.skip(); // consume 'not'
                     BinaryOpKind::IsNot
                 } else {
                     BinaryOpKind::Is
@@ -228,9 +228,9 @@ impl Parser<'_> {
             }
             TokenKind::Not => {
                 // This must be "not in"
-                let _ = self.advance(); // consume 'not'
+                self.skip(); // consume 'not'
                 if self.current_token().kind() == &TokenKind::In {
-                    let _ = self.advance(); // consume 'in'
+                    self.skip(); // consume 'in'
                     BinaryOpKind::NotIn
                 } else {
                     return Err(ParseErrorBuilder::new()
@@ -243,11 +243,11 @@ impl Parser<'_> {
                 }
             }
             TokenKind::And => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::And
             }
             TokenKind::Or => {
-                let _ = self.advance();
+                self.skip();
                 BinaryOpKind::Or
             }
             _ => {

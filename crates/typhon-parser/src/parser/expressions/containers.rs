@@ -9,16 +9,17 @@ use crate::parser::Parser;
 impl Parser<'_> {
     /// Parse a list or list comprehension expression
     pub(crate) fn parse_list_or_list_comprehension(&mut self) -> ParseResult<NodeID> {
-        let start = self.current_token().span().start;
-        let _ = self.advance(); // Consume '['
+        // Consume '['
+        let bracket = self.consume(TokenKind::LeftBracket)?;
 
         // Check if it's an empty list
-        if self.check(TokenKind::RightBracket) {
-            let _ = self.advance(); // Consume ']'
-            let end = self.current_token().span().end;
-
+        if self.expect(TokenKind::RightBracket).is_ok() {
             // Create an empty list
-            return Ok(self.create_list_literal(Vec::new(), start, end));
+            return Ok(self.create_list_literal(
+                Vec::new(),
+                bracket.span().start,
+                self.current_token().span().end,
+            ));
         }
 
         // Not empty, parse the first element
@@ -27,7 +28,7 @@ impl Parser<'_> {
         // Check if it's a list comprehension
         if self.check(TokenKind::For) {
             // It's a list comprehension
-            return self.parse_list_comprehension(first_expr, start);
+            return self.parse_list_comprehension(first_expr, bracket.span().start);
         }
 
         // Create the list with the first element
@@ -35,36 +36,32 @@ impl Parser<'_> {
         elements.push(first_expr);
 
         // Parse additional elements
-        while self.check(TokenKind::Comma) {
-            let _ = self.advance(); // Consume ','
-
+        while self.expect(TokenKind::Comma).is_ok() {
             // Check if we're at the end (trailing comma)
             if self.check(TokenKind::RightBracket) {
                 break;
             }
 
             // Parse the next element
-            let element = self.parse_expression()?;
-            elements.push(element);
+            elements.push(self.parse_expression()?);
         }
 
         // Expect ']'
-        self.expect(TokenKind::RightBracket)?;
-        let end = self.current_token().span().end;
+        let closing_bracket = self.consume(TokenKind::RightBracket)?;
 
         // Create the list literal
-        Ok(self.create_list_literal(elements, start, end))
+        Ok(self.create_list_literal(elements, bracket.span().start, closing_bracket.span().end))
     }
 
     /// Parse a set or dictionary literal
     pub(crate) fn parse_set_or_dict_literal(&mut self) -> ParseResult<NodeID> {
         // Empty dictionary or set
         let start = self.current_token().span().start;
-        let _ = self.advance(); // Consume '{'
+        self.skip(); // Consume '{'
 
         // Check if it's an empty dictionary or set
         if self.check(TokenKind::RightBrace) {
-            let _ = self.advance(); // Consume '}'
+            self.skip(); // Consume '}'
             let end = self.current_token().span().end;
 
             // Determine if it's an empty set or an empty dictionary
@@ -73,12 +70,12 @@ impl Parser<'_> {
         }
 
         // Not empty, parse the first key-value pair or set element
-        let first_expr = self.parse_expression()?;
+        let first_expr = self.parse_comprehension_condition()?;
 
         // Check if it's a dictionary or a set
         if self.check(TokenKind::Colon) {
             // It's a dictionary
-            let _ = self.advance(); // Consume ':'
+            self.skip(); // Consume ':'
 
             // Parse the value
             let value = self.parse_expression()?;
@@ -95,7 +92,7 @@ impl Parser<'_> {
 
             // Parse additional key-value pairs
             while self.check(TokenKind::Comma) {
-                let _ = self.advance(); // Consume ','
+                self.skip(); // Consume ','
 
                 // Check if we're at the end
                 if self.check(TokenKind::RightBrace) {
@@ -135,7 +132,7 @@ impl Parser<'_> {
 
             // Parse additional elements
             while self.check(TokenKind::Comma) {
-                let _ = self.advance(); // Consume ','
+                self.skip(); // Consume ','
 
                 // Check if we're at the end (trailing comma)
                 if self.check(TokenKind::RightBrace) {

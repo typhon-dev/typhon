@@ -202,17 +202,17 @@ impl RaiseStmt {
         Self { id, parent: None, exception: None, cause: None, span }
     }
 
-    /// Sets the exception of this raise statement
+    /// Sets the cause of this raise statement
     #[must_use]
-    pub const fn with_exception(mut self, exception: NodeID) -> Self {
-        self.exception = Some(exception);
+    pub const fn with_cause(mut self, cause: Option<NodeID>) -> Self {
+        self.cause = cause;
         self
     }
 
-    /// Sets the cause of this raise statement
+    /// Sets the exception of this raise statement
     #[must_use]
-    pub const fn with_cause(mut self, cause: NodeID) -> Self {
-        self.cause = Some(cause);
+    pub const fn with_exception(mut self, exception: Option<NodeID>) -> Self {
+        self.exception = exception;
         self
     }
 }
