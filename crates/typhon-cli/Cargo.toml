@@ -1,25 +1,21 @@
 lints.workspace = true
 
+[[bin]]
+  name = "typhon"
+  path = "src/main.rs"
+
 [dependencies]
   # Core dependencies
-  anyhow.workspace     = true
-  log.workspace        = true
-  serde_json.workspace = true
-  thiserror.workspace  = true
+  anyhow.workspace = true
 
   # CLI-specific dependencies
   clap.workspace       = true # Command-line argument parsing
   env_logger.workspace = true # Logging implementation
-  serde.workspace      = true
-  tempfile.workspace   = true # Temporary file handling
-
-  # General utilities
-  inkwell.workspace = true # LLVM bindings
 
   # Internal crates
-  typhon-compiler.workspace = true
-  typhon-parser.workspace   = true
-  typhon-runtime.workspace  = true
+  typhon-parser.workspace  = true
+  typhon-repl.workspace    = true
+  typhon-runtime.workspace = true
 
 [package]
   authors.workspace    = true

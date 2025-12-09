@@ -2028,6 +2028,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "typhon-analyzer"
+version = "0.1.0"
+dependencies = [
+ "bitflags 2.10.0",
+ "rustc-hash",
+ "thiserror",
+ "typhon-ast",
+ "typhon-parser",
+ "typhon-source",
+]
+
+[[package]]
 name = "typhon-ast"
 version = "0.1.0"
 dependencies = [
@@ -2042,13 +2054,6 @@ dependencies = [
  "anyhow",
  "clap 4.5.53",
  "env_logger",
- "inkwell",
- "log",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "typhon-compiler",
  "typhon-parser",
  "typhon-repl",
  "typhon-runtime",
@@ -2120,7 +2125,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "typhon-compiler",
  "typhon-runtime",
 ]
 

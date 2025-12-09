@@ -14,8 +14,7 @@ lints.workspace = true
   serde.workspace      = true
 
   # Internal crates
-  typhon-compiler.workspace = true
-  typhon-runtime.workspace  = true
+  typhon-runtime.workspace = true
 
 [package]
   authors.workspace    = true
