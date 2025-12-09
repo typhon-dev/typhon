@@ -1,9 +1,9 @@
 <!--
 This is a template for [Documenting Architecture Decisions - Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
 
-You can use [adr-tools](https://github.com/npryce/adr-tools) for managing the ADR files.
+You can use [adr-tools](https://github.com/npryce/adr-tools) for managing the TLDR files.
 
-In each ADR file, write the following sections.
+In each TLDR file, write the following sections.
 -->
 # NUMBER. TITLE
 
@@ -12,7 +12,7 @@ Date: DATE
 ## Status
 <!--
 A decision may be "proposed" if the project stakeholders haven't agreed with it yet, or "accepted" once it is agreed.
-If a later ADR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to
+If a later TLDR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to
 its replacement.
 -->
 What is the status, such as proposed, accepted, rejected, deprecated, superseded, etc.?

@@ -264,11 +264,6 @@ impl Parser<'_> {
 
             // Skip newlines between statements
             self.skip_newlines();
-
-            // If we hit a dedent or EOF, we're done with this block
-            if self.check(TokenKind::Dedent) || self.check(TokenKind::EndOfFile) {
-                break;
-            }
         }
 
         Ok(statements)

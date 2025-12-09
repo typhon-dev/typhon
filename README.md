@@ -113,7 +113,7 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribut
 
 ## License
 
-Typhon is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+See the [LICENSE](LICENSE) file for details.
 
 ## Community and Support
 

@@ -64,32 +64,32 @@ impl fmt::Display for DiagnosticLevel {
 /// Lexer error kind
 #[derive(Clone, Copy, Debug)]
 pub enum LexErrorKind {
-    /// Invalid indentation
-    InvalidIndentation { expected: usize, found: usize },
-    /// Invalid character
-    InvalidCharacter(char),
-    /// Invalid token found
-    InvalidToken(char),
-    /// Invalid escape character in a string literal
-    InvalidEscapeChar(char),
-    /// Unexpected end of file
-    UnexpectedEOF,
-    /// String literal does not have a closing quote
-    InvalidStringEnding,
-    /// Number literal is malformed
-    InvalidNumber,
-    /// Hexadecimal number literal is malformed
-    InvalidHexNumber,
-    /// Indentation is inconsistent
-    InconsistentIndentation,
-    /// Docstring does not have a proper ending
-    InvalidDocStringEnding,
     /// Expected indentation but found something else
     ExpectedIndentation,
-    /// Tab character found in indentation
-    TabInIndentation,
+    /// Indentation is inconsistent
+    InconsistentIndentation,
+    /// Invalid character
+    InvalidCharacter(char),
+    /// Docstring does not have a proper ending
+    InvalidDocStringEnding,
+    /// Invalid escape character in a string literal
+    InvalidEscapeChar(char),
+    /// Hexadecimal number literal is malformed
+    InvalidHexNumber,
+    /// Invalid indentation
+    InvalidIndentation { expected: usize, found: usize },
+    /// Number literal is malformed
+    InvalidNumber,
+    /// String literal does not have a closing quote
+    InvalidStringEnding,
+    /// Invalid token found
+    InvalidToken(char),
     /// Invalid Unicode escape sequence
     InvalidUnicodeEscape,
+    /// Tab character found in indentation
+    TabInIndentation,
+    /// Unexpected end of file
+    UnexpectedEOF,
 }
 
 /// Lexer error type

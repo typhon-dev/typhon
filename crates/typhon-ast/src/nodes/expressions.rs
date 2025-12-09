@@ -675,6 +675,7 @@ pub struct SliceExpr {
 impl SliceExpr {
     /// Creates a new slice expression
     #[must_use]
+    #[allow(clippy::similar_names)]
     pub const fn new(
         start: Option<NodeID>,
         stop: Option<NodeID>,

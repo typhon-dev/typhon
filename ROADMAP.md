@@ -90,18 +90,26 @@
 | --------------------------- | ------------- | -------------------------------------------------------------- |
 | Symbol table implementation | ✅ Complete    | [126e734](https://github.com/typhon-dev/typhon/commit/126e734) |
 | Scope handling              | ✅ Complete    | [126e734](https://github.com/typhon-dev/typhon/commit/126e734) |
+| Closure analysis            | ✅ Complete    |                                                                |
 | Import resolution           | 🚫 Not Started |                                                                |
 | Forward references          | 🚫 Not Started |                                                                |
 
 ### Type checking system
 
-| Feature                    | Status        | Commit                                                         |
-| -------------------------- | ------------- | -------------------------------------------------------------- |
-| Type compatibility rules   | ✅ Complete    | [126e734](https://github.com/typhon-dev/typhon/commit/126e734) |
-| Subtyping relationships    | 🚫 Not Started |                                                                |
-| Type narrowing             | 🚫 Not Started |                                                                |
-| Generic type instantiation | 🚫 Not Started |                                                                |
-| Error reporting            | 🚫 Not Started |                                                                |
+| Feature                                | Status        | Commit                                                         |
+| -------------------------------------- | ------------- | -------------------------------------------------------------- |
+| Type compatibility rules               | ✅ Complete    | [126e734](https://github.com/typhon-dev/typhon/commit/126e734) |
+| Type inference engine                  | ✅ Complete    |                                                                |
+| Constraint-based solving               | ✅ Complete    |                                                                |
+| Semantic validation                    | ✅ Complete    |                                                                |
+| Control flow analysis (CFG)            | ✅ Complete    |                                                                |
+| Definite assignment analysis           | ✅ Complete    |                                                                |
+| Dead code detection                    | ✅ Complete    |                                                                |
+| Method lookup (hardcoded built-ins)    | ✅ Complete    |                                                                |
+| Method lookup (metadata-driven system) | 🚫 Not Started |                                                                |
+| Subtyping relationships                | 🚫 Not Started |                                                                |
+| Type narrowing                         | 🚫 Not Started |                                                                |
+| Generic type instantiation             | 🚫 Not Started |                                                                |
 
 ## Middle-end
 
@@ -132,9 +140,10 @@
 
 | Feature               | Status        | Commit |
 | --------------------- | ------------- | ------ |
-| Data flow analysis    | 🚫 Not Started |        |
-| Control flow analysis | 🚫 Not Started |        |
-| Dead code detection   | 🚫 Not Started |        |
+| Constant propagation  | 🚫 Not Started |        |
+| Reachability analysis | 🚫 Not Started |        |
+| Alias analysis        | 🚫 Not Started |        |
+| Taint analysis        | 🚫 Not Started |        |
 
 ### Optimization passes
 

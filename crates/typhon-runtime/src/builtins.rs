@@ -9,9 +9,12 @@ pub fn print(args: &[Value]) -> Result<Value, RuntimeError> {
         if i > 0 {
             print!(" ");
         }
+
         print!("{arg}");
     }
+
     println!();
+
     Ok(Value::None)
 }
 

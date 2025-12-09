@@ -43,6 +43,8 @@ See the [test organization guidelines documentation](CONVENTIONS.md#test-organiz
 
 ## Build Commands
 
+⚠️ **CRITICAL**: Run all `cargo` commands from the workspace root (use `--package <crate name>` for targeted commands). **DO NOT** attempt to `cd` into sub-packages. ⚠️
+
 - `cargo clippy` - Checks all packages to catch common mistakes and improve Rust code
 - `cargo clippy --package typhon-cli` - Checks a specific package to catch common mistakes and improve Rust code
 - `cargo check` - Analyze all packages and report errors, but don't build object files
@@ -57,14 +59,17 @@ See the [test organization guidelines documentation](CONVENTIONS.md#test-organiz
 ```shell
 typhon/
 └── crates/
+    ├── typhon-analyzer/      # Semantic analysis infrastructure
+    ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
     ├── typhon-cli/           # Command-line interface
     ├── typhon-compiler/      # Core compiler components
     │   └── src/
     │       ├── backend/      # LLVM IR generation, code generation
     │       └── typesystem/   # Type checking and inference
     ├── typhon-lsp/           # Language Server Protocol implementation
-    ├── typhon-parser/        # Lexer, parser, AST
+    ├── typhon-parser/        # Lexer, parser
     ├── typhon-repl/          # Interactive REPL
     ├── typhon-runtime/       # Runtime support
+    ├── typhon-source/        # Source file handling and position tracking
     └── typhon-stdlib/        # Standard library
 ```

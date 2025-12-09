@@ -110,6 +110,8 @@ use crate::common::Span;
 
 ### Code Organization
 
+#### Module Organization
+
 Module members should be organized in a consistent, logical structure following these principles:
 
 - Organize module members into groups in the following order:
@@ -126,7 +128,7 @@ Module members should be organized in a consistent, logical structure following 
 - Place methods and implementations immediately after their type definitions
 - Use consistent spacing between sections (one blank line)
 
-#### Example file structure
+Example file structure:
 
 ```rust
 // Copyright and license header
@@ -206,6 +208,122 @@ mod tests {
     fn test_public_function() {
         // Test implementation
     }
+}
+```
+
+#### Method Organization Within `impl` Blocks
+
+Within `impl` blocks, methods should be organized in the following order:
+
+1. **Constructor** - The `new()` method or other constructor methods
+2. **Public methods** - All public instance methods (e.g., `pub fn method(&self)`)
+3. **Private instance methods** - All private instance methods (e.g., `fn helper(&mut self)`)
+4. **Public associated functions** - Public functions that don't take `self` (e.g., `pub fn from_parts(...)`)
+5. **Private associated functions** - Private functions that don't take `self` (e.g., `fn internal_helper(...)`)
+
+This organization ensures that the most important and frequently used methods (constructors and
+public methods) appear first, followed by implementation details. Associated functions (also called
+"static methods") that operate on the type itself rather than instances are placed after all
+instance methods.
+
+Example:
+
+```rust
+impl MyStruct {
+    /// Constructor
+    pub fn new() -> Self {
+        Self { /* ... */ }
+    }
+
+    /// Public method
+    pub fn process(&mut self) {
+        self.internal_step();
+    }
+
+    /// Another public method
+    pub fn get_value(&self) -> i32 {
+        self.value
+    }
+
+    /// Private instance method
+    fn internal_step(&mut self) {
+        Self::helper_function(self.value);
+    }
+
+    /// Public associated function
+    pub fn from_config(config: Config) -> Self {
+        Self { /* ... */ }
+    }
+
+    /// Private associated function
+    fn helper_function(value: i32) -> i32 {
+        value * 2
+    }
+}
+```
+
+#### Enum Variants and Match Arms
+
+Enum variants and match arms should be organized alphabetically to improve readability and
+maintainability, with the following exceptions:
+
+- **Default/catch-all variants** (e.g., `_`, `None`, `Other`) should appear last
+- **Semantically ordered variants** (e.g., priority levels, lifecycle stages) may deviate from
+  alphabetical order when the semantic ordering provides clearer intent
+
+Example of alphabetically sorted enum:
+
+```rust
+pub enum TokenKind {
+    /// Arrow operator (`->`)
+    Arrow,
+    /// Colon (`:`)
+    Colon,
+    /// Comma (`,`)
+    Comma,
+    /// Identifier token
+    Identifier,
+    /// Left brace (`{`)
+    LeftBrace,
+    /// Left parenthesis (`(`)
+    LeftParen,
+    /// Numeric literal
+    Number,
+    /// Right brace (`}`)
+    RightBrace,
+    /// Right parenthesis (`)`)
+    RightParen,
+    /// Semicolon (`;`)
+    Semicolon,
+}
+```
+
+Example of alphabetically sorted match arms:
+
+```rust
+match token_kind {
+    TokenKind::Arrow => self.handle_arrow(),
+    TokenKind::Colon => self.handle_colon(),
+    TokenKind::Comma => self.handle_comma(),
+    TokenKind::Identifier => self.handle_identifier(),
+    TokenKind::LeftBrace => self.handle_left_brace(),
+    TokenKind::LeftParen => self.handle_left_paren(),
+    TokenKind::Number => self.handle_number(),
+    TokenKind::RightBrace => self.handle_right_brace(),
+    TokenKind::RightParen => self.handle_right_paren(),
+    TokenKind::Semicolon => self.handle_semicolon(),
+    _ => self.handle_unknown(),
+}
+```
+
+Example of semantically ordered enum (priority levels):
+
+```rust
+pub enum Priority {
+    Critical,
+    High,
+    Medium,
+    Low,
 }
 ```
 

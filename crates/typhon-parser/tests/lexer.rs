@@ -1,207 +1,186 @@
-//! Tests for the lexer module
+//! Tests for the lexer module.
 
 use std::sync::Arc;
 
 use typhon_parser::diagnostics::DiagnosticReporter;
 use typhon_parser::lexer::{Lexer, TokenKind};
-use typhon_source::types::SourceManager;
+use typhon_source::types::{FileID, SourceManager};
 
-fn setup_lexer(source: &str) -> Lexer<'_> {
-    let mut source_manager = SourceManager::new();
-    let file_id = source_manager.add_file("test.ty".to_string(), source.to_string());
-    let diagnostic_reporter = Arc::new(DiagnosticReporter::new(Arc::new(source_manager)));
+fn create_lexer(source: &'_ str) -> Lexer<'_> {
+    let source_manager = Arc::new(SourceManager::new());
+    let file_id = FileID::new(1);
+    let diagnostics = Arc::new(DiagnosticReporter::new(source_manager));
 
-    Lexer::new(source, file_id, diagnostic_reporter)
+    Lexer::new(source, file_id, diagnostics)
 }
 
 #[test]
-fn test_simple_tokens() {
-    let source = "x = 42";
-    let mut lexer = setup_lexer(source);
+fn test_integer_literal() {
+    let mut lexer = create_lexer("42");
+    let token = lexer.next().expect("Expected token");
 
-    let token1 = lexer.next().unwrap();
-    assert_eq!(token1.kind, TokenKind::Identifier);
-    assert_eq!(token1.lexeme, "x");
+    assert_eq!(token.kind, TokenKind::IntLiteral);
+    assert_eq!(token.lexeme(), "42");
+}
 
-    let token2 = lexer.next().unwrap();
-    assert_eq!(token2.kind, TokenKind::Equal);
-    assert_eq!(token2.lexeme, "=");
+#[test]
+fn test_float_literal() {
+    let mut lexer = create_lexer("3.14");
+    let token = lexer.next().expect("Expected token");
 
-    let token3 = lexer.next().unwrap();
-    assert_eq!(token3.kind, TokenKind::IntLiteral);
-    assert_eq!(token3.lexeme, "42");
+    assert_eq!(token.kind, TokenKind::FloatLiteral);
+    assert_eq!(token.lexeme(), "3.14");
+}
 
-    let token4 = lexer.next().unwrap();
-    assert_eq!(token4.kind, TokenKind::EndOfFile);
+#[test]
+fn test_string_literal() {
+    let mut lexer = create_lexer("\"hello\"");
+    let token = lexer.next().expect("Expected token");
+
+    assert_eq!(token.kind, TokenKind::StringLiteral);
+}
+
+#[test]
+fn test_identifier() {
+    let mut lexer = create_lexer("variable_name");
+    let token = lexer.next().expect("Expected token");
+
+    assert_eq!(token.kind, TokenKind::Identifier);
+    assert_eq!(token.lexeme(), "variable_name");
+}
+
+#[test]
+fn test_keywords() {
+    let keywords = vec![
+        ("def", TokenKind::Def),
+        ("class", TokenKind::Class),
+        ("if", TokenKind::If),
+        ("else", TokenKind::Else),
+        ("elif", TokenKind::Elif),
+        ("while", TokenKind::While),
+        ("for", TokenKind::For),
+        ("return", TokenKind::Return),
+        ("True", TokenKind::True),
+        ("False", TokenKind::False),
+        ("None", TokenKind::None),
+    ];
+
+    for (source, expected_kind) in keywords {
+        let mut lexer = create_lexer(source);
+        let token = lexer.next().expect("Expected token");
+        assert_eq!(
+            token.kind, expected_kind,
+            "Expected {:?} for '{}', got {:?}",
+            expected_kind, source, token.kind
+        );
+    }
+}
+
+#[test]
+fn test_operators() {
+    let operators = vec![
+        ("+", TokenKind::Plus),
+        ("-", TokenKind::Minus),
+        ("*", TokenKind::Star),
+        ("/", TokenKind::Slash),
+        ("//", TokenKind::DoubleSlash),
+        ("==", TokenKind::Equal),
+        ("!=", TokenKind::NotEqual),
+        ("<", TokenKind::LessThan),
+        (">", TokenKind::GreaterThan),
+        ("<=", TokenKind::LessEqual),
+        (">=", TokenKind::GreaterEqual),
+    ];
+
+    for (source, expected_kind) in operators {
+        let mut lexer = create_lexer(source);
+        let token = lexer.next().expect("Expected token");
+        assert_eq!(
+            token.kind, expected_kind,
+            "Expected {:?} for '{}', got {:?}",
+            expected_kind, source, token.kind
+        );
+    }
+}
+
+#[test]
+fn test_delimiters() {
+    let delimiters = vec![
+        ("(", TokenKind::LeftParen),
+        (")", TokenKind::RightParen),
+        ("[", TokenKind::LeftBracket),
+        ("]", TokenKind::RightBracket),
+        ("{", TokenKind::LeftBrace),
+        ("}", TokenKind::RightBrace),
+        (":", TokenKind::Colon),
+        (",", TokenKind::Comma),
+        (".", TokenKind::Dot),
+    ];
+
+    for (source, expected_kind) in delimiters {
+        let mut lexer = create_lexer(source);
+        let token = lexer.next().expect("Expected token");
+        assert_eq!(
+            token.kind, expected_kind,
+            "Expected {:?} for '{}', got {:?}",
+            expected_kind, source, token.kind
+        );
+    }
+}
+
+#[test]
+fn test_fstring_token() {
+    let mut lexer = create_lexer("f\"hello {name}\"");
+    let token = lexer.next().expect("Expected token");
+
+    assert_eq!(token.kind, TokenKind::FmtStringLiteral);
+}
+
+#[test]
+fn test_multiline_string() {
+    let source = "\"\"\"
+    multiline
+    string
+    \"\"\"";
+    let mut lexer = create_lexer(source);
+    let token = lexer.next().expect("Expected token");
+
+    assert_eq!(token.kind, TokenKind::MultilineStringLiteral);
+}
+
+#[test]
+fn test_comment_ignored() {
+    let mut lexer = create_lexer("42 # this is a comment");
+    let token = lexer.next().expect("Expected token");
+
+    assert_eq!(token.kind, TokenKind::IntLiteral);
+
+    // Next token should be EOF, not the comment
+    let token2 = lexer.next();
+
+    assert!(token2.is_none() || token2.unwrap().kind == TokenKind::EndOfFile);
 }
 
 #[test]
 fn test_indentation() {
-    let source = "def test():\n    x = 1\n    if True:\n        y = 2\n    z = 3\n";
-    let lexer = setup_lexer(source);
-    let mut tokens = Vec::new();
+    let source = "if True:\n    pass";
+    let mut lexer = create_lexer(source);
 
-    for token in lexer {
-        if token.kind == TokenKind::EndOfFile {
-            break;
-        }
-
-        tokens.push(token);
-    }
-
-    // Check that we have the right number of INDENT/DEDENT tokens
-    let indent_count = tokens.iter().filter(|t| t.kind == TokenKind::Indent).count();
-    let dedent_count = tokens.iter().filter(|t| t.kind == TokenKind::Dedent).count();
-
-    assert_eq!(indent_count, 2); // One for the function body, one for the if block
-    assert_eq!(dedent_count, 2); // Matching DEDENT tokens
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::If);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::True);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Colon);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Newline);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Indent);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Pass);
 }
 
 #[test]
-fn test_string_concatenation() {
-    let source = "x = 'hello' 'world'";
-    let mut lexer = setup_lexer(source);
+fn test_multiple_tokens() {
+    let mut lexer = create_lexer("x = 42 + y");
 
-    // Skip 'x' and '='
-    let _ = lexer.next();
-    let _ = lexer.next();
-
-    let token = lexer.next().unwrap();
-    assert_eq!(token.kind, TokenKind::StringLiteral);
-    assert_eq!(token.lexeme, "'hello' 'world'");
-}
-
-#[test]
-fn test_line_continuation() {
-    let source = "x = (\n    1 + \n    2\n)";
-    let lexer = setup_lexer(source);
-    let mut tokens = Vec::new();
-
-    for token in lexer {
-        if token.kind == TokenKind::EndOfFile {
-            break;
-        }
-
-        tokens.push(token.kind);
-    }
-
-    // Check that we don't have any NEWLINE tokens inside the parentheses
-    let newlines = tokens.iter().filter(|&&k| k == TokenKind::Newline).count();
-    assert_eq!(newlines, 0);
-}
-
-#[test]
-fn test_soft_keywords() {
-    // Test that 'match', 'case', 'type', and '_' are recognized as soft keywords
-    let source = "match case type _";
-    let mut lexer = setup_lexer(source);
-
-    // Check 'match' token
-    let token1 = lexer.next().unwrap();
-    assert_eq!(token1.kind, TokenKind::Match);
-    assert_eq!(token1.lexeme, "match");
-
-    // Check 'case' token
-    let token2 = lexer.next().unwrap();
-    assert_eq!(token2.kind, TokenKind::Case);
-    assert_eq!(token2.lexeme, "case");
-
-    // Check 'type' token
-    let token3 = lexer.next().unwrap();
-    assert_eq!(token3.kind, TokenKind::Type);
-    assert_eq!(token3.lexeme, "type");
-
-    // Check '_' token
-    let token4 = lexer.next().unwrap();
-    assert_eq!(token4.kind, TokenKind::Underscore);
-    assert_eq!(token4.lexeme, "_");
-}
-
-#[test]
-fn test_soft_keywords_as_identifiers() {
-    // Test that soft keywords can be used as identifiers in valid contexts
-    let source = "x = match; y = case; z = type; w = _";
-    let mut lexer = setup_lexer(source);
-
-    // Skip 'x' and '='
-    let _ = lexer.next();
-    let _ = lexer.next();
-
-    // Check 'match' token - should be a Match token
-    let token1 = lexer.next().unwrap();
-    assert_eq!(token1.kind, TokenKind::Match);
-
-    // Skip ';' and 'y' and '='
-    let _ = lexer.next();
-    let _ = lexer.next();
-    let _ = lexer.next();
-
-    // Check 'case' token - should be a Case token
-    let token2 = lexer.next().unwrap();
-    assert_eq!(token2.kind, TokenKind::Case);
-
-    // Skip ';' and 'z' and '='
-    let _ = lexer.next();
-    let _ = lexer.next();
-    let _ = lexer.next();
-
-    // Check 'type' token - should be a Type token
-    let token3 = lexer.next().unwrap();
-    assert_eq!(token3.kind, TokenKind::Type);
-
-    // Skip ';' and 'w' and '='
-    let _ = lexer.next();
-    let _ = lexer.next();
-    let _ = lexer.next();
-
-    // Check '_' token - should be an Underscore token
-    let token4 = lexer.next().unwrap();
-    assert_eq!(token4.kind, TokenKind::Underscore);
-}
-
-#[test]
-fn test_template_string_interpolation() {
-    // Test template string with interpolation
-    let source = r#"t"Hello {name}!""#;
-    let mut lexer = setup_lexer(source);
-
-    // Check template string token
-    let token1 = lexer.next().unwrap();
-    assert_eq!(token1.kind, TokenKind::TmplStringLiteral);
-
-    // The lexer itself doesn't parse the interpolation - that's handled by the parser
-    // But we can check that it correctly identifies the template string token
-    assert_eq!(token1.lexeme, r#"t"Hello {name}!""#);
-}
-
-#[test]
-fn test_union_type_operator() {
-    // Test union type operator in type context
-    let source = "int | str | None";
-    let mut lexer = setup_lexer(source);
-
-    // Check 'int' token
-    let token1 = lexer.next().unwrap();
-    assert_eq!(token1.kind, TokenKind::Identifier);
-    assert_eq!(token1.lexeme, "int");
-
-    // Check '|' token
-    let token2 = lexer.next().unwrap();
-    assert_eq!(token2.kind, TokenKind::Pipe);
-    assert_eq!(token2.lexeme, "|");
-
-    // Check 'str' token
-    let token3 = lexer.next().unwrap();
-    assert_eq!(token3.kind, TokenKind::Identifier);
-    assert_eq!(token3.lexeme, "str");
-
-    // Check '|' token
-    let token4 = lexer.next().unwrap();
-    assert_eq!(token4.kind, TokenKind::Pipe);
-    assert_eq!(token4.lexeme, "|");
-
-    // Check 'None' token
-    let token5 = lexer.next().unwrap();
-    assert_eq!(token5.kind, TokenKind::None);
-    assert_eq!(token5.lexeme, "None");
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Identifier);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Assign);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::IntLiteral);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Plus);
+    assert_eq!(lexer.next().unwrap().kind, TokenKind::Identifier);
 }

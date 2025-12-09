@@ -213,6 +213,10 @@ pub trait Visitor<T> {
     /// ## Returns
     ///
     /// A result containing a vector of results, or the first error encountered
+    ///
+    /// ## Errors
+    ///
+    /// Returns the first `VisitorError` encountered during traversal.
     fn visit_list(&mut self, node_ids: &[NodeID]) -> VisitorResult<Vec<T>> {
         node_ids.iter().map(|&id| self.try_visit(id)).collect()
     }
@@ -306,17 +310,29 @@ pub trait Visitor<T> {
 /// transformations that require stateful tracking.
 pub trait MutVisitor<T> {
     /// Helper method to try visiting a node
+    ///
+    /// ## Errors
+    ///
+    /// Returns a `VisitorError` if the visit fails.
     fn try_visit(&mut self, node_id: NodeID) -> VisitorResult<T> {
         self.visit(node_id)
             .ok_or_else(|| VisitorError::Custom(format!("Failed to visit node {node_id}")))
     }
 
     /// Helper method to try visiting an optional node
+    ///
+    /// ## Errors
+    ///
+    /// Returns a `VisitorError` if the visit fails.
     fn try_visit_opt(&mut self, node_id_opt: Option<NodeID>) -> VisitorResult<Option<T>> {
         node_id_opt.map_or_else(|| Ok(None), |node_id| self.try_visit(node_id).map(Some))
     }
 
     /// Helper method to visit a list of nodes and collect results
+    ///
+    /// ## Errors
+    ///
+    /// Returns the first `VisitorError` encountered during traversal.
     fn visit_list(&mut self, node_ids: &[NodeID]) -> VisitorResult<Vec<T>> {
         node_ids.iter().map(|&id| self.try_visit(id)).collect()
     }

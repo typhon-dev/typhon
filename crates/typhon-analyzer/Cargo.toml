@@ -1,0 +1,24 @@
+lints.workspace = true
+
+[dependencies]
+  bitflags.workspace   = true
+  rustc-hash.workspace = true
+  thiserror.workspace  = true
+
+  typhon-ast.workspace    = true
+  typhon-source.workspace = true
+
+[dev-dependencies]
+  typhon-parser.workspace = true
+
+[package]
+  authors.workspace    = true
+  categories           = ["compilers", "development-tools"]
+  description          = "Semantic analysis for the Typhon programming language"
+  edition.workspace    = true
+  keywords             = ["compiler", "semantic-analysis", "type-checker", "typhon"]
+  license.workspace    = true
+  name                 = "typhon-analyzer"
+  readme               = "README.md"
+  repository.workspace = true
+  version.workspace    = true
