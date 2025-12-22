@@ -9,7 +9,6 @@ updates:
       interval: weekly
     commit-message:
       prefix: ":dependabot: :package: chore(deps)"
-      include: scope
     groups:
       cargo:
         update-types:
@@ -21,7 +20,6 @@ updates:
       interval: weekly
     commit-message:
       prefix: ":dependabot: :crab: chore(deps)"
-      include: scope
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,7 +27,6 @@ updates:
       interval: weekly
     commit-message:
       prefix: ":dependabot: :rocket: chore(deps)"
-      include: scope
     groups:
       actions:
         update-types:
