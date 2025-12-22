@@ -1,0 +1,27 @@
+lints.workspace = true
+
+[dependencies]
+  bitflags.workspace   = true
+  indexmap.workspace   = true
+  petgraph.workspace   = true
+  rustc-hash.workspace = true
+  thiserror.workspace  = true
+
+  typhon-mir.workspace = true
+
+[dev-dependencies]
+  rstest.workspace = true
+
+  typhon-source.workspace = true
+
+[package]
+  authors.workspace    = true
+  categories           = ["compilers", "development-tools"]
+  description          = "MIR optimization passes for the Typhon compiler"
+  edition.workspace    = true
+  keywords             = ["compiler", "mir", "optimization", "ssa", "typhon"]
+  license.workspace    = true
+  name                 = "typhon-mir-optimizer"
+  readme               = "README.md"
+  repository.workspace = true
+  version.workspace    = true

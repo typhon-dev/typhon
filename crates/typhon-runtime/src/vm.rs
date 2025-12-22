@@ -50,6 +50,7 @@ pub enum OpCode {
 }
 
 /// A frame in the call stack.
+#[derive(Debug)]
 struct Frame {
     /// Function being executed.
     function: Rc<Function>,
@@ -60,6 +61,7 @@ struct Frame {
 }
 
 /// The Typhon virtual machine.
+#[derive(Debug)]
 pub struct VM {
     /// Stack of values.
     stack: Vec<Value>,

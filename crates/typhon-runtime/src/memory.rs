@@ -32,6 +32,7 @@ impl Default for RefCounter {
 }
 
 /// Memory manager for Typhon objects.
+#[derive(Debug)]
 pub struct MemoryManager {
     // Placeholder for now
 }

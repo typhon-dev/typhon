@@ -346,6 +346,7 @@ impl MutVisitor<()> for NameResolverVisitor<'_> {
                 for child_id in node.data.children() {
                     let _ = self.visit(child_id);
                 }
+
                 Some(())
             }
             NodeKind::Statement => {
@@ -366,6 +367,7 @@ impl MutVisitor<()> for NameResolverVisitor<'_> {
                 for child_id in node.data.children() {
                     let _ = self.visit(child_id);
                 }
+
                 Some(())
             }
             NodeKind::Declaration => {
@@ -381,6 +383,7 @@ impl MutVisitor<()> for NameResolverVisitor<'_> {
                 for child_id in node.data.children() {
                     let _ = self.visit(child_id);
                 }
+
                 Some(())
             }
             _ => {
@@ -388,6 +391,7 @@ impl MutVisitor<()> for NameResolverVisitor<'_> {
                 for child_id in node.data.children() {
                     let _ = self.visit(child_id);
                 }
+
                 Some(())
             }
         }
