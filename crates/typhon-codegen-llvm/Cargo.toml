@@ -9,6 +9,11 @@ lints.workspace = true
   typhon-runtime.workspace = true
   typhon-source.workspace  = true
 
+[dev-dependencies]
+  typhon-ast.workspace         = true
+  typhon-mir-builder.workspace = true
+  typhon-parser.workspace      = true
+
 [package]
   authors.workspace    = true
   categories           = ["compilers", "development-tools"]

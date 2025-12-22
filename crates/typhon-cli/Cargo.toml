@@ -10,12 +10,25 @@ lints.workspace = true
 
   # CLI-specific dependencies
   clap.workspace       = true # Command-line argument parsing
+  colored.workspace    = true # Terminal output colorization
   env_logger.workspace = true # Logging implementation
+  log.workspace        = true
+  walkdir.workspace    = true # Directory traversal utility
 
   # Internal crates
-  typhon-parser.workspace  = true
-  typhon-repl.workspace    = true
-  typhon-runtime.workspace = true
+  typhon-analyzer.workspace      = true
+  typhon-ast.workspace           = true
+  typhon-codegen-llvm.workspace  = true
+  typhon-mir.workspace           = true
+  typhon-mir-builder.workspace   = true
+  typhon-mir-optimizer.workspace = true
+  typhon-parser.workspace        = true
+  typhon-repl.workspace          = true
+  typhon-runtime.workspace       = true
+  typhon-source.workspace        = true
+
+[dev-dependencies]
+  tempfile.workspace = true
 
 [package]
   authors.workspace    = true

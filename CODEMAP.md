@@ -70,9 +70,11 @@ typhon/
 │    ├── typhon-analyzer/      # Semantic analysis infrastructure
 │    ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
 │    ├── typhon-cli/           # Command-line interface
+│    ├── typhon-codegen-llvm/  # LLVM code generation backend
 │    ├── typhon-lsp/           # Language Server Protocol implementation
 │    ├── typhon-mir/           # Mid-level Intermediate Representation (MIR)
 │    ├── typhon-mir-builder/   # AST to MIR lowering
+│    ├── typhon-mir-optimizer/ # MIR optimization passes
 │    ├── typhon-parser/        # Lexer, parser
 │    ├── typhon-repl/          # Interactive REPL
 │    ├── typhon-runtime/       # Runtime support
@@ -156,43 +158,58 @@ Key documentation includes:
 
 ### Component Dependencies
 
-Based on analysis of the codebase, here's a visualization of the high-level component dependencies:
+Here's a visualization of the high-level component dependencies:
 
 ```mermaid
 graph TD
-    CLI[typhon-cli] --> Compiler[typhon-compiler]
-    Compiler --> Parser[typhon-parser]
-    REPL[typhon-repl] --> Compiler
+    CLI[typhon-cli] --> Parser[typhon-parser]
+    CLI --> MIR[typhon-mir]
+    CLI --> MIRBuilder[typhon-mir-builder]
+    CLI --> MIROptimizer[typhon-mir-optimizer]
+    CLI --> CodeGenLLVM[typhon-codegen-llvm]
+    REPL[typhon-repl] --> Parser
     REPL --> Runtime[typhon-runtime]
-    LSP[typhon-lsp] --> Compiler
+    LSP[typhon-lsp] --> Parser
+    LSP --> Analyzer[typhon-analyzer]
     Runtime --> StdLib[typhon-stdlib]
-    Compiler --> TypeSystem[typhon-typesystem]
+    MIRBuilder --> AST[typhon-ast]
+    Parser --> AST
+    Analyzer --> AST
+    MIROptimizer --> MIR
+    CodeGenLLVM --> MIR
 ```
 
 ### Crate Dependencies
 
 Here's a detailed breakdown of crate-level dependencies:
 
-- **typhon-cli**: Depends on typhon-compiler, typhon-parser
-- **typhon-compiler**: Depends on typhon-parser, LLVM (via inkwell)
-- **typhon-lsp**: Depends on typhon-compiler, typhon-parser
-- **typhon-repl**: Depends on typhon-compiler, typhon-runtime
+- **typhon-cli**: Depends on typhon-parser, typhon-mir, typhon-mir-builder, typhon-mir-optimizer, typhon-codegen-llvm
+- **typhon-codegen-llvm**: Depends on typhon-mir, LLVM (via inkwell)
+- **typhon-lsp**: Depends on typhon-parser, typhon-analyzer, typhon-ast
+- **typhon-repl**: Depends on typhon-parser, typhon-runtime
 - **typhon-runtime**: Depends on typhon-stdlib
-- **typhon-parser**: No internal project dependencies
+- **typhon-parser**: Depends on typhon-ast
+- **typhon-analyzer**: Depends on typhon-ast
+- **typhon-mir-builder**: Depends on typhon-ast, typhon-mir
+- **typhon-mir-optimizer**: Depends on typhon-mir
 
 ### Module Dependencies
 
 Key module-level dependencies:
 
 1. **AST Module Dependencies**:
-   - All compiler components depend on the AST definitions from typhon-parser
-   - The type checker extensively uses AST structures for analysis
-   - Code generator transforms AST to LLVM IR
+   - The AST crate defines core structures used throughout the project
+   - Parser produces AST nodes from source code
+   - Analyzer uses AST structures for semantic analysis
+   - MIR-builder transforms AST to MIR
 
 2. **Lexer/Parser Dependencies**:
    - Parser depends on Lexer for token stream
    - CLI, REPL, and LSP components all use the Parser directly
+   - Source handling provides position information for diagnostics
 
 3. **Backend Dependencies**:
-   - Code generator depends on AST and Type System
+   - MIR is the core intermediate representation
+   - MIR-optimizer applies transformation passes to the MIR
+   - Codegen-LLVM transforms MIR to LLVM IR for final code generation
    - LLVM context is used throughout the backend

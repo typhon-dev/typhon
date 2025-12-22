@@ -25,6 +25,8 @@ The project is organized into major functional areas including language design, 
 
 - [`typhon-mir`](crates/typhon-mir) - Mid-level Intermediate Representation
 - [`typhon-mir-builder`](crates/typhon-mir-builder) - AST to MIR transformation
+- [`typhon-mir-optimizer`](crates/typhon-mir-optimizer) - MIR optimization passes
+- [`typhon-codegen-llvm`](crates/typhon-codegen-llvm) - LLVM code generation backend
 
 **Runtime & Tools:**
 

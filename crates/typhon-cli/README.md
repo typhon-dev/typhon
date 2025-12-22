@@ -178,7 +178,10 @@ typhon build --verbose --timings main.ty
 
 - `typhon-parser`: Lexing and parsing
 - `typhon-analyzer`: Semantic analysis
-- `typhon-compiler`: Type checking and LLVM code generation
+- `typhon-mir`: Mid-level Intermediate Representation
+- `typhon-mir-builder`: AST to MIR transformation
+- `typhon-mir-optimizer`: MIR optimization passes
+- `typhon-codegen-llvm`: LLVM code generation
 - `typhon-runtime`: Link runtime library
 
 **Exit Codes:**
@@ -743,7 +746,10 @@ typhon 0.1.0
 
 ```shell
 typhon 0.1.0
-compiler: 0.1.0
+parser: 0.1.0
+analyzer: 0.1.0
+mir: 0.1.0
+codegen: 0.1.0
 runtime: 0.1.0
 llvm: 18.1.8
 rustc: 1.75.0

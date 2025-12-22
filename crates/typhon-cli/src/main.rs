@@ -21,6 +21,9 @@ struct CLI {
     /// Show verbose output
     #[clap(short, long, global = true)]
     verbose: bool,
+    /// Module path in dotted syntax (e.g., path.to.module)
+    #[clap(short, long, global = true)]
+    module: Option<String>,
     /// Subcommand to execute (defaults to REPL if none provided)
     #[clap(subcommand)]
     command: Option<Command>,
@@ -155,7 +158,7 @@ fn main() -> Result<()> {
     // Determine what action to take
     match (cli.command, cli.file) {
         // Explicit subcommand provided
-        (Some(command), None) => execute_command(command, cli.verbose),
+        (Some(command), None) => execute_command(command, cli.verbose, cli.module.as_deref()),
 
         // File argument provided without subcommand - run it
         (None, Some(file)) => commands::run::execute(file, Vec::new(), cli.verbose),
@@ -170,10 +173,10 @@ fn main() -> Result<()> {
     }
 }
 
-fn execute_command(command: Command, verbose: bool) -> Result<()> {
+fn execute_command(command: Command, verbose: bool, module: Option<&str>) -> Result<()> {
     match command {
         Command::Build { input, output, emit_llvm, opt_level, release } => {
-            commands::build::execute(input, output, emit_llvm, opt_level, release, verbose)
+            commands::build::execute(input, output, emit_llvm, opt_level, release, verbose, module)
         }
         Command::Check { input, all } => commands::check::execute(input, all, verbose),
         Command::Doc { open, no_deps } => commands::doc::execute(open, no_deps, verbose),
