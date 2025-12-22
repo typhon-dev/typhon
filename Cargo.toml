@@ -15,16 +15,17 @@
 
   [workspace.dependencies]
     # Internal crates
-    typhon-analyzer.path = "crates/typhon-analyzer"
-    typhon-ast.path      = "crates/typhon-ast"
-    typhon-cli.path      = "crates/typhon-cli"
-    typhon-compiler.path = "crates/typhon-compiler"
-    typhon-lsp.path      = "crates/typhon-lsp"
-    typhon-parser.path   = "crates/typhon-parser"
-    typhon-repl.path     = "crates/typhon-repl"
-    typhon-runtime.path  = "crates/typhon-runtime"
-    typhon-source.path   = "crates/typhon-source"
-    typhon-stdlib.path   = "crates/typhon-stdlib"
+    typhon-analyzer.path    = "crates/typhon-analyzer"
+    typhon-ast.path         = "crates/typhon-ast"
+    typhon-cli.path         = "crates/typhon-cli"
+    typhon-lsp.path         = "crates/typhon-lsp"
+    typhon-mir.path         = "crates/typhon-mir"
+    typhon-mir-builder.path = "crates/typhon-mir-builder"
+    typhon-parser.path      = "crates/typhon-parser"
+    typhon-repl.path        = "crates/typhon-repl"
+    typhon-runtime.path     = "crates/typhon-runtime"
+    typhon-source.path      = "crates/typhon-source"
+    typhon-stdlib.path      = "crates/typhon-stdlib"
 
     # External dependencies
     anyhow            = "1.0"

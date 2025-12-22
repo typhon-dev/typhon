@@ -73,6 +73,7 @@ pub struct VM {
 
 impl VM {
     /// Create a new VM.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             stack: Vec::new(),
@@ -83,9 +84,7 @@ impl VM {
     }
 
     /// Push a value onto the stack.
-    pub fn push(&mut self, value: Value) {
-        self.stack.push(value);
-    }
+    pub fn push(&mut self, value: Value) { self.stack.push(value); }
 
     /// Pop a value from the stack.
     pub fn pop(&mut self) -> Result<Value, RuntimeError> {
@@ -93,10 +92,8 @@ impl VM {
     }
 
     /// Execute bytecode.
-    pub fn execute(&mut self, _code: &[u8]) -> Result<Value, RuntimeError> {
-        // This is a simplified placeholder implementation
-        // A real VM would parse and execute the bytecode
-
+    pub const fn execute(&mut self, _code: &[u8]) -> Result<Value, RuntimeError> {
+        // TODO: This is a simplified placeholder implementation; need to parse and execute the bytecode
         Ok(Value::None)
     }
 
@@ -106,19 +103,14 @@ impl VM {
         _function: Rc<Function>,
         _args: Vec<Value>,
     ) -> Result<Value, RuntimeError> {
-        // This is a placeholder implementation
-
+        // TODO: This is a placeholder implementation
         Ok(Value::None)
     }
 
     /// Run the garbage collector.
-    pub fn collect_garbage(&mut self) {
-        self.memory.collect_garbage();
-    }
+    pub const fn collect_garbage(&mut self) { self.memory.collect_garbage(); }
 }
 
 impl Default for VM {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }

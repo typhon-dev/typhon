@@ -43,36 +43,36 @@ pub enum Type {
         type_params: Vec<TypeID>,
     },
     /// Dictionary type with key and value types.
-    Dict(Box<Type>, Box<Type>),
+    Dict(Box<Self>, Box<Self>),
     /// The `float` type.
     Float,
     /// Function type with parameter types and return type.
     Function {
         /// Parameter types
-        params: Vec<Type>,
+        params: Vec<Self>,
         /// Return type
-        return_type: Box<Type>,
+        return_type: Box<Self>,
     },
     /// The `int` type.
     Int,
     /// List type with element type.
-    List(Box<Type>),
+    List(Box<Self>),
     /// The `Never` type - bottom type that never occurs.
     Never,
     /// The `None` type.
     None,
     /// Optional type (syntactic sugar for `Union[T, None]`).
-    Optional(Box<Type>),
+    Optional(Box<Self>),
     /// Set type with element type.
-    Set(Box<Type>),
+    Set(Box<Self>),
     /// The `str` type.
     Str,
     /// Tuple type with element types.
-    Tuple(Vec<Type>),
+    Tuple(Vec<Self>),
     /// Type variable for generics.
     TypeVar(String),
     /// Union type with multiple possible types.
-    Union(Vec<Type>),
+    Union(Vec<Self>),
 }
 
 impl Type {

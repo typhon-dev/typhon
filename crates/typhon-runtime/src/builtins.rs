@@ -79,7 +79,7 @@ pub fn to_int(args: &[Value]) -> Result<Value, RuntimeError> {
             .parse::<i64>()
             .map(Value::Int)
             .map_err(|_| RuntimeError::value_error(format!("Invalid literal for int(): '{s}'"))),
-        Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
+        Value::Bool(b) => Ok(Value::Int(i64::from(*b))),
         _ => Err(RuntimeError::type_error(
             "int, float, str, or bool",
             args[0].get_type().to_string(),

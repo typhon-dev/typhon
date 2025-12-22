@@ -67,16 +67,17 @@ graph TD
 ```shell
 typhon/
 ├── crates/
-│   ├── typhon-cli/           # Command-line interface
-│   ├── typhon-compiler/      # Core compiler components
-│   │   └── src/
-│   │       ├── backend/      # LLVM IR generation, code generation
-│   │       └── typesystem/   # Type checking and inference
-│   ├── typhon-lsp/           # Language Server Protocol implementation
-│   ├── typhon-parser/        # Lexer, parser, AST
-│   ├── typhon-repl/          # Interactive REPL
-│   ├── typhon-runtime/       # Runtime support
-│   └── typhon-stdlib/        # Standard library
+│    ├── typhon-analyzer/      # Semantic analysis infrastructure
+│    ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
+│    ├── typhon-cli/           # Command-line interface
+│    ├── typhon-lsp/           # Language Server Protocol implementation
+│    ├── typhon-mir/           # Mid-level Intermediate Representation (MIR)
+│    ├── typhon-mir-builder/   # AST to MIR lowering
+│    ├── typhon-parser/        # Lexer, parser
+│    ├── typhon-repl/          # Interactive REPL
+│    ├── typhon-runtime/       # Runtime support
+│    ├── typhon-source/        # Source file handling and position tracking
+│    └── typhon-stdlib/        # Standard library
 ├── docs/                     # Documentation
 └── examples/                 # Example code and usage
 ```

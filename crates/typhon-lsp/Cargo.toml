@@ -15,7 +15,9 @@ lints.workspace = true
   url.workspace         = true # URL handling for LSP URIs
 
   # Internal crates
-  typhon-compiler.workspace = true
+  typhon-analyzer.workspace = true
+  typhon-parser.workspace   = true
+  typhon-source.workspace   = true
 
 [dev-dependencies]
   insta.workspace = true # Snapshot testing

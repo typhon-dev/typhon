@@ -1,0 +1,24 @@
+lints.workspace = true
+
+[dependencies]
+  thiserror.workspace = true
+
+  typhon-analyzer.workspace = true
+  typhon-ast.workspace      = true
+  typhon-mir.workspace      = true
+  typhon-source.workspace   = true
+
+[dev-dependencies]
+  typhon-parser.workspace = true
+
+[package]
+  authors.workspace    = true
+  categories           = ["compilers", "development-tools"]
+  description          = "AST to MIR lowering for the Typhon compiler"
+  edition.workspace    = true
+  keywords             = ["compiler", "ir", "lowering", "mir", "typhon"]
+  license.workspace    = true
+  name                 = "typhon-mir-builder"
+  readme               = "README.md"
+  repository.workspace = true
+  version.workspace    = true

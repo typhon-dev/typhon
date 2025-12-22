@@ -146,14 +146,14 @@ fn test_type_substitute_list() {
 
 #[test]
 fn test_type_get_attribute_stub() {
-    // get_attribute returns None for now (stub implementation)
+    // TODO: get_attribute returns None for now (stub implementation)
     assert_eq!(Type::Int.get_attribute("value"), None);
     assert_eq!(Type::Str.get_attribute("length"), None);
 }
 
 #[test]
 fn test_type_get_method_stub() {
-    // get_method is a stub that returns None for now
+    // TODO: get_method is a stub that returns None for now
     assert_eq!(Type::Int.get_method("to_string"), None);
     assert_eq!(Type::Str.get_method("upper"), None);
 }
@@ -221,7 +221,7 @@ fn test_dict_type_compatibility() {
 
 #[test]
 fn test_union_type_is_numeric() {
-    // Union types are not considered numeric in the current implementation
+    // TODO: Union types are not considered numeric in the current implementation
     // because is_numeric() only checks for Int and Float directly
     let union = Type::Union(vec![Type::Int, Type::Float]);
     assert!(!union.is_numeric()); // Union itself is not numeric

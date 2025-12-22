@@ -2,8 +2,8 @@
 
 use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
 use tower_lsp::lsp_types::*;
-use typhon_compiler::frontend::lexer::Lexer;
-use typhon_compiler::frontend::parser::Parser;
+use typhon_parser::lexer::Lexer;
+use typhon_parser::parser::Parser;
 
 use crate::document::DocumentManager;
 use crate::utils;
@@ -261,7 +261,7 @@ pub fn definition_handler(
     document_manager: &DocumentManager,
     params: &TextDocumentPositionParams,
 ) -> JsonRpcResult<Option<GotoDefinitionResponse>> {
-    // This is a placeholder implementation
+    // TODO: This is a placeholder implementation
 
     // 1. Parse the document
     // 2. Find the symbol at the position
@@ -277,7 +277,7 @@ pub fn references_handler(
     params: &TextDocumentPositionParams,
     include_declaration: bool,
 ) -> JsonRpcResult<Option<Vec<Location>>> {
-    // This is a placeholder implementation
+    // TODO: This is a placeholder implementation
 
     // 1. Parse the document
     // 2. Find the symbol at the position

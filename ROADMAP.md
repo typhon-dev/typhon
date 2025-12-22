@@ -156,19 +156,63 @@
 
 ## Backend
 
-| Feature                                                             | Status        |
-| ------------------------------------------------------------------- | ------------- |
-| [LLVM integration](#llvm-integration)                               | ✅ Complete    |
-| [Code generation](#code-generation)                                 | 🚫 Not Started |
-| [Platform-specific optimizations](#platform-specific-optimizations) | 🚫 Not Started |
+| Feature                                                             | Status            |
+| ------------------------------------------------------------------- | ----------------- |
+| [MIR Design and Implementation](#mir-design-and-implementation)     | ✅ Complete (Core) |
+| [AST to MIR Lowering](#ast-to-mir-lowering)                         | ✅ Complete (Core) |
+| [LLVM integration](#llvm-integration)                               | 🚫 Not Started     |
+| [Code generation](#code-generation)                                 | 🚫 Not Started     |
+| [Platform-specific optimizations](#platform-specific-optimizations) | 🚫 Not Started     |
+
+### MIR Design and Implementation
+
+**Status:** ✅ Complete (Core)
+
+Core functionality implemented in [`typhon-mir`](crates/typhon-mir) crate:
+
+| Feature                                   | Status     | Notes                                                                                |
+| ----------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| MIR type system (13 type variants)        | ✅ Complete | Int, Float, Bool, Str, Object, Function, Closure, Tuple, List, Dict, Ref, None, Void |
+| MIR instruction set (20+ instructions)    | ✅ Complete | Arithmetic, memory, object ops, calls, control flow                                  |
+| Basic blocks and control flow graph (CFG) | ✅ Complete | Explicit terminators, predecessor/successor tracking                                 |
+| Function representation                   | ✅ Complete | Parameters, locals, entry blocks                                                     |
+| Module structure                          | ✅ Complete | Compilation unit with functions and globals                                          |
+| Builder API                               | ✅ Complete | Ergonomic MIR construction                                                           |
+| Pretty-printer                            | ✅ Complete | Human-readable debug output                                                          |
+
+### AST to MIR Lowering
+
+**Status:** ✅ Complete (Core)
+
+Core functionality implemented in [`typhon-mir-builder`](crates/typhon-mir-builder) crate:
+
+| Feature                 | Status     | Notes                                    |
+| ----------------------- | ---------- | ---------------------------------------- |
+| Expression lowering     | ✅ Complete | Literals, binops, unops, calls           |
+| Statement lowering      | ✅ Complete | Assignments, returns, expression stmts   |
+| Function lowering       | ✅ Complete | Parameters, body, recursive functions    |
+| Control flow (if/while) | ✅ Complete | Conditional branches, loops              |
+| Break/continue support  | ✅ Complete | Loop control flow                        |
+| Class lowering          | ✅ Complete | Method mangling (`ClassName__method`)    |
+| Closure lowering        | ✅ Complete | Capture analysis integration             |
+| Field extraction        | ✅ Complete | Analyze `__init__` for `self.x` patterns |
+
+**Future Enhancements:**
+
+| Feature                      | Status        | Notes                                     |
+| ---------------------------- | ------------- | ----------------------------------------- |
+| Type environment integration | 🚫 Not Started | Connect to type checker for precise types |
+| Decorator support            | 🚫 Not Started | AST decorator node support needed         |
+| Keyword arguments            | 🚫 Not Started | Dictionary unpacking infrastructure       |
+| For loop lowering            | 🚫 Not Started | Iterator protocol + exception handling    |
 
 ### LLVM integration
 
-| Feature                    | Status     | Commit                                                         |
-| -------------------------- | ---------- | -------------------------------------------------------------- |
-| Type mapping to LLVM types | ✅ Complete | [740d1b9](https://github.com/typhon-dev/typhon/commit/740d1b9) |
-| IR translation to LLVM IR  | ✅ Complete | [740d1b9](https://github.com/typhon-dev/typhon/commit/740d1b9) |
-| LLVM optimization passes   | ✅ Complete | [740d1b9](https://github.com/typhon-dev/typhon/commit/740d1b9) |
+| Feature                    | Status        | Commit |
+| -------------------------- | ------------- | ------ |
+| Type mapping to LLVM types | 🚫 Not Started |        |
+| IR translation to LLVM IR  | 🚫 Not Started |        |
+| LLVM optimization passes   | 🚫 Not Started |        |
 
 ### Code generation
 

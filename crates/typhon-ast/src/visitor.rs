@@ -97,6 +97,7 @@ pub trait Visitable {
     /// ## Errors
     ///
     /// This may return a `VisitorError` if:
+    ///
     /// - `NodeNotFound`: The node with the given ID does not exist in the AST arena
     /// - `TypeMismatch`: The node exists but is not of the expected type for this visitor method
     /// - `Custom`: A custom error occurred during the visit operation, with details in the error message
@@ -116,6 +117,7 @@ pub trait Visitable {
     /// ## Errors
     ///
     /// This may return a `VisitorError` if:
+    ///
     /// - `NodeNotFound`: The node with the given ID does not exist in the AST arena
     /// - `TypeMismatch`: The node exists but is not of the expected type for this visitor method
     /// - `Custom`: A custom error occurred during the visit operation, with details in the error message
@@ -125,6 +127,7 @@ pub trait Visitable {
 /// Macro to generate all visit_* methods with the same pattern.
 ///
 /// Each method will:
+///
 /// 1. Take a `NodeID` parameter
 /// 2. Return a `VisitorResult`<T>
 /// 3. Have a default implementation that returns an error with a formatted message
@@ -136,6 +139,7 @@ macro_rules! visit_default {
             /// ## Errors
             ///
             /// This may return an error if:
+            ///
             /// - The node with the given ID does not exist in the AST arena
             /// - The node with the given ID is not a node of the specified type
             /// - The visitor implementation does not handle nodes of the specified type
@@ -170,6 +174,7 @@ pub trait Visitor<T> {
     /// ## Errors
     ///
     /// This may return a `VisitorError` if:
+    ///
     /// - `NodeNotFound`: The node with the given ID does not exist in the AST arena
     /// - `TypeMismatch`: The node exists but is not of the expected type for this visitor method
     /// - `Custom`: A custom error occurred during the visit operation, with details in the error message
@@ -194,6 +199,7 @@ pub trait Visitor<T> {
     /// ## Errors
     ///
     /// This may return a `VisitorError` if:
+    ///
     /// - `NodeNotFound`: The node with the given ID does not exist in the AST arena
     /// - `TypeMismatch`: The node exists but is not of the expected type for this visitor method
     /// - `Custom`: A custom error occurred during the visit operation, with details in the error message

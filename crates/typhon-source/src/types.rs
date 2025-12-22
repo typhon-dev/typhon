@@ -327,8 +327,7 @@ impl SourceInfo {
     /// Create a new source info
     #[must_use]
     pub const fn new(span: Span) -> Self {
-        // This is a simple implementation; in a real compiler,
-        // you'd compute actual line and column numbers
+        // TODO: This is a simple implementation; need to compute actual line and column numbers
         Self { span, line: 0, column: 0 }
     }
 }

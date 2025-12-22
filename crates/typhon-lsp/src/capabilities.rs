@@ -47,7 +47,6 @@ pub fn server_capabilities() -> ServerCapabilities {
         workspace: None,
         experimental: None,
         execute_command_provider: None,
-        position_encoding: Some(PositionEncodingKind::UTF8),
         inlay_hint_provider: None,
         inline_value_provider: None,
         diagnostic_provider: None,

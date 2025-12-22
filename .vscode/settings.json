@@ -55,10 +55,12 @@
   "rust-analyzer.lens.enable": true,
   "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"],
   "rust-analyzer.linkedProjects": [
+    "crates/typhon-analyzer/Cargo.toml",
     "crates/typhon-ast/Cargo.toml",
     "crates/typhon-cli/Cargo.toml",
-    "crates/typhon-compiler/Cargo.toml",
     "crates/typhon-lsp/Cargo.toml",
+    "crates/typhon-mir/Cargo.toml",
+    "crates/typhon-mir-builder/Cargo.toml",
     "crates/typhon-parser/Cargo.toml",
     "crates/typhon-repl/Cargo.toml",
     "crates/typhon-runtime/Cargo.toml",

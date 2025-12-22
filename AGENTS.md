@@ -62,11 +62,9 @@ typhon/
     ├── typhon-analyzer/      # Semantic analysis infrastructure
     ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
     ├── typhon-cli/           # Command-line interface
-    ├── typhon-compiler/      # Core compiler components
-    │   └── src/
-    │       ├── backend/      # LLVM IR generation, code generation
-    │       └── typesystem/   # Type checking and inference
     ├── typhon-lsp/           # Language Server Protocol implementation
+    ├── typhon-mir/           # Mid-level Intermediate Representation (MIR)
+    ├── typhon-mir-builder/   # AST to MIR lowering
     ├── typhon-parser/        # Lexer, parser
     ├── typhon-repl/          # Interactive REPL
     ├── typhon-runtime/       # Runtime support

@@ -3,11 +3,12 @@
 use std::sync::Arc;
 
 use typhon_analyzer::analyze_module;
+use typhon_ast::nodes::NodeID;
 use typhon_parser::parser::Parser;
 use typhon_source::types::SourceManager;
 
 /// Helper to create a parser and parse source code
-fn parse_source(source: &str) -> (Parser<'_>, typhon_ast::nodes::NodeID) {
+fn parse_source(source: &str) -> (Parser<'_>, NodeID) {
     let mut source_manager = SourceManager::new();
     let file_id = source_manager.add_file("test.ty".to_string(), source.to_string());
     let mut parser = Parser::new(source, file_id, Arc::new(source_manager));

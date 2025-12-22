@@ -16,7 +16,7 @@ pub struct TypeEnvironment {
     /// Map from AST node ID to type ID.
     node_types: FxHashMap<NodeID, TypeID>,
     /// Map from type variables to their substituted types.
-    #[allow(dead_code)] // Reserved for future type inference implementation
+    #[allow(dead_code, reason = "TODO: Reserved for future type inference implementation")]
     substitutions: FxHashMap<String, TypeID>,
 }
 

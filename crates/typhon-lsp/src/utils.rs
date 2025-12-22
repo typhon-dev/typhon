@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use tower_lsp::lsp_types::{Position, Range, Url};
+use typhon_source::types::Span;
 
 /// Converts a `Span` to an LSP `Range`.
 ///
@@ -32,6 +33,7 @@ pub fn byte_offset_to_position(source: &str, offset: usize) -> Position {
         } else {
             character += 1;
         }
+
         current_offset += c.len_utf8();
     }
 
@@ -87,9 +89,7 @@ pub fn path_to_uri(path: &Path) -> Url {
 }
 
 /// Converts an LSP URI to a file path.
-pub fn uri_to_path(uri: &Url) -> Option<std::path::PathBuf> {
-    uri.to_file_path().ok()
-}
+pub fn uri_to_path(uri: &Url) -> Option<std::path::PathBuf> { uri.to_file_path().ok() }
 
 /// Finds the word at the given position in the text.
 pub fn word_at_position(text: &str, position: &Position) -> Option<(String, Range)> {

@@ -6,9 +6,9 @@ use parking_lot::RwLock;
 use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
-use typhon_compiler::frontend::lexer::Lexer;
-use typhon_compiler::frontend::parser::Parser;
-use typhon_compiler::typesystem::TypeChecker;
+use typhon_analyzer::visitors::TypeCheckerVisitor as TypeChecker;
+use typhon_parser::lexer::Lexer;
+use typhon_parser::parser::Parser;
 
 use crate::capabilities::server_capabilities;
 use crate::document::DocumentManager;

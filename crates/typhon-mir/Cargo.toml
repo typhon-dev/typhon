@@ -1,0 +1,16 @@
+lints.workspace = true
+
+[dependencies]
+  typhon-source.workspace = true
+
+[package]
+  authors.workspace    = true
+  categories           = ["compilers", "development-tools"]
+  description          = "Mid-level Intermediate Representation (MIR) for the Typhon compiler"
+  edition.workspace    = true
+  keywords             = ["compiler", "intermediate-representation", "ir", "mir", "ssa", "typhon"]
+  license.workspace    = true
+  name                 = "typhon-mir"
+  readme               = "README.md"
+  repository.workspace = true
+  version.workspace    = true

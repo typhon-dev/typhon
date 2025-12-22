@@ -59,9 +59,9 @@ pub enum Value {
     /// String value.
     String(String),
     /// List value.
-    List(Rc<RefCell<Vec<Value>>>),
+    List(Rc<RefCell<Vec<Self>>>),
     /// Dictionary value.
-    Dict(Rc<RefCell<HashMap<String, Value>>>),
+    Dict(Rc<RefCell<HashMap<String, Self>>>),
     /// Function value.
     Function(Rc<Function>),
     /// Class value.
@@ -151,7 +151,7 @@ pub struct Class {
     /// Methods of the class.
     pub methods: HashMap<String, Rc<Function>>,
     /// Base classes.
-    pub bases: Vec<Rc<Class>>,
+    pub bases: Vec<Rc<Self>>,
 }
 
 /// An instance of a class in the Typhon runtime.

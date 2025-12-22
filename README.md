@@ -1,11 +1,38 @@
 # ![Typhon](docs/images/logo-hi-res.png)
 
+Typhon is a statically typed programming language based on Python 3 implemented in Rust.
+
 > [!NOTE]
 > **⚠️ Project Status: Alpha/Experimental**
 >
 > Typhon is in early development. Core components like the lexer, parser, and LLVM integration are functional, but many features including code generation, concurrency model, and most of the standard library are not yet implemented.
+>
+> For the complete, detailed project roadmap with current status of all components, see [ROADMAP.md](ROADMAP.md).
 
-Typhon is a statically typed programming language based on Python 3, implemented in Rust with LLVM as the backend.
+## Components
+
+Typhon's compiler architecture consists of several key components. Some components are already functional with many more planned.
+
+The project is organized into major functional areas including language design, compiler implementation, runtime system, standard library, development tools, documentation, and testing infrastructure.
+
+**Frontend:**
+
+- [`typhon-parser`](crates/typhon-parser) - Lexical analysis and parsing
+- [`typhon-ast`](crates/typhon-ast) - Abstract Syntax Tree definitions
+- [`typhon-analyzer`](crates/typhon-analyzer) - Semantic analysis and type checking
+
+**Backend:**
+
+- [`typhon-mir`](crates/typhon-mir) - Mid-level Intermediate Representation
+- [`typhon-mir-builder`](crates/typhon-mir-builder) - AST to MIR transformation
+
+**Runtime & Tools:**
+
+- [`typhon-runtime`](crates/typhon-runtime) - Runtime support and memory management
+- [`typhon-stdlib`](crates/typhon-stdlib) - Standard library
+- [`typhon-cli`](crates/typhon-cli) - Command-line interface
+- [`typhon-lsp`](crates/typhon-lsp) - Language Server Protocol implementation
+- [`typhon-source`](crates/typhon-source) - Source file handling
 
 ## Similarities and Differences with Python
 
@@ -111,10 +138,6 @@ Contributions are welcome! Typhon is in early development and there are many are
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to the project.
 
-## License
-
-See the [LICENSE](LICENSE) file for details.
-
 ## Community and Support
 
 - **GitHub Issues**: For bug reports and feature requests
@@ -122,8 +145,6 @@ See the [LICENSE](LICENSE) file for details.
 - **Discord**: TBD <!-- Join our [Discord server](https://discord.gg/typhon) for real-time chat -->
 - **Twitter**: TBD <!-- Follow [@typhonlang](https://twitter.com/typhonlang) for updates -->
 
-## Project Roadmap
+## License
 
-Typhon is under active development with several components already functional and many more planned. The project is organized into major functional areas including language design, compiler implementation, runtime system, standard library, development tools, documentation, and testing infrastructure.
-
-For the complete, detailed project roadmap with current status of all components, see [ROADMAP.md](ROADMAP.md).
+See the [LICENSE](LICENSE) file for details.
