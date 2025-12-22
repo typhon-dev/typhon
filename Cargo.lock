@@ -1954,7 +1954,6 @@ dependencies = [
 name = "typhon-codegen-llvm"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "inkwell",
  "rustc-hash",
  "thiserror",
@@ -1986,6 +1985,7 @@ dependencies = [
 name = "typhon-mir"
 version = "0.1.0"
 dependencies = [
+ "rustc-hash",
  "typhon-source",
 ]
 
@@ -1993,6 +1993,7 @@ dependencies = [
 name = "typhon-mir-builder"
 version = "0.1.0"
 dependencies = [
+ "rustc-hash",
  "thiserror",
  "typhon-analyzer",
  "typhon-ast",

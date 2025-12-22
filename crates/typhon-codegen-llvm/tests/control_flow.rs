@@ -6,7 +6,7 @@ use inkwell::context::Context;
 use typhon_codegen_llvm::blocks::{create_basic_blocks, translate_blocks};
 use typhon_codegen_llvm::context::CodegenContext;
 use typhon_codegen_llvm::error::CodegenError;
-use typhon_codegen_llvm::instructions::translate_terminator;
+use typhon_codegen_llvm::instructions::{translate_instruction, translate_terminator};
 use typhon_codegen_llvm::runtime::declare_runtime_functions;
 use typhon_mir::block::BasicBlock;
 use typhon_mir::instr::{BasicBlockID, MIRConst, MIRInstr, Terminator, ValueID};
@@ -241,7 +241,7 @@ fn test_phi_node() {
         incoming: vec![(BasicBlockID(0), value1), (BasicBlockID(1), value2)],
         ty: MIRType::Bool,
     };
-    let result = typhon_codegen_llvm::instructions::translate_instruction(&mut ctx, &phi_instr);
+    let result = translate_instruction(&mut ctx, &phi_instr);
 
     assert!(result.is_ok());
     assert!(result.unwrap().is_some());

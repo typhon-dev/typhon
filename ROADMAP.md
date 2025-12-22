@@ -186,25 +186,27 @@ Core functionality implemented in [`typhon-mir`](crates/typhon-mir) crate:
 
 Core functionality implemented in [`typhon-mir-builder`](crates/typhon-mir-builder) crate:
 
-| Feature                 | Status     | Notes                                    |
-| ----------------------- | ---------- | ---------------------------------------- |
-| Expression lowering     | ✅ Complete | Literals, binops, unops, calls           |
-| Statement lowering      | ✅ Complete | Assignments, returns, expression stmts   |
-| Function lowering       | ✅ Complete | Parameters, body, recursive functions    |
-| Control flow (if/while) | ✅ Complete | Conditional branches, loops              |
-| Break/continue support  | ✅ Complete | Loop control flow                        |
-| Class lowering          | ✅ Complete | Method mangling (`ClassName__method`)    |
-| Closure lowering        | ✅ Complete | Capture analysis integration             |
-| Field extraction        | ✅ Complete | Analyze `__init__` for `self.x` patterns |
+| Feature                       | Status     | Notes                                                     |
+| ----------------------------- | ---------- | --------------------------------------------------------- |
+| Expression lowering           | ✅ Complete | Literals, binops, unops, calls                            |
+| Statement lowering            | ✅ Complete | Assignments, returns, expression stmts                    |
+| Function lowering             | ✅ Complete | Parameters, body, recursive functions                     |
+| Control flow (if/while)       | ✅ Complete | Conditional branches, loops                               |
+| Break/continue support        | ✅ Complete | Loop control flow                                         |
+| Class lowering                | ✅ Complete | Method mangling (`ClassName__method`)                     |
+| Closure lowering              | ✅ Complete | Capture analysis integration                              |
+| Field extraction              | ✅ Complete | Analyze `__init__` for `self.x` patterns                  |
+| Semantic analysis integration | ✅ Complete | Type environment and symbol table integration             |
+| Name classification           | ✅ Complete | Local/captured/global/builtin resolution                  |
+| Type queries                  | ✅ Complete | Query expression and variable types from type environment |
 
 **Future Enhancements:**
 
-| Feature                      | Status        | Notes                                     |
-| ---------------------------- | ------------- | ----------------------------------------- |
-| Type environment integration | 🚫 Not Started | Connect to type checker for precise types |
-| Decorator support            | 🚫 Not Started | AST decorator node support needed         |
-| Keyword arguments            | 🚫 Not Started | Dictionary unpacking infrastructure       |
-| For loop lowering            | 🚫 Not Started | Iterator protocol + exception handling    |
+| Feature           | Status        | Notes                                  |
+| ----------------- | ------------- | -------------------------------------- |
+| Decorator support | 🚫 Not Started | AST decorator node support needed      |
+| Keyword arguments | 🚫 Not Started | Dictionary unpacking infrastructure    |
+| For loop lowering | 🚫 Not Started | Iterator protocol + exception handling |
 
 ### LLVM integration
 

@@ -76,7 +76,7 @@ fn translate_binop<'ctx>(
     let call_site = ctx
         .builder
         .build_call(fn_val, &[lhs_val.into(), rhs_val.into()], call_name)
-        .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+        .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
     call_site.try_as_basic_value().left().ok_or_else(|| {
         CodegenError::InstructionTranslationError(format!("{fn_name} call didn't return value"))
@@ -127,7 +127,7 @@ fn translate_const<'ctx>(
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[i64_val.into()], "int_new")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
                     "typhon_int_new call didn't return value".to_string(),
@@ -141,7 +141,7 @@ fn translate_const<'ctx>(
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[f64_val.into()], "float_new")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
                     "typhon_float_new call didn't return value".to_string(),
@@ -154,7 +154,7 @@ fn translate_const<'ctx>(
             let string_val = ctx
                 .builder
                 .build_global_string_ptr(s, "str_const")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             let len_val = ctx.context.i64_type().const_int(s.len() as u64, false);
             let fn_val = ctx.get_runtime_function("typhon_str_new")?;
             let call_site = ctx
@@ -164,7 +164,7 @@ fn translate_const<'ctx>(
                     &[string_val.as_pointer_value().into(), len_val.into()],
                     "str_new",
                 )
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
                     "typhon_str_new call didn't return value".to_string(),
@@ -177,7 +177,7 @@ fn translate_const<'ctx>(
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[], "none_get")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
                     "typhon_none_get call didn't return value".to_string(),
@@ -244,7 +244,7 @@ pub fn translate_instruction<'ctx>(
             let loaded = ctx
                 .builder
                 .build_load(ptr_type, alloca, "load")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(Some(loaded))
         }
@@ -253,7 +253,7 @@ pub fn translate_instruction<'ctx>(
             let val = ctx.get_value(*value)?;
             ctx.builder
                 .build_store(alloca, val)
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(None)
         }
@@ -267,7 +267,7 @@ pub fn translate_instruction<'ctx>(
             let fn_val = ctx.get_runtime_function("typhon_incref")?;
             ctx.builder
                 .build_call(fn_val, &[val.into()], "incref")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(None)
         }
@@ -276,7 +276,7 @@ pub fn translate_instruction<'ctx>(
             let fn_val = ctx.get_runtime_function("typhon_decref")?;
             ctx.builder
                 .build_call(fn_val, &[val.into()], "decref")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(None)
         }
@@ -285,7 +285,7 @@ pub fn translate_instruction<'ctx>(
             let phi = ctx
                 .builder
                 .build_phi(phi_type, "phi")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             for (block_id, value_id) in incoming {
                 let block = ctx.get_block(*block_id)?;
@@ -304,7 +304,7 @@ pub fn translate_instruction<'ctx>(
             let args_alloca = ctx
                 .builder
                 .build_alloca(args_array_type, "args_array")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             // Store each argument into the array
             for (i, arg_id) in args.iter().enumerate() {
@@ -319,11 +319,11 @@ pub fn translate_instruction<'ctx>(
                         &format!("arg_{i}"),
                     )
                 }
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
                 ctx.builder
                     .build_store(gep, arg_val)
-                    .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                    .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             }
 
             // Call typhon_call runtime function
@@ -336,7 +336,7 @@ pub fn translate_instruction<'ctx>(
                     &[callee_val.into(), args_alloca.into(), num_args.into()],
                     "call",
                 )
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             let result = call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
@@ -354,7 +354,7 @@ pub fn translate_instruction<'ctx>(
             let name_str = ctx
                 .builder
                 .build_global_string_ptr(attr, "attr_name")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             // Call runtime function
             let fn_val = ctx.get_runtime_function("typhon_getattr")?;
@@ -365,7 +365,7 @@ pub fn translate_instruction<'ctx>(
                     &[obj_val.into(), name_str.as_pointer_value().into()],
                     "getattr",
                 )
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(Some(call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError("GetAttr didn't return value".to_string())
@@ -377,7 +377,7 @@ pub fn translate_instruction<'ctx>(
             let name_str = ctx
                 .builder
                 .build_global_string_ptr(attr, "attr_name")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             let fn_val = ctx.get_runtime_function("typhon_setattr")?;
             ctx.builder
@@ -386,7 +386,7 @@ pub fn translate_instruction<'ctx>(
                     &[obj_val.into(), name_str.as_pointer_value().into(), value_val.into()],
                     "setattr",
                 )
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(None) // SetAttr is void
         }
@@ -398,7 +398,7 @@ pub fn translate_instruction<'ctx>(
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[obj_val.into(), key_val.into()], "getitem")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(Some(call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError("GetItem didn't return value".to_string())
@@ -412,14 +412,14 @@ pub fn translate_instruction<'ctx>(
             let fn_val = ctx.get_runtime_function("typhon_setitem")?;
             ctx.builder
                 .build_call(fn_val, &[obj_val.into(), key_val.into(), value_val.into()], "setitem")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(None) // SetItem is void
         }
         MIRInstr::InstanceOf { object, type_id } => {
             let obj_val = ctx.get_value(*object)?;
+            // TODO: Retrieve the actual type object
             // For now, treat TypeID as an integer that can be converted to a pointer
-            // In a full implementation, this would retrieve the actual type object
             let type_val = ctx
                 .context
                 .i64_type()
@@ -430,7 +430,7 @@ pub fn translate_instruction<'ctx>(
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[obj_val.into(), type_val.into()], "isinstance")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(Some(call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError(
@@ -440,16 +440,16 @@ pub fn translate_instruction<'ctx>(
         }
         MIRInstr::Cast { value, target_ty: _ } => {
             let obj_val = ctx.get_value(*value)?;
+            // TODO: Retrieve the actual type object
             // For cast, we need the target type as a runtime object
-            // For now, use a null pointer as placeholder - full implementation
-            // would retrieve the actual type object
+            // For now, use a null pointer as placeholder
             let type_val = ctx.context.ptr_type(AddressSpace::default()).const_null();
 
             let fn_val = ctx.get_runtime_function("typhon_cast")?;
             let call_site = ctx
                 .builder
                 .build_call(fn_val, &[obj_val.into(), type_val.into()], "cast")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
 
             Ok(Some(call_site.try_as_basic_value().left().ok_or_else(|| {
                 CodegenError::InstructionTranslationError("Cast didn't return value".to_string())
@@ -502,18 +502,18 @@ pub fn translate_terminator(
             let return_val = ctx.get_value(*value_id)?;
             ctx.builder
                 .build_return(Some(&return_val))
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::Return(None) => {
             ctx.builder
                 .build_return(None)
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::Branch(target_block) => {
             let target = ctx.get_block(*target_block)?;
             ctx.builder
                 .build_unconditional_branch(target)
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::CondBranch { condition, then_block, else_block } => {
             let cond_val = ctx.get_value(*condition)?;
@@ -529,7 +529,7 @@ pub fn translate_terminator(
                 let call_site = ctx
                     .builder
                     .build_call(fn_val, &[cond_val.into()], "is_truthy")
-                    .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                    .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
                 call_site
                     .try_as_basic_value()
                     .left()
@@ -543,22 +543,22 @@ pub fn translate_terminator(
 
             ctx.builder
                 .build_conditional_branch(cond_i1, then_bb, else_bb)
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::Unreachable => {
             ctx.builder
                 .build_unreachable()
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::Raise(exception) => {
             let exc_val = ctx.get_value(*exception)?;
             let fn_val = ctx.get_runtime_function("typhon_raise")?;
             ctx.builder
                 .build_call(fn_val, &[exc_val.into()], "raise")
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
             ctx.builder
                 .build_unreachable()
-                .map_err(|e| CodegenError::InstructionTranslationError(e.to_string()))?;
+                .map_err(|err| CodegenError::InstructionTranslationError(err.to_string()))?;
         }
         Terminator::Invoke { .. } => {
             return Err(CodegenError::InstructionTranslationError(

@@ -1,7 +1,8 @@
 lints.workspace = true
 
 [dependencies]
-  thiserror.workspace = true
+  rustc-hash.workspace = true
+  thiserror.workspace  = true
 
   typhon-analyzer.workspace = true
   typhon-ast.workspace      = true

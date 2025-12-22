@@ -60,7 +60,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The filter condition expression is invalid
     /// - A binary operator is missing its right-hand side
@@ -146,7 +146,7 @@ impl Parser<'_> {
     /// Parse an expression.
     ///
     /// This is the main entry point for expression parsing. It delegates to the
-    /// Pratt parser ([`parse_expression_bp`](Self::parse_expression_bp)) with minimum
+    /// Pratt parser (`parse_expression_bp`) with minimum
     /// binding power of 0, allowing all operators to be parsed with correct precedence.
     ///
     /// ## Grammar
@@ -204,7 +204,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Prefix expression parsing fails (invalid token, malformed literal, etc.)
     /// - Binary operator's right-hand side fails to parse
@@ -228,7 +228,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Prefix expression parsing fails (invalid token, malformed literal, etc.)
     /// - Binary operator's right-hand side fails to parse
@@ -302,7 +302,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if the target expression is invalid.
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if the target expression is invalid.
     pub(crate) fn parse_for_target(&mut self) -> ParseResult<NodeID> {
         // Push ForTarget context to help nested parsing functions know we're in a for-target
         self.context_stack.push(Context::new(ContextType::ForTarget, None, 0));

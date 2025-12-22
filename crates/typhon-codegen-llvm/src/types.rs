@@ -20,7 +20,7 @@
 //! ## Type Caching
 //!
 //! Type translations are cached to avoid redundant work. The cache is stored in the
-//! [`CodegenContext`](crate::context::CodegenContext) and is consulted before performing
+//! [`CodegenContext`] and is consulted before performing
 //! translation.
 //!
 //! ## Examples
@@ -52,7 +52,7 @@ use crate::error::{CodegenError, CodegenResult};
 ///
 /// This function first checks the type cache to see if the type has already been translated.
 /// If found in the cache, the cached type is returned immediately. Otherwise, it delegates
-/// to [`translate_type_uncached`] to perform the actual translation.
+/// to `translate_type_uncached` to perform the actual translation.
 ///
 /// All Typhon objects are represented as pointers to heap-allocated structs. Primitive types
 /// like `Bool` use native LLVM integer types.

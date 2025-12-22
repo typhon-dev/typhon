@@ -19,7 +19,7 @@ use typhon_source::types::Span;
 use crate::context::LoweringContext;
 use crate::error::{LoweringError, LoweringResult};
 
-impl LoweringContext<'_> {
+impl LoweringContext<'_, '_> {
     /// Lowers a class declaration to MIR
     ///
     /// Creates a `MIRTypeDef` for the class and lowers all methods as functions.
@@ -31,7 +31,7 @@ impl LoweringContext<'_> {
         let class_node =
             self.ast().get_node(class_id).ok_or_else(|| LoweringError::InternalError {
                 message: format!("Class node {class_id:?} not found"),
-                span: Span::new(0, 0),
+                span: Span::default(),
             })?;
 
         let class_decl = class_node
@@ -98,7 +98,7 @@ impl LoweringContext<'_> {
             let node =
                 self.ast().get_node(*stmt_id).ok_or_else(|| LoweringError::InternalError {
                     message: format!("Node {stmt_id:?} not found"),
-                    span: Span::new(0, 0),
+                    span: Span::default(),
                 })?;
 
             if let Ok(func) = node.data.get_as::<FunctionDecl>() {
@@ -125,7 +125,7 @@ impl LoweringContext<'_> {
             let node =
                 self.ast().get_node(*stmt_id).ok_or_else(|| LoweringError::InternalError {
                     message: format!("Node {stmt_id:?} not found"),
-                    span: Span::new(0, 0),
+                    span: Span::default(),
                 })?;
 
             if let Ok(func) = node.data.get_as::<FunctionDecl>()
@@ -141,7 +141,7 @@ impl LoweringContext<'_> {
             let node =
                 self.ast().get_node(*stmt_id).ok_or_else(|| LoweringError::InternalError {
                     message: format!("Node {stmt_id:?} not found"),
-                    span: Span::new(0, 0),
+                    span: Span::default(),
                 })?;
 
             if node.data.get_as::<FunctionDecl>().is_ok() {
@@ -228,7 +228,7 @@ impl LoweringContext<'_> {
     ) -> LoweringResult<()> {
         let node = self.ast().get_node(method_id).ok_or_else(|| LoweringError::InternalError {
             message: format!("Method node {method_id:?} not found"),
-            span: Span::new(0, 0),
+            span: Span::default(),
         })?;
 
         let func = node
@@ -308,29 +308,34 @@ impl LoweringContext<'_> {
     ///
     /// ## Base Class Resolution
     ///
-    /// Base class resolution is not yet fully implemented. To properly resolve base classes,
-    /// we need:
+    /// Resolves base class names to their type IDs using the symbol table when semantic
+    /// context is available. For each base class:
     ///
-    /// - Symbol table integration to look up class definitions by name
-    /// - Type ID mapping from class names to their allocated type IDs
-    /// - Handling of built-in base classes (object, Exception, etc.)
-    /// - Support for multiple inheritance and method resolution order (MRO)
-    /// - Validation that base classes are actually defined before use
-    ///
-    /// Currently returns an empty vector, meaning all classes are treated as if they inherit
-    /// directly from `object` only.
+    /// 1. Gets the base class node from the AST
+    /// 2. Extracts the class name from the node
+    /// 3. Looks up the class in the symbol table
+    /// 4. Retrieves the type ID from the symbol
     ///
     /// ## Future Work
     ///
-    /// - Integrate with symbol table to resolve base class names
     /// - Track class inheritance hierarchy in MIR type definitions
     /// - Implement MRO calculation for multiple inheritance
     /// - Add validation for circular inheritance
-    ///
-    /// TODO: Implement proper base class resolution once symbol table integration is completed
-    const fn resolve_base_classes(&self, _bases: &[NodeID]) -> Vec<TypeID> {
-        // Base class resolution not yet implemented - all classes implicitly inherit from object
-        Vec::new()
+    /// - Handle complex base class expressions (e.g., parameterized generics)
+    fn resolve_base_classes(&self, bases: &[NodeID]) -> Vec<TypeID> {
+        let mut base_type_ids = Vec::new();
+
+        for &base_id in bases {
+            // Get the base class node and extract the class name
+            if let Some(node) = self.ast().get_node(base_id)
+                && let Ok(var) = node.data.get_as::<VariableExpr>()
+                && let Some(type_id) = self.resolve_base_class(&var.name)
+            {
+                base_type_ids.push(type_id);
+            }
+        }
+
+        base_type_ids
     }
 
     /// Tries to extract a field assignment from a statement
@@ -341,7 +346,7 @@ impl LoweringContext<'_> {
     ) -> LoweringResult<Option<MIRField>> {
         let node = self.ast().get_node(stmt_id).ok_or_else(|| LoweringError::InternalError {
             message: format!("Statement node {stmt_id:?} not found"),
-            span: Span::new(0, 0),
+            span: Span::default(),
         })?;
 
         // Check if this is an assignment statement
@@ -349,7 +354,7 @@ impl LoweringContext<'_> {
             let target_node =
                 self.ast().get_node(assign.target).ok_or_else(|| LoweringError::InternalError {
                     message: format!("Target node {:?} not found", assign.target),
-                    span: Span::new(0, 0),
+                    span: Span::default(),
                 })?;
 
             // Check if target is self.field_name
@@ -357,7 +362,7 @@ impl LoweringContext<'_> {
                 let obj_node = self.ast().get_node(attr.value).ok_or_else(|| {
                     LoweringError::InternalError {
                         message: format!("Object node {:?} not found", attr.value),
-                        span: Span::new(0, 0),
+                        span: Span::default(),
                     }
                 })?;
 

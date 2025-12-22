@@ -29,9 +29,9 @@ pub enum MIRInstr {
     // ===== Object Operations =====
     /// Allocate new object
     AllocObject { type_id: TypeID, size: usize },
-    /// Get item from container (obj[key])
+    /// Get item from container (`obj[key]`)
     GetItem { object: ValueID, key: ValueID, ty: MIRType },
-    /// Set item in container (obj[key] = value)
+    /// Set item in container (`obj[key] = value`)
     SetItem { object: ValueID, key: ValueID, value: ValueID },
 
     // ===== Attribute Operations =====

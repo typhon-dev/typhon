@@ -21,7 +21,7 @@ use typhon_source::types::Span;
 use crate::context::{LoopContext, LoweringContext};
 use crate::error::{LoweringError, LoweringResult};
 
-impl LoweringContext<'_> {
+impl LoweringContext<'_, '_> {
     /// Lower an assignment statement
     fn lower_assignment(&mut self, assign: &AssignmentStmt) -> LoweringResult<()> {
         // Lower RHS first
@@ -46,14 +46,16 @@ impl LoweringContext<'_> {
 
                     new_local
                 });
-                let _ = self.emit(MIRInstr::Store { local, value });
+
+                self.emit(MIRInstr::Store { local, value });
 
                 Ok(())
             }
             AnyNode::AttributeExpr(attr) => {
                 // Attribute assignment: obj.attr = value
                 let object = self.lower_expr(attr.value)?;
-                let _ = self.emit(MIRInstr::SetAttr { object, attr: attr.name.clone(), value });
+
+                self.emit(MIRInstr::SetAttr { object, attr: attr.name.clone(), value });
 
                 Ok(())
             }
@@ -61,7 +63,8 @@ impl LoweringContext<'_> {
                 // Subscript assignment: obj[key] = value
                 let object = self.lower_expr(sub.value)?;
                 let key = self.lower_expr(sub.index)?;
-                let _ = self.emit(MIRInstr::SetItem { object, key, value });
+
+                self.emit(MIRInstr::SetItem { object, key, value });
 
                 Ok(())
             }
@@ -78,6 +81,7 @@ impl LoweringContext<'_> {
         // Branch to the break block
         let break_block = loop_ctx.break_block;
         let builder = self.current_function()?;
+
         builder.set_terminator(Terminator::Branch(break_block));
 
         Ok(())
@@ -101,7 +105,7 @@ impl LoweringContext<'_> {
     /// Lower an expression statement
     fn lower_expression_stmt(&mut self, stmt: &ExpressionStmt) -> LoweringResult<()> {
         // Lower the expression (its side effects are what matter)
-        let _ = self.lower_expr(stmt.expression)?;
+        self.lower_expr(stmt.expression)?;
 
         Ok(())
     }
@@ -250,9 +254,10 @@ impl LoweringContext<'_> {
 
     /// Lower a statement node to MIR
     ///
-    /// # Errors
+    /// ## Errors
     ///
     /// Returns an error if:
+    ///
     /// - The node does not exist in the AST
     /// - The node is not a supported statement type
     /// - Lowering of the statement fails
@@ -260,7 +265,7 @@ impl LoweringContext<'_> {
         // Get the node from the AST
         let node = self.ast().get_node(node_id).ok_or_else(|| LoweringError::InternalError {
             message: format!("Node not found: {node_id}"),
-            span: Span::new(0, 0),
+            span: Span::default(),
         })?;
 
         match &node.data {

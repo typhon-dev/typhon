@@ -20,7 +20,7 @@ pub struct MIRFunction {
     pub return_type: MIRType,
     /// Local variables
     pub locals: Vec<MIRLocal>,
-    /// Basic blocks (entry block is always blocks[0])
+    /// Basic blocks (entry block is always `blocks[0]`)
     pub blocks: Vec<BasicBlock>,
     /// Captured variables (if this is a closure)
     pub captures: Vec<MIRCapture>,

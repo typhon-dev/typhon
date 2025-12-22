@@ -64,7 +64,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not a valid identifier
     /// - The current token is not an underscore token
@@ -134,7 +134,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not an identifier
     /// - Expected module name is missing
@@ -213,7 +213,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not an identifier or underscore
     /// - The type annotation has syntax errors
@@ -319,7 +319,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not `type`, `match`, or `case`
     pub fn parse_soft_keyword_as_identifier(&mut self) -> ParseResult<NodeID> {
@@ -385,7 +385,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not an identifier
     /// - Expected type name is missing
@@ -454,7 +454,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The current token is not an identifier
     /// - The current token is not an underscore

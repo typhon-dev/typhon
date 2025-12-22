@@ -5,6 +5,7 @@
 //! and precise location tracking through spans and positions.
 //!
 //! The crate consists of two main modules:
+//!
 //! - [`source`]: Manages source files, content storage, and line/column tracking
 //! - [`span`]: Provides position and span tracking for accurate source locations
 //!

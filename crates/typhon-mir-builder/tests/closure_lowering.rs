@@ -5,9 +5,9 @@
 use std::sync::Arc;
 
 use typhon_ast::nodes::{AnyNode, NodeID};
+use typhon_mir::module::MIRModule;
 use typhon_mir_builder::context::LoweringContext;
 use typhon_mir_builder::error::LoweringResult;
-use typhon_mir::module::MIRModule;
 use typhon_parser::parser::Parser;
 use typhon_source::types::SourceManager;
 

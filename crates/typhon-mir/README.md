@@ -8,36 +8,60 @@ MIR is a typed, SSA-form IR that preserves Typhon semantics while being low-leve
 
 The crate is organized into the following modules:
 
-- **`types`**: MIR type system
-  - `MIRType`: Comprehensive type enum covering all MIR types (Int, Float, Bool, String, Object, Function, etc.)
-  - Type representation for boxed Typhon objects, functions, closures, and containers
+- **[`types`](src/types.rs)**: MIR type system
+  - [`MIRType`](src/types.rs): 13-variant type enum (Int, Float, Bool, Str, None, Object, Function, Closure, Tuple, List, Dict, Ref, Void)
+  - [`TypeID`](src/types.rs): Unique identifier for class types
 
-- **`instruction`**: MIR instructions and operands
-  - `Instruction`: All MIR instructions (arithmetic, memory, object operations, calls)
-  - `Operand`: Instruction operands (registers, constants)
-  - `Register`: SSA register with unique ID and type
-  - `Constant`: Constant values (Int, Float, Bool, String, None)
+- **[`instr`](src/instr.rs)**: MIR instructions and identifiers
+  - [`MIRInstr`](src/instr.rs): 20+ instruction variants covering:
+    - Memory management (IncRef, DecRef)
+    - Object operations (AllocObject, GetAttr, SetAttr, GetItem, SetItem)
+    - Function calls (Call, MethodCall)
+    - Constants and loads (Const, Load, Store, LoadGlobal, StoreGlobal)
+    - Arithmetic (BinOp, UnOp)
+    - Type operations (Cast, InstanceOf)
+    - Closure operations (CreateClosure, GetCapture, SetCapture)
+    - SSA (Phi nodes)
+  - [`Terminator`](src/instr.rs): Control flow terminators (Branch, CondBranch, Invoke, Raise, Return, Unreachable)
+  - [`MIRConst`](src/instr.rs): Constant values (Bool, Int, Float, Str, None)
+  - [`ValueID`](src/instr.rs): Unique identifier for SSA values
+  - [`LocalID`](src/instr.rs): Unique identifier for local variables
+  - [`BasicBlockID`](src/instr.rs): Unique identifier for basic blocks
+  - [`BinOpKind`](src/instr.rs): Binary operation kinds (Add, Sub, Mul, Div, etc.)
+  - [`UnOpKind`](src/instr.rs): Unary operation kinds (Neg, Not, BitNot)
 
-- **`block`**: Basic blocks and control flow
-  - `BasicBlock`: Single-entry, single-exit code blocks with instructions and terminator
-  - `Terminator`: Control flow instructions (Return, Jump, Branch, Unreachable)
-  - `BlockID`: Unique identifier for basic blocks
+- **[`block`](src/block.rs)**: Basic blocks and control flow
+  - [`BasicBlock`](src/block.rs): Single-entry, single-exit code blocks with:
+    - Instruction sequence
+    - Terminator
+    - Predecessor/successor tracking
+    - Optional landing pad for exception handling
 
-- **`function`**: Function representation
-  - `MIRFunction`: Complete function with parameters, locals, basic blocks, and control flow
-  - Function metadata including name, return type, and entry block
+- **[`function`](src/function.rs)**: Function representation
+  - [`MIRFunction`](src/function.rs): Complete function with parameters, locals, basic blocks,
+    captures
+  - [`MIRParam`](src/function.rs): Function parameter (name, type, local ID)
+  - [`MIRLocal`](src/function.rs): Local variable (name, type, mutability)
+  - [`MIRCapture`](src/function.rs): Captured variable for closures
 
-- **`module`**: Module and global definitions
-  - `MIRModule`: Compilation unit containing functions and globals
-  - `Global`: Global variable definitions with initializers
+- **[`module`](src/module.rs)**: Module and global definitions
+  - [`MIRModule`](src/module.rs): Compilation unit containing:
+    - Functions ([`Vec<MIRFunction>`](src/function.rs))
+    - Global variables ([`Vec<MIRGlobal>`](src/module.rs))
+    - Type definitions ([`Vec<MIRTypeDef>`](src/module.rs))
+    - Value name mapping ([`value_names`](src/module.rs)) for debug information
+  - [`MIRGlobal`](src/module.rs): Global variable with type, initializer, mutability
+  - [`MIRTypeDef`](src/module.rs): Class definition with fields, methods, inheritance
+  - [`MIRField`](src/module.rs): Type field (name, type, offset)
+  - [`MethodInfo`](src/module.rs): Method metadata for classes
 
-- **`builder`**: Builder API for constructing MIR
-  - `FunctionBuilder`: Ergonomic API for building MIR functions
-  - Block creation, instruction emission, register allocation
+- **[`builder`](src/builder.rs)**: Builder API for constructing MIR
+  - [`FunctionBuilder`](src/builder.rs): Ergonomic API for building MIR functions
+  - Block creation, instruction emission, local/value allocation
 
-- **`display`**: Pretty-printing and debugging
-  - `Display` implementations for human-readable MIR output
-  - Debug formatting for development and testing
+- **[`pretty`](src/pretty.rs)**: Pretty-printing and debugging
+  - Human-readable MIR output for debugging
+  - Display implementations for all MIR types
 
 ## MIR Design Principles
 

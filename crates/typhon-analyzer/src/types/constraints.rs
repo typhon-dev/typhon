@@ -113,13 +113,13 @@ impl ConstraintSolver {
                 Self::unify(*left_type_id, *right_type_id, type_env)
             }
             TypeConstraint::HasAttribute(_type_id, _attr_name, _attr_type_id) => {
-                // TODO: For now, we'll defer attribute checking to the type checker
-                // Full implementation would check if the type has the attribute
+                // TODO: Check if the type has the attribute
+                // For now, we'll defer attribute checking to the type checker
                 Ok(())
             }
             TypeConstraint::HasMethod(_type_id, _method_name, _arg_types, _return_type) => {
-                // TODO: For now, we'll defer method checking to the type checker
-                // Full implementation would check if the type has the method
+                // TODO: Check if the type has the method
+                // For now, we'll defer method checking to the type checker
                 Ok(())
             }
             TypeConstraint::Subtype(left_type_id, right_type_id) => {

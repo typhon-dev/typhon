@@ -1,7 +1,6 @@
 lints.workspace = true
 
 [dependencies]
-  anyhow.workspace     = true
   inkwell.workspace    = true
   rustc-hash.workspace = true
   thiserror.workspace  = true

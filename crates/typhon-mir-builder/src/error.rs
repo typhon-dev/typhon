@@ -6,6 +6,9 @@ use thiserror::Error;
 use typhon_ast::nodes::NodeID;
 use typhon_source::types::Span;
 
+/// Result type for lowering operations
+pub type LoweringResult<T> = Result<T, LoweringError>;
+
 /// Errors that can occur during AST to MIR lowering
 #[derive(Debug, Error, Clone)]
 pub enum LoweringError {
@@ -33,6 +36,15 @@ pub enum LoweringError {
     /// Return statement with value in void function
     #[error("return statement with value in void function")]
     ReturnWithValueInVoidFunction { span: Span },
+    /// Type conversion failed
+    #[error("type conversion error: cannot convert from {from} to {to}: {reason}")]
+    TypeConversionError { from: String, to: String, reason: String, span: Span },
+    /// Type information not available when needed
+    #[error("type information unavailable: {message}")]
+    TypeInformationUnavailable { message: String, span: Span },
+    /// Type lookup failed for expression
+    #[error("type lookup failed for expression {expr_id}: {reason}")]
+    TypeLookupFailed { expr_id: usize, reason: String, span: Span },
     /// Type mismatch during lowering
     #[error("type mismatch: expected {expected}, found {found}")]
     TypeMismatch { expected: String, found: String, span: Span },
@@ -40,6 +52,3 @@ pub enum LoweringError {
     #[error("unsupported AST node: {node_kind}")]
     UnsupportedNode { node_kind: String, span: Span },
 }
-
-/// Result type for lowering operations
-pub type LoweringResult<T> = Result<T, LoweringError>;

@@ -241,6 +241,7 @@ enum RefCountOp {
 
 #[cfg(test)]
 mod tests {
+    use rustc_hash::FxHashMap;
     use typhon_mir::block::BasicBlock;
     use typhon_mir::instr::{MIRConst, Terminator};
     use typhon_mir::module::MIRModule;
@@ -340,6 +341,7 @@ mod tests {
             functions: vec![func.clone()],
             globals: vec![],
             types: vec![],
+            value_names: FxHashMap::default(),
         };
         escape.analyze_module(&module).expect("escape analysis should succeed");
 

@@ -48,7 +48,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The colon (`:`) is missing
     /// - The newline after the colon is missing
@@ -114,7 +114,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The statement syntax is invalid
     /// - An unexpected token is encountered
@@ -319,7 +319,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The variable name is missing or invalid
     /// - The colon `:` is missing

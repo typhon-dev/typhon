@@ -13,7 +13,7 @@ use typhon_source::types::Span;
 use crate::context::{CaptureInfo, LoweringContext};
 use crate::error::{LoweringError, LoweringResult};
 
-impl LoweringContext<'_> {
+impl LoweringContext<'_, '_> {
     /// Analyzes what variables a function captures from its enclosing scope
     fn analyze_captures(&self, func_id: NodeID) -> LoweringResult<Vec<String>> {
         let node = self.ast().get_node(func_id).ok_or_else(|| LoweringError::InternalError {
@@ -103,13 +103,8 @@ impl LoweringContext<'_> {
     /// values. This is a safe default for the MIR phase as Python's dynamic type system
     /// determines actual types at runtime.
     ///
-    /// Future enhancements could track more specific type information by:
-    ///
-    /// - Querying the type environment from semantic analysis
-    /// - Tracking types through SSA value definitions
-    /// - Propagating type information through data flow analysis
-    ///
-    /// TODO: Implement proper type tracking for values once type environment integration is completed
+    /// Type tracking now supported via `query_name_type()` from `LoweringContext`.
+    /// Captured values can query their types from the semantic context when available.
     const fn get_type_for_value(&self, _value: typhon_mir::instr::ValueID) -> MIRType {
         // Use Object type as safe default - actual type determined at runtime
         MIRType::Object { type_id: None }
@@ -172,7 +167,7 @@ impl LoweringContext<'_> {
             .iter()
             .enumerate()
             .map(|(idx, name)| {
-                let ty = self.get_type_for_name(name);
+                let ty = self.query_captured_type(name);
                 #[allow(clippy::cast_possible_truncation)]
                 let source_local = LocalID(idx as u32);
                 MIRCapture { name: name.clone(), ty, source_local }
@@ -201,7 +196,7 @@ impl LoweringContext<'_> {
                 let fallback_local = LocalID(index as u32);
                 CaptureInfo {
                     name: name.clone(),
-                    ty: self.get_type_for_name(name),
+                    ty: self.query_captured_type(name),
                     source_local: self.get_local(name).unwrap_or(fallback_local),
                 }
             })
@@ -259,7 +254,7 @@ impl LoweringContext<'_> {
             // Determine closure type
             let param_types: Vec<MIRType> = params.iter().map(|(_, ty)| ty.clone()).collect();
             let captured_types: Vec<MIRType> =
-                captures.iter().map(|name| self.get_type_for_name(name)).collect();
+                captures.iter().map(|name| self.query_captured_type(name)).collect();
 
             let closure_ty = MIRType::Closure {
                 params: param_types,
@@ -387,5 +382,13 @@ impl LoweringContext<'_> {
         self.register_local(name_str, local_id);
 
         Ok(())
+    }
+
+    /// Queries the type of a captured value by name
+    ///
+    /// This helper method queries type information from the semantic analysis context
+    /// for captured variables. Falls back to [`MIRType::Object`] when unavailable.
+    fn query_captured_type(&mut self, name: &str) -> MIRType {
+        self.query_name_type(name).unwrap_or(MIRType::Object { type_id: None })
     }
 }

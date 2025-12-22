@@ -1,5 +1,6 @@
 //! MIR builder helpers for tests.
 
+use rustc_hash::FxHashMap;
 use typhon_mir::block::BasicBlock;
 use typhon_mir::function::MIRFunction;
 use typhon_mir::instr::{BasicBlockID, MIRInstr, Terminator};
@@ -58,5 +59,6 @@ pub fn create_module_with_function(func: MIRFunction) -> MIRModule {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     }
 }

@@ -196,8 +196,7 @@ impl VariableRenamer {
                     // We need to determine which variable this phi is for and use
                     // the current value from our stack
 
-                    // Note: This is a simplified implementation
-                    // A full implementation would track which variable each phi is for
+                    // TODO: Track which variable each phi is for
                     if pred_idx < incoming.len() {
                         // Record that we need to update this phi
                         // We'll apply updates after all renaming is done

@@ -6,6 +6,7 @@
 
 use inkwell::values::FunctionValue;
 use typhon_mir::block::BasicBlock as MIRBasicBlock;
+use typhon_mir::instr::ValueID;
 
 use crate::context::CodegenContext;
 use crate::error::CodegenResult;
@@ -101,7 +102,7 @@ pub fn translate_blocks(
         for instr in &block.instrs {
             if let Some(value) = translate_instruction(ctx, instr)? {
                 // Store the value with its sequential ID
-                ctx.set_value(typhon_mir::instr::ValueID(next_value_id), value);
+                ctx.set_value(ValueID(next_value_id), value);
                 next_value_id += 1;
             }
         }

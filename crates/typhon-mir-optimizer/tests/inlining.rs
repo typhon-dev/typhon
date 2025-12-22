@@ -1,5 +1,6 @@
 //! Tests for function inlining optimization pass.
 
+use rustc_hash::FxHashMap;
 use typhon_mir::builder::FunctionBuilder;
 use typhon_mir::instr::{MIRInstr, Terminator, ValueID};
 use typhon_mir::module::MIRModule;
@@ -64,6 +65,7 @@ fn test_no_inline_recursive() {
         functions: Vec::new(),
         globals: Vec::new(),
         types: Vec::new(),
+        value_names: FxHashMap::default(),
     };
 
     // Create a simple recursive function
@@ -102,6 +104,7 @@ fn test_no_inline_large_function() {
         functions: Vec::new(),
         globals: Vec::new(),
         types: Vec::new(),
+        value_names: FxHashMap::default(),
     };
 
     // Create a function with many instructions (exceeds max_inline_size)

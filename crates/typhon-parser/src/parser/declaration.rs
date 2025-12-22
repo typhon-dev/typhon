@@ -73,7 +73,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - A base class expression is invalid
     /// - Commas are missing between base classes
@@ -173,7 +173,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `class` keyword is missing or misplaced
     /// - The class name (identifier) is missing
@@ -309,7 +309,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Decorators are present but not followed by a function or class
     /// - Type declarations have decorators (not allowed in Python)
@@ -425,7 +425,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `@` symbol is missing
     /// - The decorator expression is invalid
@@ -501,7 +501,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `def` keyword is missing
     /// - The function name (identifier) is missing
@@ -714,7 +714,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - A parameter name is missing or invalid
     /// - Type annotations have syntax errors
@@ -948,7 +948,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `type` keyword is missing
     /// - The type name (identifier) is missing
@@ -1052,7 +1052,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `**` token is missing or malformed
     /// - The parameter name (identifier) is missing
@@ -1153,7 +1153,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The `*` token is missing or malformed
     /// - The parameter name (identifier) is missing

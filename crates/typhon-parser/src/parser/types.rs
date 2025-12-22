@@ -58,7 +58,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Missing first `[` after `Callable` keyword
     /// - Missing second `[` for parameter list
@@ -195,7 +195,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Missing `[` after base type identifier
     /// - Invalid type expression in argument list
@@ -295,7 +295,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Missing `[` after `Literal` keyword
     /// - Invalid literal value expression
@@ -399,7 +399,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Invalid type expression in element list
     /// - Missing commas between element types
@@ -519,7 +519,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - The type identifier is invalid
     /// - Generic type arguments are malformed
@@ -600,7 +600,7 @@ impl Parser<'_> {
     ///
     /// ## Errors
     ///
-    /// Returns [`ParseError`] if:
+    /// Returns [`ParseError`](crate::diagnostics::ParseError) if:
     ///
     /// - Invalid type expression after `|` operator
     /// - Type expression parsing fails

@@ -21,13 +21,14 @@ use typhon_mir::types::MIRType;
 
 use crate::context::LoweringContext;
 use crate::error::LoweringError;
+use crate::symbol_resolution::NameClassification;
 
-impl LoweringContext<'_> {
+impl LoweringContext<'_, '_> {
     /// Lower an expression node to MIR
     ///
     /// Returns the `ValueID` of the resulting value.
     ///
-    /// # Errors
+    /// ## Errors
     ///
     /// Returns an error if:
     /// - The node does not exist in the AST
@@ -81,36 +82,53 @@ impl LoweringContext<'_> {
     /// 2. Captured variables (for closures)
     /// 3. Global variables (module-level definitions and builtins)
     ///
+    /// ## Symbol Resolution
+    ///
+    /// When semantic context is available, uses the symbol table to classify the name
+    /// and determine the correct access pattern. Falls back to local/global distinction
+    /// when semantic context is unavailable.
+    ///
     /// ## Type Information
     ///
-    /// Currently uses [`MIRType::Object`] with `type_id: None` as a default type.
-    /// This is appropriate for the MIR lowering phase as detailed type information
-    /// will be propagated from the semantic analysis phase in future integration.
-    /// The dynamic type will be resolved at runtime.
-    ///
-    /// ## Global Variables
-    ///
-    /// Global variable access uses [`MIRInstr::LoadGlobal`] which handles:
-    ///
-    /// - Module-level function definitions
-    /// - Module-level class definitions
-    /// - Module-level variable assignments
-    /// - Built-in functions and constants
-    ///
-    /// The runtime will resolve these names in the global namespace at execution time.
-    ///
-    /// TODO: Enhance global variable support once symbol table integration is completed
+    /// Queries type from the semantic analysis context when available. Falls back to
+    /// [`MIRType::Object`] with `type_id: None` when type information is unavailable.
     fn lower_variable(&mut self, var: &VariableExpr) -> Result<ValueID, LoweringError> {
-        let ty = MIRType::Object { type_id: None };
+        // Query type from semantic context or use default
+        let ty = self.query_name_type(&var.name).unwrap_or(MIRType::Object { type_id: None });
 
-        // Try to look up the local ID for this variable by name
-        if let Ok(local_id) = self.get_local(&var.name) {
-            // It's a local variable - emit a load instruction
-            Ok(self.emit(MIRInstr::Load { local: local_id, ty }))
+        // Classify the name using symbol table if available
+        if let Some(classification) = self.classify_name(&var.name) {
+            match classification {
+                NameClassification::Local => {
+                    // Local variable - emit Load instruction
+                    let local_id = self.get_local(&var.name)?;
+
+                    Ok(self.emit(MIRInstr::Load { local: local_id, ty }))
+                }
+                NameClassification::Captured => {
+                    // Captured variable - check if we have a local binding first (parameter)
+                    // Otherwise treat as nonlocal access (LoadGlobal for now)
+                    // Full closure support with GetCapture requires tracking the closure object
+                    if let Ok(local_id) = self.get_local(&var.name) {
+                        Ok(self.emit(MIRInstr::Load { local: local_id, ty }))
+                    } else {
+                        // TODO: Treat as nonlocal for now - full closure infrastructure pending
+                        Ok(self.emit(MIRInstr::LoadGlobal { name: var.name.clone(), ty }))
+                    }
+                }
+                NameClassification::Global | NameClassification::Builtin => {
+                    // Global or builtin - emit LoadGlobal instruction
+                    Ok(self.emit(MIRInstr::LoadGlobal { name: var.name.clone(), ty }))
+                }
+            }
         } else {
-            // Not a local variable - treat as a global reference
-            // This handles function names, class names, and module-level variables
-            Ok(self.emit(MIRInstr::LoadGlobal { name: var.name.clone(), ty }))
+            // Fallback when semantic context is unavailable
+            // Try local first, then treat as global
+            if let Ok(local_id) = self.get_local(&var.name) {
+                Ok(self.emit(MIRInstr::Load { local: local_id, ty }))
+            } else {
+                Ok(self.emit(MIRInstr::LoadGlobal { name: var.name.clone(), ty }))
+            }
         }
     }
 
@@ -118,16 +136,11 @@ impl LoweringContext<'_> {
     ///
     /// ## Type Information
     ///
-    /// Uses [`MIRType::Object`] as the result type. In Python's dynamic type system,
-    /// binary operations can return different types based on the operands (e.g., `+` can
-    /// return int, float, str, list, etc.). The actual result type will be determined at
-    /// runtime through Python's operator protocol (`__add__`, `__mul__`, etc.).
-    ///
-    /// Future integration with the type checker can provide more specific type information
-    /// where available (e.g., from type annotations or inference), but the Object type
-    /// remains a safe default for the MIR phase.
-    ///
-    /// TODO: Get actual type from type environment once type checker integration is completed
+    /// Queries the type from the semantic analysis context if available. Binary operations
+    /// can return different types based on the operands (e.g., `+` can return int, float,
+    /// str, list, etc.). When type information is unavailable, falls back to [`MIRType::Object`],
+    /// and the actual result type will be determined at runtime through the operator protocol
+    /// (`__add__`, `__mul__`, etc.).
     fn lower_binary_op(&mut self, binop: &BinaryOpExpr) -> Result<ValueID, LoweringError> {
         // Lower operands first (bottom-up)
         let lhs = self.lower_expr(binop.left)?;
@@ -136,8 +149,8 @@ impl LoweringContext<'_> {
         // Map AST operator to MIR operator
         let op = map_binary_op(binop.op)?;
 
-        // Use Object type - actual type determined at runtime via operator protocol
-        let ty = MIRType::Object { type_id: None };
+        // Query type from semantic context, or use Object as fallback
+        let ty = self.query_expr_type_or_default(binop.id);
 
         // Emit binary operation
         Ok(self.emit(MIRInstr::BinOp { op, lhs, rhs, ty }))
@@ -147,12 +160,11 @@ impl LoweringContext<'_> {
     ///
     /// ## Type Information
     ///
-    /// Uses [`MIRType::Object`] as the result type. Unary operations in Python can return
-    /// different types based on the operand (e.g., `-x` can return int, float, or any type
-    /// with `__neg__` defined). The actual result type is determined at runtime through
-    /// Python's unary operator protocol.
-    ///
-    /// TODO: Get actual type from type environment once type checker integration is completed
+    /// Queries the type from the semantic analysis context if available. Unary operations
+    /// can return different types based on the operand (e.g., `-x` can return int, float,
+    /// or any type with `__neg__` defined). When type information is unavailable, falls back
+    /// to [`MIRType::Object`], and the actual result type is determined at runtime through
+    /// the unary operator protocol.
     fn lower_unary_op(&mut self, unop: &UnaryOpExpr) -> Result<ValueID, LoweringError> {
         // Lower operand first (bottom-up)
         let operand = self.lower_expr(unop.operand)?;
@@ -160,8 +172,8 @@ impl LoweringContext<'_> {
         // Map AST operator to MIR operator
         let op = map_unary_op(unop.op);
 
-        // Use Object type - actual type determined at runtime via operator protocol
-        let ty = MIRType::Object { type_id: None };
+        // Query type from semantic context, or use Object as fallback
+        let ty = self.query_expr_type_or_default(unop.id);
 
         // Emit unary operation
         Ok(self.emit(MIRInstr::UnOp { op, operand, ty }))
@@ -171,11 +183,10 @@ impl LoweringContext<'_> {
     ///
     /// ## Type Information
     ///
-    /// Uses [`MIRType::Object`] for the return type. In Python's dynamic type system,
-    /// function return types are determined at runtime. Type annotations can be used
-    /// in future integration with the type checker to provide more specific return types.
-    ///
-    /// TODO: Get actual return type from type environment once type checker integration is completed
+    /// Queries the return type from the semantic analysis context if available. Function
+    /// return types can be inferred from type annotations and inference. Falls back to
+    /// [`MIRType::Object`] when type information is unavailable, with the actual return
+    /// type determined at runtime.
     ///
     /// ## Keyword Arguments
     ///
@@ -195,6 +206,15 @@ impl LoweringContext<'_> {
     /// - Implement default parameter value handling
     /// - Support *args and **kwargs unpacking
     fn lower_call(&mut self, call: &CallExpr) -> Result<ValueID, LoweringError> {
+        // Try to extract the function name if it's a direct call to a named function
+        let func_name = if let Some(func_node) = self.ast().get_node(call.func)
+            && let AnyNode::VariableExpr(var) = &func_node.data
+        {
+            Some(var.name.clone())
+        } else {
+            None
+        };
+
         // Lower the callee
         let callee = self.lower_expr(call.func)?;
 
@@ -212,32 +232,34 @@ impl LoweringContext<'_> {
             });
         }
 
-        // Use Object type for return value - actual type determined at runtime
-        let ty = MIRType::Object { type_id: None };
+        // Query return type from semantic context, or use Object as fallback
+        let ty = self.query_expr_type_or_default(call.id);
 
         // Emit call instruction
-        Ok(self.emit(MIRInstr::Call { callee, args, ty }))
+        let call_result = self.emit(MIRInstr::Call { callee, args, ty });
+
+        // Track function name for this call result if we have it
+        if let Some(name) = func_name {
+            self.module_mut().set_value_name(call_result, name);
+        }
+
+        Ok(call_result)
     }
 
     /// Lower an attribute access
     ///
     /// ## Type Information
     ///
-    /// Uses [`MIRType::Object`] for the attribute type. In Python's dynamic type system,
-    /// attribute types are determined at runtime through the attribute lookup protocol
-    /// (`__getattribute__`, `__getattr__`). The actual type depends on the object's class
-    /// definition and cannot always be determined statically.
-    ///
-    /// Future integration with the type checker can provide more specific attribute types
-    /// where class definitions and type annotations are available.
-    ///
-    /// TODO: Get actual attribute type from type environment once type checker integration is completed
+    /// Queries the attribute type from the semantic analysis context if available. Attribute
+    /// types are determined at runtime through the attribute lookup protocol (`__getattribute__`,
+    /// `__getattr__`), but class definitions and type annotations can provide more specific types.
+    /// Falls back to [`MIRType::Object`] when type information is unavailable.
     fn lower_attribute(&mut self, attr: &AttributeExpr) -> Result<ValueID, LoweringError> {
         // Lower the object
         let object = self.lower_expr(attr.value)?;
 
-        // Use Object type - actual attribute type determined at runtime
-        let ty = MIRType::Object { type_id: None };
+        // Query type from semantic context, or use Object as fallback
+        let ty = self.query_expr_type_or_default(attr.id);
 
         // Emit GetAttr instruction
         Ok(self.emit(MIRInstr::GetAttr { object, attr: attr.name.clone(), ty }))

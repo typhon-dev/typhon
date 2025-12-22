@@ -387,7 +387,7 @@ impl fmt::Display for MappingPattern {
             f,
             "MappingPattern(items: {}, starred: {}, id: {})",
             self.items.len(),
-            self.starred.map_or("None".to_string(), |s| s.to_string()),
+            self.starred.map_or_else(|| "None".to_string(), |s| s.to_string()),
             self.id
         )
     }
@@ -460,7 +460,7 @@ impl fmt::Display for MatchCase {
             f,
             "CaseStmt(pattern: {}, guard: {}, body: {}, id: {})",
             self.pattern,
-            self.guard.map_or("None".to_string(), |g| g.to_string()),
+            self.guard.map_or_else(|| "None".to_string(), |g| g.to_string()),
             self.body.len(),
             self.id
         )
@@ -650,7 +650,7 @@ impl fmt::Display for SequencePattern {
             f,
             "SequencePattern(patterns: {}, starred: {}, id: {})",
             self.patterns.len(),
-            self.starred.map_or("None".to_string(), |s| s.to_string()),
+            self.starred.map_or_else(|| "None".to_string(), |s| s.to_string()),
             self.id
         )
     }

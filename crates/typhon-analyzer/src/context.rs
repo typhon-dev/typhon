@@ -25,7 +25,7 @@ use crate::visitors::{
 /// This is a simplified version for Phase 1. Full analysis logic will be added
 /// in later phases.
 #[derive(Debug)]
-pub struct SemanticContext {
+pub struct AnalysisContext {
     /// The symbol table for managing scopes and symbols.
     pub symbol_table: SymbolTable,
     /// The type environment for tracking type information.
@@ -34,7 +34,7 @@ pub struct SemanticContext {
     warnings: Vec<DeadCodeWarning>,
 }
 
-impl SemanticContext {
+impl AnalysisContext {
     /// Creates a new semantic context with empty symbol table and type environment.
     #[must_use]
     pub fn new() -> Self {
@@ -162,6 +162,6 @@ impl SemanticContext {
     pub fn warnings(&self) -> &[DeadCodeWarning] { &self.warnings }
 }
 
-impl Default for SemanticContext {
+impl Default for AnalysisContext {
     fn default() -> Self { Self::new() }
 }

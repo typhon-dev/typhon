@@ -42,7 +42,7 @@ pub mod symbol;
 pub mod types;
 pub mod visitors;
 
-use context::SemanticContext;
+use context::AnalysisContext;
 use error::SemanticError;
 use typhon_ast::ast::AST;
 use typhon_ast::nodes::NodeID;
@@ -60,8 +60,8 @@ use typhon_ast::nodes::NodeID;
 /// ## Errors
 ///
 /// Returns semantic errors if any were encountered during analysis.
-pub fn analyze_module(ast: &AST, module_id: NodeID) -> Result<SemanticContext, Vec<SemanticError>> {
-    let mut context = SemanticContext::new();
+pub fn analyze_module(ast: &AST, module_id: NodeID) -> Result<AnalysisContext, Vec<SemanticError>> {
+    let mut context = AnalysisContext::new();
     context.collect_symbols(ast, module_id)?;
     context.resolve_names(ast, module_id)?;
     context.check_types(ast, module_id)?;

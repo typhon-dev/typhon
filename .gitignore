@@ -13,7 +13,6 @@
 !/clippy.toml
 !/rust-toolchain.toml
 !/rustfmt.toml
-!/Taskfile.yml
 
 # Whitelist patterns found anywhere in project
 !.gitignore
@@ -52,7 +51,6 @@
 !/.github/
 !/.github/scripts/
 !/.github/workflows/
-!/.taskfiles/
 !/.vscode/
 !/crates/
 !/crates/**/

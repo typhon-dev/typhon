@@ -148,10 +148,10 @@ impl Type {
     ///
     /// This implements basic subtyping rules:
     ///
-    /// - Reflexivity: T <: T
-    /// - None <: Optional[T]
-    /// - T <: Optional[T]
-    /// - T <: Union[...] if T is one of the union members
+    /// - Reflexivity: `T <: T`
+    /// - `None <: Optional[T]`
+    /// - `T <: Optional[T]`
+    /// - `T <: Union[...]` if `T` is one of the union members
     #[must_use]
     pub fn is_subtype_of(&self, other: &Self) -> bool {
         // Reflexivity: T <: T

@@ -141,7 +141,7 @@ impl SymbolTable {
     /// Looks up a symbol by name, searching all scopes.
     ///
     /// This searches through all scopes in the table, which is useful for testing
-    /// and introspection. For normal name resolution, use [`lookup_in_scope_chain`].
+    /// and introspection. For normal name resolution, use [`lookup_in_scope_chain`](Self::lookup_in_scope_chain()).
     #[must_use]
     pub fn lookup_symbol(&self, name: &str) -> Option<&Symbol> {
         self.scopes.iter().find_map(|scope| scope.get_symbol(name))

@@ -78,9 +78,9 @@ impl LivenessAnalysis {
     /// 1. Compute use and def sets for each block
     /// 2. Iterate until fixed point:
     ///    - `live_out[B]` = union of `live_in[S]` for all successors S
-    ///    - `live_in[B]` = use[B] ∪ (`live_out[B]` - def[B])
+    ///    - `live_in[B] = use[B] ∪ (live_out[B] - def[B])`
     ///
-    /// # Errors
+    /// ## Errors
     ///
     /// Returns an error if the function has an invalid CFG structure.
     pub fn analyze(func: &MIRFunction) -> OptimizerResult<Self> {

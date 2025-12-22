@@ -11,6 +11,7 @@
 use inkwell::types::{BasicMetadataTypeEnum, BasicType};
 use inkwell::values::FunctionValue;
 use typhon_mir::function::MIRFunction;
+use typhon_mir::instr::{BasicBlockID, LocalID};
 use typhon_mir::types::MIRType;
 
 use crate::blocks::{create_basic_blocks, translate_blocks};
@@ -60,7 +61,7 @@ use crate::types::translate_type;
 /// ```
 pub fn allocate_locals(ctx: &mut CodegenContext<'_>, mir_func: &MIRFunction) -> CodegenResult<()> {
     for (idx, local) in mir_func.locals.iter().enumerate() {
-        let local_id = typhon_mir::instr::LocalID(idx as u32);
+        let local_id = LocalID(idx as u32);
 
         // Skip if already allocated (parameter)
         if ctx.locals.contains_key(&local_id) {
@@ -192,11 +193,8 @@ pub fn setup_parameters<'ctx>(
     llvm_func: FunctionValue<'ctx>,
 ) -> CodegenResult<()> {
     // Position at the end of the first basic block (which should already be created)
-    let first_block_id = mir_func
-        .blocks
-        .first()
-        .ok_or(CodegenError::BlockNotFound(typhon_mir::instr::BasicBlockID(0)))?
-        .id;
+    let first_block_id =
+        mir_func.blocks.first().ok_or(CodegenError::BlockNotFound(BasicBlockID(0)))?.id;
     let first_bb = ctx.get_block(first_block_id)?;
 
     // Position at the end of the first block for parameter allocations

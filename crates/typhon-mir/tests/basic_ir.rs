@@ -2,6 +2,7 @@
 //!
 //! Tests for constructing simple MIR programs using the builder API.
 
+use rustc_hash::FxHashMap;
 use typhon_mir::builder::FunctionBuilder;
 use typhon_mir::instr::{BinOpKind, LocalID, MIRConst, MIRInstr, Terminator, UnOpKind};
 use typhon_mir::module::MIRModule;
@@ -119,6 +120,7 @@ fn test_module_creation() {
         functions: vec![],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     assert_eq!(module.name, "test_module");

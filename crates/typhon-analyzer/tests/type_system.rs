@@ -1,6 +1,6 @@
 //! Tests for type system functionality.
 
-use typhon_analyzer::context::SemanticContext;
+use typhon_analyzer::context::AnalysisContext;
 use typhon_analyzer::types::{Type, TypeEnvironment, TypeID};
 use typhon_ast::nodes::NodeID;
 
@@ -193,7 +193,7 @@ fn test_type_display() {
 
 #[test]
 fn test_semantic_context_type_integration() {
-    let mut context = SemanticContext::new();
+    let mut context = AnalysisContext::new();
 
     // Add a type through context
     let type_id = context.type_environment_mut().add_type(Type::Int);

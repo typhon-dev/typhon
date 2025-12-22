@@ -4,6 +4,7 @@
 //! to object file emission.
 
 use inkwell::OptimizationLevel;
+use rustc_hash::FxHashMap;
 use typhon_codegen_llvm::{Target, compile_module, compile_to_object_file};
 use typhon_mir::block::BasicBlock;
 use typhon_mir::function::MIRFunction;
@@ -60,6 +61,7 @@ fn test_complete_compilation_pipeline() {
         functions: vec![func1, func2],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     // Compile to LLVM IR
@@ -96,6 +98,7 @@ fn test_object_file_generation_end_to_end() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let target = Target::default();
@@ -143,6 +146,7 @@ fn test_arithmetic_function_compilation() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let llvm_ir = compile_module(&module).expect("Arithmetic function compilation failed");
@@ -173,6 +177,7 @@ fn test_optimization_levels() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     // Test with different optimization levels
@@ -240,6 +245,7 @@ fn test_control_flow_compilation() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
     let llvm_ir = compile_module(&module).expect("Control flow compilation failed");
 

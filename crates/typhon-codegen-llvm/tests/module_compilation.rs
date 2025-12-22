@@ -3,6 +3,7 @@
 //! These tests verify the end-to-end compilation pipeline from MIR to LLVM IR
 //! and object files.
 
+use rustc_hash::FxHashMap;
 use typhon_codegen_llvm::{Target, compile_module, compile_to_object_file};
 use typhon_mir::block::BasicBlock;
 use typhon_mir::function::MIRFunction;
@@ -64,6 +65,7 @@ fn test_empty_module_compilation() {
         functions: vec![],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -83,6 +85,7 @@ fn test_single_function_module() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -103,6 +106,7 @@ fn test_function_with_return_value() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -136,6 +140,7 @@ fn test_multiple_functions_module() {
         functions: vec![func1, func2],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -155,6 +160,7 @@ fn test_module_verification_success() {
         functions: vec![],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -171,6 +177,7 @@ fn test_llvm_ir_format() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let llvm_ir = compile_module(&module).unwrap();
@@ -189,6 +196,7 @@ fn test_llvm_ir_signatures() {
         functions: vec![func1, func2],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let llvm_ir = compile_module(&module).unwrap();
@@ -206,6 +214,7 @@ fn test_object_file_generation() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
     let target = Target::default();
 
@@ -226,6 +235,7 @@ fn test_object_file_format() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
     let target = Target::default();
 
@@ -277,6 +287,7 @@ fn test_module_with_branching() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -294,6 +305,7 @@ fn test_module_with_function_calls() {
         functions: vec![func1, func2],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -342,6 +354,7 @@ fn test_module_with_loop() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let result = compile_module(&module);
@@ -359,6 +372,7 @@ fn test_module_name_in_ir() {
         functions: vec![func],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let llvm_ir = compile_module(&module).unwrap();
@@ -398,6 +412,7 @@ fn test_function_ordering_in_ir() {
         functions: vec![func_a, func_b],
         globals: vec![],
         types: vec![],
+        value_names: FxHashMap::default(),
     };
 
     let llvm_ir = compile_module(&module).unwrap();

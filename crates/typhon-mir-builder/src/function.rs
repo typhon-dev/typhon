@@ -10,7 +10,7 @@ use typhon_mir::types::MIRType;
 use crate::context::LoweringContext;
 use crate::error::{LoweringError, LoweringResult};
 
-impl LoweringContext<'_> {
+impl LoweringContext<'_, '_> {
     /// Lower a function declaration to MIR
     ///
     /// # Errors

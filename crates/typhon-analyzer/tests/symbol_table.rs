@@ -1,6 +1,6 @@
 //! Tests for symbol table functionality.
 
-use typhon_analyzer::context::SemanticContext;
+use typhon_analyzer::context::AnalysisContext;
 use typhon_analyzer::symbol::{ScopeKind, Symbol, SymbolKind, SymbolTable};
 use typhon_ast::nodes::NodeID;
 use typhon_source::types::Span;
@@ -200,7 +200,7 @@ fn test_node_scope_association() {
 
 #[test]
 fn test_semantic_context_integration() {
-    let mut context = SemanticContext::new();
+    let mut context = AnalysisContext::new();
     let span = Span::new(0, 10);
 
     // Access symbol table through context

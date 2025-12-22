@@ -168,8 +168,7 @@ impl UseDefChains {
 ///
 /// Returns None if the `ValueID` doesn't correspond to a local variable.
 fn value_to_local(_value_id: ValueID, _func: &MIRFunction) -> Option<LocalID> {
-    // This is a simplified implementation.
-    // A full implementation would maintain a mapping from ValueID to its source instruction,
+    // TODO: maintain a mapping from ValueID to its source instruction,
     // then check if that instruction is a Load of a local variable.
     // For now, we return None as this requires additional infrastructure.
     None
