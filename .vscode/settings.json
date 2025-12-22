@@ -58,6 +58,7 @@
     "crates/typhon-analyzer/Cargo.toml",
     "crates/typhon-ast/Cargo.toml",
     "crates/typhon-cli/Cargo.toml",
+    "crates/typhon-codegen-llvm/Cargo.toml",
     "crates/typhon-lsp/Cargo.toml",
     "crates/typhon-mir/Cargo.toml",
     "crates/typhon-mir-builder/Cargo.toml",
