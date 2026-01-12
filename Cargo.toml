@@ -32,7 +32,7 @@
     # External dependencies
     anyhow            = "1.0"
     bitflags          = "2.4.1"
-    bumpalo           = "3.19.0"
+    bumpalo           = "3.19.1"
     chumsky           = "0.9.3"
     colored           = "3.0.0"
     criterion         = "0.4"
@@ -61,9 +61,9 @@
     tower-lsp         = "0.20"
     unic-ucd-category = "0.9.0"
     unicode-xid       = "0.2.4"
-    url               = "2.4"
+    url               = "2.5"
     walkdir           = "2.5.0"
-    zerocopy          = "=0.8.26"
+    zerocopy          = "=0.8.33"
 
     [workspace.dependencies.clap]
       features = ["derive"]
