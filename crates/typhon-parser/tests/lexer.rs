@@ -1,17 +1,24 @@
 //! Tests for the lexer module.
 
-use std::sync::Arc;
+use typhon_parser::lexer::{LexError, Lexer, TokenKind};
+use typhon_source::types::FileID;
 
-use typhon_parser::diagnostics::DiagnosticReporter;
-use typhon_parser::lexer::{Lexer, TokenKind};
-use typhon_source::types::{FileID, SourceManager};
+fn create_lexer(source: &'_ str) -> Lexer<'_> { Lexer::new(source, FileID::new(1)) }
 
-fn create_lexer(source: &'_ str) -> Lexer<'_> {
-    let source_manager = Arc::new(SourceManager::new());
-    let file_id = FileID::new(1);
-    let diagnostics = Arc::new(DiagnosticReporter::new(source_manager));
+/// Lex `source` to completion, returning the kinds of every emitted token and
+/// every error the lexer accumulated.
+///
+/// This helper exercises the new internal-accumulator pattern: the lexer no
+/// longer takes a `DiagnosticReporter`; instead it pushes errors into a
+/// `Vec<LexError>` that consumers drain via [`Lexer::take_errors`]. Tests can
+/// therefore assert directly on the lexer's diagnostic output without going
+/// through the parser's `Diagnostic` type.
+fn lex_with_errors(source: &str) -> (Vec<TokenKind>, Vec<LexError>) {
+    let mut lexer = create_lexer(source);
+    let kinds: Vec<TokenKind> = (&mut lexer).map(|t| t.kind).collect();
+    let errors = lexer.take_errors();
 
-    Lexer::new(source, file_id, diagnostics)
+    (kinds, errors)
 }
 
 #[test]
@@ -134,6 +141,26 @@ fn test_fstring_token() {
     let token = lexer.next().expect("Expected token");
 
     assert_eq!(token.kind, TokenKind::FmtStringLiteral);
+}
+
+#[test]
+fn test_lex_with_errors_invalid_token() {
+    // The `$` character is not part of the Typhon lexicon; the lexer should
+    // record an `InvalidToken` error and the helper should surface it.
+    let (_kinds, errors) = lex_with_errors("$");
+
+    assert!(
+        errors.iter().any(|err| matches!(err, LexError::InvalidToken { character: '$', .. })),
+        "expected at least one InvalidToken('$') error, got {errors:?}"
+    );
+}
+
+#[test]
+fn test_lex_with_errors_no_errors() {
+    let (kinds, errors) = lex_with_errors("x = 42");
+
+    assert!(!kinds.is_empty(), "expected at least one token");
+    assert!(errors.is_empty(), "expected no lexer errors, got {errors:?}");
 }
 
 #[test]
