@@ -2,16 +2,19 @@
 //!
 //! This module defines the error types used by the Typhon parser, including:
 //! - `DiagnosticLevel`: Severity level of diagnostic messages
-//! - `LexError`: Errors that can occur during lexical analysis
-//! - `ParserError`: Errors that can occur during parsing
+//! - `ParseError`: Errors that can occur during parsing
 //! - `Diagnostic`: A diagnostic message with source location
+//!
+//! Lexer-specific error and warning types live in the [`typhon_lexer`] crate
+//! and are bridged into [`Diagnostic`] via `From` impls below; this directionality
+//! (consumer depends on producer) keeps the lexer free of any dependency on
+//! the diagnostics module.
 
 use std::{fmt, io};
 
 use thiserror::Error;
+use typhon_lexer::{LexError, LexWarning, Token, TokenKind};
 use typhon_source::types::SourceSpan;
-
-use crate::lexer::{Token, TokenKind};
 
 /// Represents the severity level of a diagnostic message.
 ///
@@ -59,223 +62,6 @@ impl DiagnosticLevel {
 
 impl fmt::Display for DiagnosticLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.as_str()) }
-}
-
-/// Lexer error kind
-#[derive(Clone, Copy, Debug)]
-pub enum LexErrorKind {
-    /// Expected indentation but found something else
-    ExpectedIndentation,
-    /// Indentation is inconsistent
-    InconsistentIndentation,
-    /// Invalid character
-    InvalidCharacter(char),
-    /// Docstring does not have a proper ending
-    InvalidDocStringEnding,
-    /// Invalid escape character in a string literal
-    InvalidEscapeChar(char),
-    /// Hexadecimal number literal is malformed
-    InvalidHexNumber,
-    /// Invalid indentation
-    InvalidIndentation { expected: usize, found: usize },
-    /// Number literal is malformed
-    InvalidNumber,
-    /// String literal does not have a closing quote
-    InvalidStringEnding,
-    /// Invalid token found
-    InvalidToken(char),
-    /// Invalid Unicode escape sequence
-    InvalidUnicodeEscape,
-    /// Tab character found in indentation
-    TabInIndentation,
-    /// Unexpected end of file
-    UnexpectedEOF,
-}
-
-/// Lexer error type
-#[derive(Debug, Error, Clone)]
-pub enum LexError {
-    /// Invalid indentation
-    #[error(
-        "Invalid indentation at line {line}, column {column}: expected {expected}, found {found}"
-    )]
-    InvalidIndentation {
-        /// Line number
-        line: usize,
-        /// Column number
-        column: usize,
-        /// Expected indentation
-        expected: usize,
-        /// Found indentation
-        found: usize,
-    },
-    /// Invalid character
-    #[error("Invalid character '{character}' at line {line}, column {column}")]
-    InvalidCharacter {
-        /// Invalid character
-        character: char,
-        /// Line number
-        line: usize,
-        /// Column number
-        column: usize,
-    },
-    /// Invalid token
-    #[error("Invalid token '{character}' at line {line}, column {column}")]
-    InvalidToken {
-        /// Invalid character
-        character: char,
-        /// Line number
-        line: usize,
-        /// Column number
-        column: usize,
-    },
-    /// Indentation error
-    #[error("Indentation error: {message}")]
-    IndentationError {
-        /// Error message
-        message: String,
-        /// Expected indentation level
-        expected: usize,
-        /// Found indentation level
-        found: usize,
-    },
-    /// Unexpected end of file
-    #[error("Unexpected end of file")]
-    UnexpectedEof,
-    /// Invalid syntax
-    #[error("Invalid syntax: {message}")]
-    InvalidSyntax {
-        /// Error message
-        message: String,
-        /// Span of the error
-        span: SourceSpan,
-    },
-    /// Other error
-    #[error("{0}")]
-    Other(String),
-}
-
-impl LexError {
-    /// Creates a new invalid indentation error.
-    #[must_use]
-    pub const fn invalid_indentation(
-        line: usize,
-        column: usize,
-        expected: usize,
-        found: usize,
-    ) -> Self {
-        Self::InvalidIndentation { line, column, expected, found }
-    }
-
-    /// Creates a new invalid character error.
-    #[must_use]
-    pub const fn invalid_character(line: usize, column: usize, character: char) -> Self {
-        Self::InvalidCharacter { line, column, character }
-    }
-
-    /// Creates a new unexpected EOF error.
-    #[must_use]
-    pub const fn unexpected_eof() -> Self { Self::UnexpectedEof }
-
-    /// Creates a new invalid syntax error.
-    pub fn invalid_syntax(message: impl Into<String>, span: SourceSpan) -> Self {
-        Self::InvalidSyntax { message: message.into(), span }
-    }
-
-    /// Creates a new other error.
-    pub fn other(message: impl Into<String>) -> Self { Self::Other(message.into()) }
-}
-
-/// Builder for lexer errors
-#[derive(Clone, Copy, Debug)]
-pub struct LexErrorBuilder {
-    /// Line number
-    line: Option<usize>,
-    /// Column number
-    column: Option<usize>,
-    /// Error kind
-    kind: Option<LexErrorKind>,
-}
-
-impl Default for LexErrorBuilder {
-    fn default() -> Self { Self::new() }
-}
-
-impl LexErrorBuilder {
-    /// Creates a new lexer error builder.
-    #[must_use]
-    pub const fn new() -> Self { Self { line: None, column: None, kind: None } }
-
-    /// Sets the line number.
-    #[must_use]
-    pub const fn line(mut self, line: usize) -> Self {
-        self.line = Some(line);
-        self
-    }
-
-    /// Sets the column number.
-    #[must_use]
-    pub const fn column(mut self, column: usize) -> Self {
-        self.column = Some(column);
-        self
-    }
-
-    /// Sets the column number.
-    #[must_use]
-    pub const fn kind(mut self, kind: LexErrorKind) -> Self {
-        self.kind = Some(kind);
-        self
-    }
-
-    /// Builds the lexer error.
-    #[must_use]
-    pub fn build(self) -> LexError {
-        let line = self.line.unwrap_or(0);
-        let column = self.column.unwrap_or(0);
-
-        match self.kind {
-            Some(LexErrorKind::InvalidIndentation { expected, found }) => {
-                LexError::InvalidIndentation { line, column, expected, found }
-            }
-            Some(
-                LexErrorKind::InvalidCharacter(character)
-                | LexErrorKind::InvalidEscapeChar(character),
-            ) => LexError::InvalidCharacter { line, column, character },
-            Some(LexErrorKind::InvalidToken(character)) => {
-                LexError::InvalidToken { line, column, character }
-            }
-            Some(LexErrorKind::UnexpectedEOF) => LexError::UnexpectedEof,
-            Some(LexErrorKind::InvalidStringEnding) => {
-                LexError::Other("Invalid string ending".to_string())
-            }
-            Some(LexErrorKind::InvalidNumber) => {
-                LexError::Other("Invalid number literal".to_string())
-            }
-            Some(LexErrorKind::InvalidHexNumber) => {
-                LexError::Other("Invalid hexadecimal literal".to_string())
-            }
-            Some(LexErrorKind::InconsistentIndentation) => LexError::IndentationError {
-                message: "Inconsistent indentation".to_string(),
-                expected: 0,
-                found: 0,
-            },
-            Some(LexErrorKind::InvalidDocStringEnding) => {
-                LexError::Other("Invalid docstring ending".to_string())
-            }
-            Some(LexErrorKind::ExpectedIndentation) => LexError::IndentationError {
-                message: "Expected indentation".to_string(),
-                expected: 0,
-                found: 0,
-            },
-            Some(LexErrorKind::TabInIndentation) => {
-                LexError::Other("Tab character in indentation".to_string())
-            }
-            Some(LexErrorKind::InvalidUnicodeEscape) => {
-                LexError::Other("Invalid Unicode escape sequence".to_string())
-            }
-            None => LexError::Other("Unknown lexer error".to_string()),
-        }
-    }
 }
 
 /// Parser error type
@@ -608,38 +394,54 @@ impl Diagnostic {
     }
 }
 
-/// Convert `LexError` to Diagnostic
+/// Convert [`LexError`] into a [`Diagnostic`].
+///
+/// This is the consumer-side bridge that lets the parser forward lexer errors
+/// drained from [`Lexer::take_errors`](typhon_lexer::Lexer::take_errors) into
+/// the diagnostic reporter without the lexer ever depending on diagnostics.
 impl From<LexError> for Diagnostic {
     fn from(error: LexError) -> Self {
         match error {
+            LexError::IndentationError { message, .. } => {
+                let span = SourceSpan::default();
+                Self::error(message, span)
+                    .with_note("Python-style indentation is significant in Typhon".to_string())
+            }
+            LexError::InvalidCharacter { character, .. } => {
+                let span = SourceSpan::default(); // TODO: derive span from line/column.
+                Self::error(format!("Invalid character: '{character}'"), span)
+            }
             LexError::InvalidIndentation { expected, found, .. } => {
-                let span = SourceSpan::default(); // Need to create an appropriate span from line, column
+                let span = SourceSpan::default(); // TODO: derive span from line/column.
                 Self::error(
                     format!("Invalid indentation: expected {expected}, found {found}"),
                     span,
                 )
                 .with_note("Python-style indentation is significant in Typhon".to_string())
             }
-            LexError::InvalidCharacter { character, .. } => {
-                let span = SourceSpan::default(); // Need to create an appropriate span from line, column
-                Self::error(format!("Invalid character: '{character}'"), span)
-            }
-            LexError::InvalidToken { character, .. } => {
-                let span = SourceSpan::default(); // Need to create an appropriate span from line, column
-                Self::error(format!("Invalid token: '{character}'"), span)
-            }
-            LexError::IndentationError { message, .. } => {
-                let span = SourceSpan::default();
-                Self::error(message, span)
-                    .with_note("Python-style indentation is significant in Typhon".to_string())
-            }
-            LexError::UnexpectedEof => {
-                Self::error("Unexpected end of file".to_string(), SourceSpan::default())
-            }
             LexError::InvalidSyntax { message, span } => {
                 Self::error(format!("Invalid syntax: {message}"), span)
             }
+            LexError::InvalidToken { character, .. } => {
+                let span = SourceSpan::default(); // TODO: derive span from line/column.
+                Self::error(format!("Invalid token: '{character}'"), span)
+            }
             LexError::Other(message) => Self::error(message, SourceSpan::default()),
+            LexError::UnexpectedEof => {
+                Self::error("Unexpected end of file".to_string(), SourceSpan::default())
+            }
+        }
+    }
+}
+
+/// Convert [`LexWarning`] into a [`Diagnostic`].
+///
+/// This is the consumer-side bridge for warnings drained from
+/// [`Lexer::take_warnings`](typhon_lexer::Lexer::take_warnings).
+impl From<LexWarning> for Diagnostic {
+    fn from(warning: LexWarning) -> Self {
+        match warning {
+            LexWarning::Message { message, span } => Self::warning(message, span),
         }
     }
 }

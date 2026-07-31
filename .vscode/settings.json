@@ -48,27 +48,13 @@
   "roo-cline.newTaskRequireTodos": true,
 
   "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.allTargets": false,
   "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::all"],
   "rust-analyzer.checkOnSave": true,
   "rust-analyzer.diagnostics.previewRustcOutput": true,
   "rust-analyzer.imports.granularity.enforce": true,
   "rust-analyzer.lens.enable": true,
-  "rust-analyzer.rustfmt.extraArgs": ["--unstable-features"],
-  "rust-analyzer.linkedProjects": [
-    "crates/typhon-analyzer/Cargo.toml",
-    "crates/typhon-ast/Cargo.toml",
-    "crates/typhon-cli/Cargo.toml",
-    "crates/typhon-codegen-llvm/Cargo.toml",
-    "crates/typhon-lsp/Cargo.toml",
-    "crates/typhon-mir/Cargo.toml",
-    "crates/typhon-mir-builder/Cargo.toml",
-    "crates/typhon-mir-optimizer/Cargo.toml",
-    "crates/typhon-parser/Cargo.toml",
-    "crates/typhon-repl/Cargo.toml",
-    "crates/typhon-runtime/Cargo.toml",
-    "crates/typhon-source/Cargo.toml",
-    "crates/typhon-stdlib/Cargo.toml"
-  ],
+  "rust-analyzer.rustfmt.extraArgs": ["+nightly"],
 
   "shellformat.useEditorConfig": true
 }

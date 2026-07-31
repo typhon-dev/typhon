@@ -1,10 +1,10 @@
 //! Context manager statement parsing (with, async with).
 
 use typhon_ast::nodes::{AnyNode, AsyncWithStmt, NodeID, NodeKind, WithStmt};
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser<'_> {

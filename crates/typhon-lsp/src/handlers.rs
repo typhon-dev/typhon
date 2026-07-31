@@ -1,28 +1,47 @@
 //! Handler implementations for LSP requests.
 
-use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
-use tower_lsp::lsp_types::*;
-use typhon_parser::lexer::Lexer;
+use std::sync::Arc;
+
+use tower_lsp::jsonrpc;
+use tower_lsp::lsp_types::{
+    CompletionItem,
+    CompletionItemKind,
+    CompletionResponse,
+    DocumentSymbol,
+    DocumentSymbolResponse,
+    GotoDefinitionResponse,
+    Hover,
+    HoverContents,
+    Location,
+    MarkupContent,
+    MarkupKind,
+    Position,
+    Range,
+    SymbolKind,
+    TextDocumentIdentifier,
+    TextDocumentPositionParams,
+};
 use typhon_parser::parser::Parser;
+use typhon_source::types::SourceManager;
 
 use crate::document::DocumentManager;
 use crate::utils;
 
 /// Handle a completion request.
-pub fn completion_handler(
+pub(crate) fn completion_handler(
     document_manager: &DocumentManager,
     params: &TextDocumentPositionParams,
-) -> JsonRpcResult<Option<CompletionResponse>> {
+) -> jsonrpc::Result<Option<CompletionResponse>> {
     // Get the document
     let document = document_manager
         .get_document(&params.text_document.uri)
-        .ok_or_else(|| JsonRpcError::invalid_params("Document not found"))?;
+        .ok_or_else(|| jsonrpc::Error::invalid_params("Document not found"))?;
 
     let position = params.position;
     let text = document.text();
 
     // Find the word at the cursor position
-    let word_info = utils::word_at_position(text, &position);
+    let word_info = utils::word_at_position(&text, &position);
 
     // Simple completion based on the current word
     let items = match word_info {
@@ -179,6 +198,31 @@ pub fn completion_handler(
                 }
             }
 
+            for function_name in top_level_function_names(&text) {
+                if function_name.starts_with(&word) {
+                    items.push(CompletionItem {
+                        label: function_name,
+                        kind: Some(CompletionItemKind::FUNCTION),
+                        detail: Some("Document function".to_string()),
+                        documentation: None,
+                        deprecated: Some(false),
+                        preselect: None,
+                        sort_text: None,
+                        filter_text: None,
+                        insert_text: None,
+                        insert_text_format: None,
+                        insert_text_mode: None,
+                        text_edit: None,
+                        additional_text_edits: None,
+                        command: None,
+                        commit_characters: None,
+                        data: None,
+                        tags: None,
+                        label_details: None,
+                    });
+                }
+            }
+
             items
         }
         None => Vec::new(),
@@ -188,20 +232,20 @@ pub fn completion_handler(
 }
 
 /// Handle a hover request.
-pub fn hover_handler(
+pub(crate) fn hover_handler(
     document_manager: &DocumentManager,
     params: &TextDocumentPositionParams,
-) -> JsonRpcResult<Option<Hover>> {
+) -> jsonrpc::Result<Option<Hover>> {
     // Get the document
     let document = document_manager
         .get_document(&params.text_document.uri)
-        .ok_or_else(|| JsonRpcError::invalid_params("Document not found"))?;
+        .ok_or_else(|| jsonrpc::Error::invalid_params("Document not found"))?;
 
     let position = params.position;
     let text = document.text();
 
     // Find the word at the cursor position
-    if let Some((word, range)) = utils::word_at_position(text, &position) {
+    if let Some((word, range)) = utils::word_at_position(&text, &position) {
         // Simple hover info based on the word
         let hover_text = match word.as_str() {
             // Keywords
@@ -257,10 +301,10 @@ pub fn hover_handler(
 }
 
 /// Handle a goto definition request.
-pub fn definition_handler(
-    document_manager: &DocumentManager,
-    params: &TextDocumentPositionParams,
-) -> JsonRpcResult<Option<GotoDefinitionResponse>> {
+pub(crate) const fn definition_handler(
+    _document_manager: &DocumentManager,
+    _params: &TextDocumentPositionParams,
+) -> jsonrpc::Result<Option<GotoDefinitionResponse>> {
     // TODO: This is a placeholder implementation
 
     // 1. Parse the document
@@ -272,11 +316,11 @@ pub fn definition_handler(
 }
 
 /// Handle a find references request.
-pub fn references_handler(
-    document_manager: &DocumentManager,
-    params: &TextDocumentPositionParams,
-    include_declaration: bool,
-) -> JsonRpcResult<Option<Vec<Location>>> {
+pub(crate) const fn references_handler(
+    _document_manager: &DocumentManager,
+    _params: &TextDocumentPositionParams,
+    _include_declaration: bool,
+) -> jsonrpc::Result<Option<Vec<Location>>> {
     // TODO: This is a placeholder implementation
 
     // 1. Parse the document
@@ -288,51 +332,69 @@ pub fn references_handler(
 }
 
 /// Handle a document symbol request.
-pub fn document_symbol_handler(
+pub(crate) fn document_symbol_handler(
     document_manager: &DocumentManager,
     params: &TextDocumentIdentifier,
-) -> JsonRpcResult<Option<DocumentSymbolResponse>> {
+) -> jsonrpc::Result<Option<DocumentSymbolResponse>> {
     // Get the document
     let document = document_manager
         .get_document(&params.uri)
-        .ok_or_else(|| JsonRpcError::invalid_params("Document not found"))?;
+        .ok_or_else(|| jsonrpc::Error::invalid_params("Document not found"))?;
 
     let text = document.text();
 
-    // Create a lexer and parser
-    let lexer = Lexer::new(text);
-    let mut parser = Parser::new(lexer);
+    // Create a SourceManager and register this document so the parser can resolve spans.
+    let mut source_manager = SourceManager::new();
+    let file_id = source_manager.add_file(params.uri.to_string(), text.clone());
+    let source_manager = Arc::new(source_manager);
 
-    // Parse the document
-    match parser.parse() {
-        Ok(module) => {
-            // Create symbols from the AST
-            let mut symbols = Vec::new();
+    // Parse the document for diagnostics side effects and future nested-symbol support.
+    // The top-level module symbol remains available even if parsing fails.
+    let mut parser = Parser::new(&text, file_id, source_manager);
+    drop(parser.parse_module());
 
-            // Add module as a root symbol
-            symbols.push(DocumentSymbol {
-                name: module.name.clone(),
-                detail: Some("Module".to_string()),
-                kind: SymbolKind::FILE,
-                tags: None,
-                deprecated: None,
-                range: Range::new(Position::new(0, 0), Position::new(u32::MAX, u32::MAX)),
-                selection_range: Range::new(
-                    Position::new(0, 0),
-                    Position::new(0, module.name.len() as u32),
-                ),
-                children: None,
-            });
+    // Derive a friendly module name from the URI path. We currently expose only the
+    // top-level module symbol; recursive AST traversal for nested function/class/variable
+    // symbols is tracked as future work.
+    let module_name = params
+        .uri
+        .path_segments()
+        .and_then(|mut segs| segs.next_back())
+        .map_or_else(|| "module".to_string(), |s| s.trim_end_matches(".ty").to_string());
 
-            // TODO: recursively visit the AST and extract
-            // symbols for functions, classes, variables, etc.
+    let module_name_len = u32::try_from(module_name.len()).unwrap_or(u32::MAX);
+    let symbols = vec![{
+        #[allow(deprecated)]
+        DocumentSymbol {
+            name: module_name,
+            detail: Some("Module".to_string()),
+            kind: SymbolKind::FILE,
+            tags: None,
+            deprecated: None,
+            range: Range::new(Position::new(0, 0), Position::new(u32::MAX, u32::MAX)),
+            selection_range: Range::new(Position::new(0, 0), Position::new(0, module_name_len)),
+            children: None,
+        }
+    }];
 
-            if symbols.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(DocumentSymbolResponse::Nested(symbols)))
+    Ok(Some(DocumentSymbolResponse::Nested(symbols)))
+}
+
+fn top_level_function_names(text: &str) -> impl Iterator<Item = String> + '_ {
+    text.lines().filter_map(|line| {
+        let trimmed = line.trim_start();
+
+        if trimmed.len() == line.len() && trimmed.starts_with("def ") {
+            let name = trimmed[4..]
+                .split(|character: char| !character.is_alphanumeric() && character != '_')
+                .next()
+                .unwrap_or_default();
+
+            if !name.is_empty() {
+                return Some(name.to_string());
             }
         }
-        Err(()) => Ok(None),
-    }
+
+        None
+    })
 }

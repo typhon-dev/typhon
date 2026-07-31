@@ -19,11 +19,11 @@ use typhon_ast::nodes::{
     VariableExpr,
     WildcardPattern,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use super::Parser;
 use crate::diagnostics::{ParseError, ParseResult};
-use crate::lexer::TokenKind;
 
 impl Parser<'_> {
     /// Parse a case statement (e.g. `case pattern:` or `case pattern if guard:`).

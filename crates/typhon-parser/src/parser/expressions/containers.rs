@@ -1,9 +1,9 @@
 //! Container expression parsing (lists, dicts, sets, tuples)
 
 use typhon_ast::nodes::NodeID;
+use typhon_lexer::TokenKind;
 
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser<'_> {

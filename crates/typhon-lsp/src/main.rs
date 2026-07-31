@@ -22,8 +22,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let stdout = tokio::io::stdout();
 
     // Create a new language server instance
-    let (service, socket) =
-        LspService::build(|client| server::TyphonLanguageServer::new(client)).finish();
+    let (service, socket) = LspService::build(server::TyphonLanguageServer::new).finish();
 
     // Start the language server
     Server::new(stdin, stdout, socket).serve(service).await;

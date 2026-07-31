@@ -12,7 +12,7 @@ use std::sync::OnceLock;
 
 use rustc_hash::FxHashMap;
 
-use super::token::{Token, TokenKind};
+use crate::token::{Token, TokenKind};
 
 /// Get a global map of soft keywords for efficient lookups
 pub fn soft_keywords() -> &'static FxHashMap<&'static str, TokenKind> {

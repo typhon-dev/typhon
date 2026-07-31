@@ -7,10 +7,10 @@
 //! - Unary operator parsing
 
 use typhon_ast::nodes::{AnyNode, NodeID, NodeKind, TernaryExpr, UnaryOpExpr, UnaryOpKind};
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::{ParseErrorBuilder, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::{Context, ContextType, Parser};
 
 /// Get the binding power for infix operators

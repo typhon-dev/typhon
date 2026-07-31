@@ -8,10 +8,10 @@ use std::sync::Arc;
 
 use typhon_ast::ast::AST;
 use typhon_ast::nodes::{AnyNode, FromImportStmt, ImportStmt, Module, NodeID, NodeKind};
+use typhon_lexer::TokenKind;
 use typhon_source::types::{SourceManager, Span};
 
 use crate::diagnostics::{ParseError, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 use crate::parser::context::{Context, ContextType};
 

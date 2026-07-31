@@ -1,10 +1,10 @@
 //! Statement parsing entry points (`parse_statement`, `parse_block`, `parse_statement_list`, `parse_variable_declaration`).
 
 use typhon_ast::nodes::{AnyNode, NodeID, NodeKind, VariableDecl};
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 use crate::parser::context::{Context, ContextType};
 

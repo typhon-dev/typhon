@@ -21,11 +21,11 @@ use typhon_ast::nodes::{
     YieldExpr,
     YieldFromExpr,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use super::operators::infix_binding_power;
 use crate::diagnostics::{ParseErrorBuilder, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser<'_> {
@@ -37,7 +37,7 @@ impl Parser<'_> {
         let start = self
             .ast
             .get_node(object)
-            .map_or(self.current_token().span().start, |node| node.span.start);
+            .map_or_else(|| self.current_token().span().start, |node| node.span.start);
 
         // Expect and consume '.'
         self.expect(TokenKind::Dot)?;
@@ -134,8 +134,10 @@ impl Parser<'_> {
         let value = self.parse_expression()?;
 
         // Get the end position
-        let end =
-            self.ast.get_node(value).map_or(self.current_token().span().end, |node| node.span.end);
+        let end = self
+            .ast
+            .get_node(value)
+            .map_or_else(|| self.current_token().span().end, |node| node.span.end);
 
         let span = Span::new(start, end);
         let await_expr = AwaitExpr::new(value, NodeID::new(0, 0), span);
@@ -207,7 +209,7 @@ impl Parser<'_> {
         let start = self
             .ast
             .get_node(func)
-            .map_or(self.current_token().span().start, |node| node.span.start);
+            .map_or_else(|| self.current_token().span().start, |node| node.span.start);
 
         // Expect and consume '('
         self.expect(TokenKind::LeftParen)?;
@@ -468,7 +470,7 @@ impl Parser<'_> {
         let start = self
             .ast
             .get_node(object)
-            .map_or(self.current_token().span().start, |node| node.span.start);
+            .map_or_else(|| self.current_token().span().start, |node| node.span.start);
 
         // Expect and consume '['
         self.expect(TokenKind::LeftBracket)?;

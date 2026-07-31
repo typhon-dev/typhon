@@ -62,6 +62,7 @@ typhon/
     ├── typhon-analyzer/      # Semantic analysis infrastructure
     ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
     ├── typhon-cli/           # Command-line interface
+    ├── typhon-lexer/         # Tokenizer (logos-based, decoupled from parser)
     ├── typhon-lsp/           # Language Server Protocol implementation
     ├── typhon-mir/           # Mid-level Intermediate Representation (MIR)
     ├── typhon-mir-builder/   # AST to MIR lowering

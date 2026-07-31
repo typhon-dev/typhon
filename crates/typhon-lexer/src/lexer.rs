@@ -11,20 +11,27 @@
 //! - Error reporting and recovery
 //! - Tab vs. spaces warnings
 
-mod rules;
-mod token;
-
 use std::collections::VecDeque;
-use std::sync::Arc;
 
 use logos::Lexer as LogosLexer;
-pub use rules::*;
-pub use token::*;
 use typhon_source::types::{FileID, Position, SourceSpan, Span};
 
-use crate::diagnostics::{DiagnosticReporter, LexError};
+use crate::error::{LexError, LexWarning};
+use crate::rules::{
+    check_soft_keyword,
+    is_in_template_string_context,
+    is_string_literal,
+    join_string_literals,
+};
+use crate::token::{Token, TokenKind};
 
-/// Custom lexer that handles Python's indentation rules
+/// Custom lexer that handles Python's indentation rules.
+///
+/// Diagnostics produced during tokenization are accumulated locally on the
+/// lexer (see [`Lexer::take_errors`] and [`Lexer::take_warnings`]) and drained
+/// by the consumer (typically the parser) between tokens. This keeps the lexer
+/// free of any dependency on the diagnostics module so it can be extracted
+/// into its own crate without inducing a dependency cycle.
 #[derive(Debug)]
 pub struct Lexer<'src> {
     /// The inner logos lexer
@@ -33,8 +40,10 @@ pub struct Lexer<'src> {
     source: &'src str,
     /// File identifier
     file_id: FileID,
-    /// Diagnostic reporter for error reporting
-    diagnostic_reporter: Arc<DiagnosticReporter>,
+    /// Errors accumulated during tokenization, drained by the consumer.
+    errors: Vec<LexError>,
+    /// Warnings accumulated during tokenization, drained by the consumer.
+    warnings: Vec<LexWarning>,
     /// Indentation management
     indent_stack: Vec<usize>,
     /// Queue of pending tokens to return
@@ -54,20 +63,23 @@ pub struct Lexer<'src> {
 }
 
 impl<'src> Lexer<'src> {
-    /// Create a new lexer for the given source
+    /// Create a new lexer for the given source.
+    ///
+    /// The lexer accumulates diagnostics internally; consumers should drain
+    /// them via [`Lexer::take_errors`] and [`Lexer::take_warnings`] between
+    /// tokens (or at end of stream) and forward them to their preferred
+    /// reporting sink. Conversion to the parser's `Diagnostic` type is
+    /// available via the `From` impls in [`crate::diagnostics`].
     #[must_use]
-    pub fn new(
-        source: &'src str,
-        file_id: FileID,
-        diagnostic_reporter: Arc<DiagnosticReporter>,
-    ) -> Self {
+    pub fn new(source: &'src str, file_id: FileID) -> Self {
         let inner = LogosLexer::new(source);
 
         Self {
             inner,
             source,
             file_id,
-            diagnostic_reporter,
+            errors: vec![],
+            warnings: vec![],
             indent_stack: vec![0], // Start with no indentation
             pending_tokens: VecDeque::new(),
             at_line_start: true,
@@ -126,17 +138,13 @@ impl<'src> Lexer<'src> {
 
                 Some(token)
             } else {
-                // Create a LexError for the invalid token
-                let error = LexError::InvalidToken {
+                // Record an `InvalidToken` error and return `None` so the
+                // outer iterator can decide whether to continue.
+                self.errors.push(LexError::InvalidToken {
                     character: self.source[start_offset..end_offset].chars().next().unwrap_or('?'),
                     line: start_line,
                     column: start_col,
-                };
-
-                // Create a clone of the reporter for mutation
-                let mut reporter_clone = (*self.diagnostic_reporter).clone();
-                reporter_clone.add_diagnostic(error.into());
-                self.diagnostic_reporter = Arc::new(reporter_clone);
+                });
 
                 None
             }
@@ -154,19 +162,26 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    /// Returns the current source code being lexed
+    /// Returns the current source code being lexed.
     #[must_use]
     pub const fn source(&self) -> &'src str { self.source }
 
-    /// Returns the file ID
+    /// Returns the file ID.
     #[must_use]
     pub const fn file_id(&self) -> FileID { self.file_id }
 
-    /// Returns the diagnostic reporter
-    #[must_use]
-    pub const fn diagnostic_reporter(&self) -> &Arc<DiagnosticReporter> {
-        &self.diagnostic_reporter
-    }
+    /// Drain accumulated lexer errors.
+    ///
+    /// Consumers (typically [`crate::parser::Parser`]) should call this after
+    /// each token (or at end of stream) and forward the returned errors via
+    /// `Diagnostic::from(LexError)` to their reporting sink.
+    pub fn take_errors(&mut self) -> Vec<LexError> { std::mem::take(&mut self.errors) }
+
+    /// Drain accumulated lexer warnings.
+    ///
+    /// Consumers should call this alongside [`Lexer::take_errors`] and
+    /// forward the returned warnings via `Diagnostic::from(LexWarning)`.
+    pub fn take_warnings(&mut self) -> Vec<LexWarning> { std::mem::take(&mut self.warnings) }
 
     /// Returns the current line number
     #[must_use]
@@ -222,17 +237,13 @@ impl<'src> Iterator for Lexer<'src> {
                         self.byte_offset += 1;
                         self.column += 1;
 
-                        // Report warning about mixing tabs and spaces
+                        // Report a warning about mixing tabs and spaces.
                         let pos = Position::new(self.line, self.column, self.byte_offset - 1);
                         let source_span = SourceSpan::new(pos, pos, self.file_id);
-
-                        // Clone reporter, add diagnostic, and replace the original
-                        let mut reporter_clone = (*self.diagnostic_reporter).clone();
-                        let _ = reporter_clone.warning(
-                            "Inconsistent indentation: mixing tabs and spaces".to_string(),
+                        self.warnings.push(LexWarning::message(
+                            "Inconsistent indentation: mixing tabs and spaces",
                             source_span,
-                        );
-                        self.diagnostic_reporter = Arc::new(reporter_clone);
+                        ));
                     }
                     _ => break,
                 }
@@ -280,17 +291,11 @@ impl<'src> Iterator for Lexer<'src> {
                             if !self.indent_stack.is_empty()
                                 && !self.indent_stack.contains(&space_count)
                             {
-                                // Create error builder
-                                let error = LexError::IndentationError {
+                                self.errors.push(LexError::IndentationError {
                                     message: "Inconsistent indentation level".to_string(),
                                     expected: *self.indent_stack.last().unwrap(),
                                     found: space_count,
-                                };
-
-                                // Clone reporter, add diagnostic, and replace the original
-                                let mut reporter_clone = (*self.diagnostic_reporter).clone();
-                                reporter_clone.add_diagnostic(error.into());
-                                self.diagnostic_reporter = Arc::new(reporter_clone);
+                                });
                             }
 
                             let pos = Position::new(self.line, 1, self.byte_offset - space_count);

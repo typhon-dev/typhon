@@ -7,9 +7,8 @@ use ropey::Rope;
 use tower_lsp::lsp_types::{Position, Range, Url};
 
 /// Represents a text document in the editor.
-pub struct Document {
-    /// URI of the document
-    uri: Url,
+#[derive(Debug)]
+pub(crate) struct Document {
     /// Version of the document
     version: i32,
     /// Document content as a rope data structure for efficient editing
@@ -18,27 +17,22 @@ pub struct Document {
 
 impl Document {
     /// Creates a new document with the given URI, text, and version.
-    pub fn new(uri: Url, text: String, version: i32) -> Self {
-        Self { uri, version, content: Rope::from_str(&text) }
-    }
-
-    /// Returns the URI of the document.
-    pub fn uri(&self) -> &Url {
-        &self.uri
+    pub(crate) fn new(text: &str, version: i32) -> Self {
+        Self { version, content: Rope::from_str(text) }
     }
 
     /// Returns the current version of the document.
-    pub fn version(&self) -> i32 {
-        self.version
-    }
+    pub(crate) const fn version(&self) -> i32 { self.version }
 
-    /// Returns the text of the document.
-    pub fn text(&self) -> &str {
-        self.content.as_str().unwrap_or("")
-    }
+    /// Returns the text of the document as a `String`.
+    ///
+    /// `ropey::Rope` does not expose a contiguous `&str` accessor (its internal storage is
+    /// rope-based), so this allocates a fresh `String` from the rope's chunks. Callers
+    /// that need to repeatedly read the same document should cache the returned `String`.
+    pub(crate) fn text(&self) -> String { self.content.to_string() }
 
     /// Updates the document with a change at the given range.
-    pub fn update(&mut self, range: Range, text: String, version: i32) {
+    pub(crate) fn update(&mut self, range: Range, text: &str, version: i32) {
         // Update version
         self.version = version;
 
@@ -50,20 +44,20 @@ impl Document {
         if let (Some(start), Some(end)) = (start_offset, end_offset) {
             let byte_range = start..end;
             self.content.remove(byte_range);
-            self.content.insert(start, &text);
+            self.content.insert(start, text);
         }
     }
 
     /// Replaces the entire document content.
-    pub fn replace(&mut self, text: String, version: i32) {
+    pub(crate) fn replace(&mut self, text: &str, version: i32) {
         // Update version
         self.version = version;
         // Replace content
-        self.content = Rope::from_str(&text);
+        self.content = Rope::from_str(text);
     }
 
     /// Converts a Position (line, character) to a byte offset in the document.
-    pub fn position_to_byte_offset(&self, position: Position) -> Option<usize> {
+    pub(crate) fn position_to_byte_offset(&self, position: Position) -> Option<usize> {
         let line_idx = position.line as usize;
         let char_idx = position.character as usize;
 
@@ -82,17 +76,20 @@ impl Document {
     }
 
     /// Converts a byte offset to a Position (line, character) in the document.
-    pub fn byte_offset_to_position(&self, offset: usize) -> Position {
+    pub(crate) fn byte_offset_to_position(&self, offset: usize) -> Position {
         let line_idx = self.content.byte_to_line(offset);
         let line = self.content.line(line_idx);
         let line_start_byte = self.content.line_to_byte(line_idx);
         let char_idx = line.byte_to_char(offset - line_start_byte);
 
-        Position::new(line_idx as u32, char_idx as u32)
+        Position::new(
+            u32::try_from(line_idx).unwrap_or(u32::MAX),
+            u32::try_from(char_idx).unwrap_or(u32::MAX),
+        )
     }
 
     /// Converts a span (byte range) to an LSP range.
-    pub fn range_from_span(&self, span: StdRange<usize>) -> Range {
+    pub(crate) fn range_from_span(&self, span: StdRange<usize>) -> Range {
         let start = self.byte_offset_to_position(span.start);
         let end = self.byte_offset_to_position(span.end);
         Range::new(start, end)
@@ -100,48 +97,38 @@ impl Document {
 }
 
 /// Manages documents in the LSP server.
-pub struct DocumentManager {
+#[derive(Debug)]
+pub(crate) struct DocumentManager {
     /// Map of document URIs to Document instances
     documents: HashMap<Url, Document>,
 }
 
 impl DocumentManager {
     /// Creates a new document manager.
-    pub fn new() -> Self {
-        Self { documents: HashMap::new() }
-    }
+    pub(crate) fn new() -> Self { Self { documents: HashMap::new() } }
 
     /// Adds a document to the manager.
-    pub fn add_document(&mut self, uri: Url, text: String, version: i32) {
-        self.documents.insert(uri.clone(), Document::new(uri, text, version));
+    pub(crate) fn add_document(&mut self, uri: Url, text: &str, version: i32) {
+        self.documents.insert(uri, Document::new(text, version));
     }
 
     /// Removes a document from the manager.
-    pub fn remove_document(&mut self, uri: &Url) {
-        self.documents.remove(uri);
-    }
+    pub(crate) fn remove_document(&mut self, uri: &Url) { self.documents.remove(uri); }
 
     /// Gets a document by URI.
-    pub fn get_document(&self, uri: &Url) -> Option<&Document> {
-        self.documents.get(uri)
-    }
+    pub(crate) fn get_document(&self, uri: &Url) -> Option<&Document> { self.documents.get(uri) }
 
     /// Updates a document with a change at the given range.
-    pub fn update_document(&mut self, uri: &Url, range: Range, text: String, version: i32) {
+    pub(crate) fn update_document(&mut self, uri: &Url, range: Range, text: &str, version: i32) {
         if let Some(doc) = self.documents.get_mut(uri) {
             doc.update(range, text, version);
         }
     }
 
     /// Replaces the entire content of a document.
-    pub fn replace_document(&mut self, uri: &Url, text: String, version: i32) {
+    pub(crate) fn replace_document(&mut self, uri: &Url, text: &str, version: i32) {
         if let Some(doc) = self.documents.get_mut(uri) {
             doc.replace(text, version);
         }
-    }
-
-    /// Returns the list of all document URIs.
-    pub fn document_uris(&self) -> Vec<Url> {
-        self.documents.keys().cloned().collect()
     }
 }

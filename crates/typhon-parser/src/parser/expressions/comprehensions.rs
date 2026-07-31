@@ -17,10 +17,10 @@ use typhon_ast::nodes::{
     NodeKind,
     SetComprehensionExpr,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 use crate::parser::{Context, ContextType, Parser};
 
 impl Parser<'_> {

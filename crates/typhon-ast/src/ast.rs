@@ -86,6 +86,10 @@ impl AST {
     ///
     /// Uses a free list to achieve constant-time allocation by reusing freed slots.
     /// Generation counters prevent use-after-free bugs.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the arena already contains more nodes than can be addressed by a [`NodeID`].
     pub fn alloc_node(&mut self, kind: NodeKind, data: AnyNode, span: Span) -> NodeID {
         let (index, generation) = if let Some(free_index) = self.free_list.pop() {
             // Reuse a freed slot - use its current generation
@@ -94,7 +98,9 @@ impl AST {
             (free_index, metadata.generation)
         } else {
             // No free slots - allocate a new one
-            let index = self.nodes.len() as u32;
+            let index = u32::try_from(self.nodes.len())
+                .expect("AST arena cannot address more than u32::MAX nodes");
+
             self.nodes.push(None);
             self.metadata.push(SlotMetadata::new(true));
 
@@ -518,8 +524,6 @@ impl Default for AST {
 impl Drop for AST {
     fn drop(&mut self) {
         // Clear all node references to avoid any potential issues
-        for node in &mut self.nodes {
-            *node = None;
-        }
+        self.nodes.fill(None);
     }
 }

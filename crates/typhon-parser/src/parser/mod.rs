@@ -33,10 +33,10 @@ pub use context::{
 };
 use typhon_ast::ast::AST;
 use typhon_ast::nodes::{AnyNode, NodeID, NodeKind};
+use typhon_lexer::{Lexer, Token, TokenKind};
 use typhon_source::types::{FileID, Position, SourceManager, SourceSpan, Span};
 
 use crate::diagnostics::{DiagnosticReporter, ParseError, ParseErrorBuilder, ParseResult};
-use crate::lexer::{Lexer, Token, TokenKind};
 
 /// The Parser struct is responsible for converting a stream of tokens
 /// into an Abstract Syntax Tree (AST).
@@ -76,8 +76,9 @@ impl<'src> Parser<'src> {
         // Create diagnostic reporter
         let diagnostics = DiagnosticReporter::new(source_manager.clone());
 
-        // Create lexer
-        let lexer = Lexer::new(source, file_id, Arc::new(diagnostics.clone()));
+        // Create lexer. The lexer accumulates its own diagnostics internally;
+        // they are drained in `Parser::advance()` after each token.
+        let lexer = Lexer::new(source, file_id);
 
         // Create default tokens to initialize current and peek
         let default_token = Token::with_empty_lexeme(TokenKind::Error, 0..0);
@@ -104,7 +105,11 @@ impl<'src> Parser<'src> {
         parser
     }
 
-    /// Advance to the next token and return the current token
+    /// Advance to the next token and return the current token.
+    ///
+    /// After pulling a token from the lexer, this method drains any
+    /// diagnostics the lexer accumulated for that token (errors and
+    /// warnings) and forwards them to the parser's [`DiagnosticReporter`].
     fn advance(&mut self) -> Token<'src> {
         // Save the current token
         let previous = std::mem::replace(&mut self.current, self.peek.clone());
@@ -121,6 +126,18 @@ impl<'src> Parser<'src> {
         } else {
             self.lookahead_buffer.remove(0)
         };
+
+        // Drain any diagnostics the lexer produced while emitting that token
+        // and forward them to the parser-level reporter. This is the
+        // consumer-side bridge between the lexer's accumulator and the
+        // shared `DiagnosticReporter`.
+        for err in self.lexer.take_errors() {
+            self.diagnostics.add_diagnostic(err.into());
+        }
+
+        for warning in self.lexer.take_warnings() {
+            self.diagnostics.add_diagnostic(warning.into());
+        }
 
         previous
     }
@@ -178,7 +195,10 @@ impl<'src> Parser<'src> {
     #[inline]
     pub const fn current_token(&self) -> &Token<'src> { &self.current }
 
-    /// Get the diagnostics reporter
+    /// Returns a reference to the parser's diagnostic reporter.
+    ///
+    /// Useful for downstream tools (LSP, REPL) that want to enumerate or display
+    /// diagnostics produced during parsing without taking ownership of the parser.
     #[inline]
     pub const fn diagnostics(&self) -> &DiagnosticReporter { &self.diagnostics }
 
