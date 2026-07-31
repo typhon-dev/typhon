@@ -59,7 +59,7 @@
     strum_macros      = "0.26.1"
     taplo             = "0.14.0"
     tempfile          = "3.8"
-    thiserror         = "1.0.56"
+    thiserror         = "2.0.19"
     tower-lsp         = "0.20"
     unic-ucd-category = "0.9.0"
     unicode-xid       = "0.2.4"
