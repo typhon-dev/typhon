@@ -65,7 +65,7 @@
     unicode-xid       = "0.2.4"
     url               = "2.4"
     walkdir           = "2.5.0"
-    zerocopy          = "=0.8.26"
+    zerocopy          = "=0.8.55"
 
     [workspace.dependencies.clap]
       features = ["derive"]
