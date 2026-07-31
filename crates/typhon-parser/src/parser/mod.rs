@@ -33,10 +33,10 @@ pub use context::{
 };
 use typhon_ast::ast::AST;
 use typhon_ast::nodes::{AnyNode, NodeID, NodeKind};
+use typhon_lexer::{Lexer, Token, TokenKind};
 use typhon_source::types::{FileID, Position, SourceManager, SourceSpan, Span};
 
 use crate::diagnostics::{DiagnosticReporter, ParseError, ParseErrorBuilder, ParseResult};
-use crate::lexer::{Lexer, Token, TokenKind};
 
 /// The Parser struct is responsible for converting a stream of tokens
 /// into an Abstract Syntax Tree (AST).
@@ -195,7 +195,10 @@ impl<'src> Parser<'src> {
     #[inline]
     pub const fn current_token(&self) -> &Token<'src> { &self.current }
 
-    /// Get the diagnostics reporter
+    /// Returns a reference to the parser's diagnostic reporter.
+    ///
+    /// Useful for downstream tools (LSP, REPL) that want to enumerate or display
+    /// diagnostics produced during parsing without taking ownership of the parser.
     #[inline]
     pub const fn diagnostics(&self) -> &DiagnosticReporter { &self.diagnostics }
 

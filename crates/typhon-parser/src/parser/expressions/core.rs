@@ -4,10 +4,10 @@
 //! operator precedence and associativity correctly.
 
 use typhon_ast::nodes::NodeID;
+use typhon_lexer::TokenKind;
 
 use super::operators::infix_binding_power;
 use crate::diagnostics::{ParseErrorBuilder, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::{Context, ContextType, Parser};
 
 impl Parser<'_> {

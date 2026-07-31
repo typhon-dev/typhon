@@ -14,12 +14,12 @@ use typhon_ast::nodes::{
     ParameterIdent,
     TypeDecl,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use super::Parser;
 use super::context::{Context, ContextFlags, ContextType, FunctionModifiers};
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 
 impl Parser<'_> {
     /// Parse base classes for a class declaration.

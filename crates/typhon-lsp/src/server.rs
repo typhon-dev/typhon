@@ -4,11 +4,32 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 use tower_lsp::jsonrpc::{Error as JsonRpcError, Result as JsonRpcResult};
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_types::{
+    CompletionParams,
+    CompletionResponse,
+    Diagnostic,
+    DiagnosticSeverity,
+    DidChangeTextDocumentParams,
+    DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
+    DocumentSymbolParams,
+    DocumentSymbolResponse,
+    GotoDefinitionParams,
+    GotoDefinitionResponse,
+    Hover,
+    HoverParams,
+    InitializeParams,
+    InitializeResult,
+    InitializedParams,
+    Location,
+    MessageType,
+    ReferenceParams,
+    ServerInfo,
+    Url,
+};
 use tower_lsp::{Client, LanguageServer};
-use typhon_analyzer::visitors::TypeCheckerVisitor as TypeChecker;
-use typhon_parser::lexer::Lexer;
 use typhon_parser::parser::Parser;
+use typhon_source::types::SourceManager;
 
 use crate::capabilities::server_capabilities;
 use crate::document::DocumentManager;
@@ -30,6 +51,7 @@ pub struct TyphonLanguageServer {
 
 impl TyphonLanguageServer {
     /// Create a new Typhon language server.
+    #[must_use]
     pub fn new(client: Client) -> Self {
         Self { client, document_manager: Arc::new(RwLock::new(DocumentManager::new())) }
     }
@@ -50,77 +72,51 @@ impl TyphonLanguageServer {
     }
 
     /// Run diagnostics on a document and publish the results.
+    ///
+    /// Currently this only runs the parser and forwards parser-level diagnostics
+    /// (syntax errors and lexer-bridged errors) to the client. Semantic
+    /// (type-checker) diagnostics will be re-enabled once the LSP wires up an
+    /// `AST` + `SymbolTable` + `TypeEnvironment` pipeline matching the current
+    /// `typhon_analyzer::visitors::TypeCheckerVisitor::new(ast, type_env, symbol_table)`
+    /// API; see Subtask 2A notes.
     async fn run_diagnostics(&self, uri: &Url) -> JsonRpcResult<()> {
-        let document_manager = self.document_manager.read();
-        let document = document_manager
-            .get_document(uri)
-            .ok_or_else(|| JsonRpcError::invalid_params("Document not found"))?;
+        // Run the parser inside a synchronous scope so non-`Send` parser internals
+        // (the AST arena, `Parser` itself) are dropped before the `await` below.
+        let diagnostics = {
+            let document_manager = self.document_manager.read();
+            let document = document_manager
+                .get_document(uri)
+                .ok_or_else(|| JsonRpcError::invalid_params("Document not found"))?;
 
-        // Create a new lexer for the document
-        let lexer = Lexer::new(document.text());
+            let text = document.text();
 
-        // Create a new parser with the lexer
-        let mut parser = Parser::new(lexer);
+            // Set up a single-file SourceManager so the parser can resolve spans for any
+            // diagnostics it produces.
+            let mut source_manager = SourceManager::new();
+            let file_id = source_manager.add_file(uri.to_string(), text.clone());
+            let source_manager = Arc::new(source_manager);
 
-        // Parse the document
-        let parse_result = parser.parse();
+            let mut parser = Parser::new(&text, file_id, source_manager);
+            drop(parser.parse_module());
 
-        let mut diagnostics = Vec::new();
+            parser
+                .diagnostics()
+                .diagnostics()
+                .iter()
+                .map(|diag| Diagnostic {
+                    range: document.range_from_span(diag.span.start.offset..diag.span.end.offset),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: None,
+                    code_description: None,
+                    source: Some("typhon-parser".to_string()),
+                    message: diag.message.clone(),
+                    related_information: None,
+                    tags: None,
+                    data: None,
+                })
+                .collect::<Vec<_>>()
+        };
 
-        // Add syntax errors to diagnostics
-        for error in parser.errors() {
-            let range = document.range_from_span(error.span.clone());
-            diagnostics.push(Diagnostic {
-                range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: None,
-                code_description: None,
-                source: Some("typhon-parser".to_string()),
-                message: error.to_string(),
-                related_information: None,
-                tags: None,
-                data: None,
-            });
-        }
-
-        // If parsing was successful, run the type checker
-        if let Ok(module) = parse_result {
-            let mut type_checker = TypeChecker::new();
-            let type_check_result = type_checker.check_module(&module);
-
-            // Add type errors to diagnostics
-            for error in type_checker.errors() {
-                if let Some(span) = error.span() {
-                    let range = document.range_from_span(span.clone());
-                    diagnostics.push(Diagnostic {
-                        range,
-                        severity: Some(DiagnosticSeverity::ERROR),
-                        code: None,
-                        code_description: None,
-                        source: Some("typhon-type-checker".to_string()),
-                        message: error.to_string(),
-                        related_information: None,
-                        tags: None,
-                        data: None,
-                    });
-                } else {
-                    // For errors without a specific span, place at the beginning
-                    diagnostics.push(Diagnostic {
-                        range: Range::new(Position::new(0, 0), Position::new(0, 0)),
-                        severity: Some(DiagnosticSeverity::ERROR),
-                        code: None,
-                        code_description: None,
-                        source: Some("typhon-type-checker".to_string()),
-                        message: error.to_string(),
-                        related_information: None,
-                        tags: None,
-                        data: None,
-                    });
-                }
-            }
-        }
-
-        // Publish the diagnostics
         self.publish_diagnostics(uri.clone(), diagnostics).await;
 
         Ok(())
@@ -129,7 +125,7 @@ impl TyphonLanguageServer {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for TyphonLanguageServer {
-    async fn initialize(&self, params: InitializeParams) -> JsonRpcResult<InitializeResult> {
+    async fn initialize(&self, _params: InitializeParams) -> JsonRpcResult<InitializeResult> {
         self.log_info("Typhon Language Server initialized").await;
 
         // Return server capabilities
@@ -158,12 +154,12 @@ impl LanguageServer for TyphonLanguageServer {
 
         {
             let mut document_manager = self.document_manager.write();
-            document_manager.add_document(uri.clone(), text, version);
+            document_manager.add_document(uri.clone(), &text, version);
         }
 
         // Run diagnostics on the opened document
         if let Err(e) = self.run_diagnostics(&uri).await {
-            self.log_error(format!("Error running diagnostics: {}", e)).await;
+            self.log_error(format!("Error running diagnostics: {e}")).await;
         }
     }
 
@@ -175,16 +171,16 @@ impl LanguageServer for TyphonLanguageServer {
             let mut document_manager = self.document_manager.write();
             for change in params.content_changes {
                 if let Some(range) = change.range {
-                    document_manager.update_document(&uri, range, change.text, version);
+                    document_manager.update_document(&uri, range, &change.text, version);
                 } else {
-                    document_manager.replace_document(&uri, change.text, version);
+                    document_manager.replace_document(&uri, &change.text, version);
                 }
             }
         }
 
         // Run diagnostics on the changed document
         if let Err(e) = self.run_diagnostics(&uri).await {
-            self.log_error(format!("Error running diagnostics: {}", e)).await;
+            self.log_error(format!("Error running diagnostics: {e}")).await;
         }
     }
 

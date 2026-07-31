@@ -4,11 +4,11 @@
 //! Typhon programming language. It uses the tower-lsp framework for implementing
 //! the LSP protocol and integrates with the Typhon compiler for language analysis.
 
-pub mod capabilities;
-pub mod document;
-pub mod handlers;
-pub mod server;
-pub mod utils;
+mod capabilities;
+mod document;
+mod handlers;
+mod server;
+mod utils;
 
 #[cfg(test)]
 pub mod tests;

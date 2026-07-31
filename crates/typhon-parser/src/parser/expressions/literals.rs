@@ -16,10 +16,10 @@ use typhon_ast::nodes::{
     TemplateStringPart,
     VariableExpr,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::{ParseErrorBuilder, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser<'_> {

@@ -9,10 +9,10 @@ use typhon_ast::nodes::{
     TryStmt,
     VariableExpr,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use crate::diagnostics::{ParseError, ParseResult};
-use crate::lexer::TokenKind;
 use crate::parser::Parser;
 
 impl Parser<'_> {

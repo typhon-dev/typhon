@@ -4,45 +4,51 @@
 # Default to true for all rules
 default: true
 
-# MD004/ul-style : Unordered list style
+# MD004/ul-style - Unordered list style
 ul-style:
   style: dash
 
-# MD007/ul-indent : Unordered list indentation
+# MD007/ul-indent - Unordered list indentation
 ul-indent:
   indent: 2
 
 # MD009/no-trailing-spaces - No trailing spaces
 no-trailing-spaces: true
 
-# MD013/line-length : Line length
-line-length: false
+# MD013/line-length - Line length
+line-length:
+  code_blocks: false
+  line_length: 100
+  tables: false
 
-# MD014/commands-show-output : Dollar signs used before commands without showing output
+# MD014/commands-show-output - Dollar signs used before commands without showing output
 commands-show-output: false
 
 # MD022/blanks-around-headings - Headings should be surrounded by blank lines
 blanks-around-headings: true
 
-# MD024/no-duplicate-heading : Multiple headings with the same content
+# MD024/no-duplicate-heading - Multiple headings with the same content
 no-duplicate-heading:
   # Allow when nested under different parents e.g. CHANGELOG.md
   siblings_only: true
 
-# MD031/blanks-around-fenced-code - Fenced code blocks should be surrounded by blank lines
-blanks-around-fenced-code: true
+# MD031/blanks-around-fences - Fenced code blocks should be surrounded by blank lines
+blanks-around-fences: true
 
-# MD033/no-inline-html : Inline HTML
+# MD032/blanks-around-lists - Lists should be surrounded by blank lines
+blanks-around-lists: true
+
+# MD033/no-inline-html - Inline HTML
 no-inline-html: false
 
-# MD040/fenced-code-language : Fenced code blocks should have a language specified
+# MD040/fenced-code-language - Fenced code blocks should have a language specified
 fenced-code-language:
   language_only: false
 
-# MD041/first-line-heading/first-line-h1 : First line in a file should be a top-level heading
+# MD041/first-line-heading/first-line-h1 - First line in a file should be a top-level heading
 first-line-heading: false
 
-# MD046/code-block-style : Code block style
+# MD046/code-block-style - Code block style
 code-block-style:
   style: fenced
 
@@ -53,5 +59,14 @@ single-trailing-newline: true
 code-fence-style:
   style: backtick
 
-# MD059/descriptive-link-text : Link text should be descriptive
+# MD058/blanks-around-tables - Tables should be surrounded by blank lines
+blanks-around-tables: true
+
+# MD059/descriptive-link-text - Link text should be descriptive
 descriptive-link-text: false
+
+# MD060/table-column-style - Table column style
+table-column-style:
+  aligned_delimiter: true
+  enabled: true
+  style: aligned

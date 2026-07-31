@@ -1,0 +1,23 @@
+lints.workspace = true
+
+[dependencies]
+  logos.workspace      = true
+  rustc-hash.workspace = true
+  thiserror.workspace  = true
+
+  typhon-source.workspace = true
+
+[dev-dependencies]
+  rstest.workspace = true
+
+[package]
+  authors.workspace    = true
+  categories           = ["compilers", "parser-implementations"]
+  description          = "Lexer for the Typhon programming language"
+  edition.workspace    = true
+  keywords             = ["compiler", "lexer", "logos", "tokenizer", "typhon"]
+  license.workspace    = true
+  name                 = "typhon-lexer"
+  readme               = "README.md"
+  repository.workspace = true
+  version.workspace    = true

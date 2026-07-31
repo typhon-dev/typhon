@@ -1,9 +1,6 @@
 ---
 title: Project Code Map - Typhon Programming Language
 description: A comprehensive map of the Typhon programming language codebase
-date: 2025-11-19
-generated_by: gen-codemap
-version: 1.0
 ---
 
 ## Table of Contents
@@ -71,11 +68,12 @@ typhon/
 │    ├── typhon-ast/           # Abstract Syntax Tree (AST) definitions
 │    ├── typhon-cli/           # Command-line interface
 │    ├── typhon-codegen-llvm/  # LLVM code generation backend
+│    ├── typhon-lexer/         # Tokenizer (logos-based)
 │    ├── typhon-lsp/           # Language Server Protocol implementation
 │    ├── typhon-mir/           # Mid-level Intermediate Representation (MIR)
 │    ├── typhon-mir-builder/   # AST to MIR lowering
 │    ├── typhon-mir-optimizer/ # MIR optimization passes
-│    ├── typhon-parser/        # Lexer, parser
+│    ├── typhon-parser/        # Parser (consumes typhon-lexer tokens)
 │    ├── typhon-repl/          # Interactive REPL
 │    ├── typhon-runtime/       # Runtime support
 │    ├── typhon-source/        # Source file handling and position tracking
@@ -164,6 +162,8 @@ Here's a visualization of the high-level component dependencies:
 graph TD
     CLI[typhon-cli] --> Parser[typhon-parser]
     CLI --> MIR[typhon-mir]
+    Parser --> Lexer[typhon-lexer]
+    LSPLexer[typhon-lsp] --> Lexer
     CLI --> MIRBuilder[typhon-mir-builder]
     CLI --> MIROptimizer[typhon-mir-optimizer]
     CLI --> CodeGenLLVM[typhon-codegen-llvm]
@@ -185,10 +185,11 @@ Here's a detailed breakdown of crate-level dependencies:
 
 - **typhon-cli**: Depends on typhon-parser, typhon-mir, typhon-mir-builder, typhon-mir-optimizer, typhon-codegen-llvm
 - **typhon-codegen-llvm**: Depends on typhon-mir, LLVM (via inkwell)
-- **typhon-lsp**: Depends on typhon-parser, typhon-analyzer, typhon-ast
+- **typhon-lexer**: Depends on typhon-source (logos-based, no parser dependencies — kept acyclic)
+- **typhon-lsp**: Depends on typhon-parser, typhon-lexer, typhon-analyzer, typhon-ast
 - **typhon-repl**: Depends on typhon-parser, typhon-runtime
 - **typhon-runtime**: Depends on typhon-stdlib
-- **typhon-parser**: Depends on typhon-ast
+- **typhon-parser**: Depends on typhon-ast, typhon-lexer
 - **typhon-analyzer**: Depends on typhon-ast
 - **typhon-mir-builder**: Depends on typhon-ast, typhon-mir
 - **typhon-mir-optimizer**: Depends on typhon-mir

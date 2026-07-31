@@ -1986,9 +1986,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "typhon-lexer"
+version = "0.1.0"
+dependencies = [
+ "logos",
+ "rstest",
+ "rustc-hash",
+ "thiserror",
+ "typhon-source",
+]
+
+[[package]]
 name = "typhon-lsp"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "insta",
  "log",
  "parking_lot",
@@ -1999,6 +2011,7 @@ dependencies = [
  "tokio",
  "tower-lsp",
  "typhon-analyzer",
+ "typhon-lexer",
  "typhon-parser",
  "typhon-source",
  "url",
@@ -2047,10 +2060,10 @@ dependencies = [
  "bumpalo",
  "criterion",
  "cute",
- "logos",
- "rustc-hash",
+ "rstest",
  "thiserror",
  "typhon-ast",
+ "typhon-lexer",
  "typhon-source",
 ]
 

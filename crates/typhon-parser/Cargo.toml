@@ -5,18 +5,18 @@ lints.workspace = true
   name    = "parser"
 
 [dependencies]
-  anyhow.workspace     = true
-  bumpalo.workspace    = true
-  cute.workspace       = true
-  logos.workspace      = true
-  rustc-hash.workspace = true
-  thiserror.workspace  = true
+  anyhow.workspace    = true
+  bumpalo.workspace   = true
+  cute.workspace      = true
+  thiserror.workspace = true
 
   typhon-ast.workspace    = true
+  typhon-lexer.workspace  = true
   typhon-source.workspace = true
 
 [dev-dependencies]
   criterion.workspace = true
+  rstest.workspace    = true
 
 [package]
   authors.workspace    = true

@@ -21,7 +21,7 @@ mod reporter;
 // `LexErrorKind`, `LexWarning`) intentionally live in the `lexer` module so
 // that the lexer has no dependency on `diagnostics`. Consumers that need the
 // `Diagnostic` view of those types use the `From` impls defined in
-// [`error`] and access the source types via `crate::lexer`.
+// [`error`] and access the source types via [`typhon_lexer`].
 pub use error::{Diagnostic, DiagnosticLevel, ParseError, ParseErrorBuilder, ParseResult};
 pub use reporter::{DiagnosticReporter, format_error_context, format_with_line_numbers};
 use typhon_source::types::SourceSpan;

@@ -5,17 +5,16 @@
 //! - `ParseError`: Errors that can occur during parsing
 //! - `Diagnostic`: A diagnostic message with source location
 //!
-//! Lexer-specific error and warning types live in [`crate::lexer::error`] and
-//! are bridged into [`Diagnostic`] via `From` impls below; this directionality
+//! Lexer-specific error and warning types live in the [`typhon_lexer`] crate
+//! and are bridged into [`Diagnostic`] via `From` impls below; this directionality
 //! (consumer depends on producer) keeps the lexer free of any dependency on
 //! the diagnostics module.
 
 use std::{fmt, io};
 
 use thiserror::Error;
+use typhon_lexer::{LexError, LexWarning, Token, TokenKind};
 use typhon_source::types::SourceSpan;
-
-use crate::lexer::{LexError, LexWarning, Token, TokenKind};
 
 /// Represents the severity level of a diagnostic message.
 ///
@@ -398,7 +397,7 @@ impl Diagnostic {
 /// Convert [`LexError`] into a [`Diagnostic`].
 ///
 /// This is the consumer-side bridge that lets the parser forward lexer errors
-/// drained from [`Lexer::take_errors`](crate::lexer::Lexer::take_errors) into
+/// drained from [`Lexer::take_errors`](typhon_lexer::Lexer::take_errors) into
 /// the diagnostic reporter without the lexer ever depending on diagnostics.
 impl From<LexError> for Diagnostic {
     fn from(error: LexError) -> Self {
@@ -438,7 +437,7 @@ impl From<LexError> for Diagnostic {
 /// Convert [`LexWarning`] into a [`Diagnostic`].
 ///
 /// This is the consumer-side bridge for warnings drained from
-/// [`Lexer::take_warnings`](crate::lexer::Lexer::take_warnings).
+/// [`Lexer::take_warnings`](typhon_lexer::Lexer::take_warnings).
 impl From<LexWarning> for Diagnostic {
     fn from(warning: LexWarning) -> Self {
         match warning {

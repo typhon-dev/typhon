@@ -11,17 +11,19 @@
 //! - Error reporting and recovery
 //! - Tab vs. spaces warnings
 
-mod error;
-mod rules;
-mod token;
-
 use std::collections::VecDeque;
 
-pub use error::*;
 use logos::Lexer as LogosLexer;
-pub use rules::*;
-pub use token::*;
 use typhon_source::types::{FileID, Position, SourceSpan, Span};
+
+use crate::error::{LexError, LexWarning};
+use crate::rules::{
+    check_soft_keyword,
+    is_in_template_string_context,
+    is_string_literal,
+    join_string_literals,
+};
+use crate::token::{Token, TokenKind};
 
 /// Custom lexer that handles Python's indentation rules.
 ///

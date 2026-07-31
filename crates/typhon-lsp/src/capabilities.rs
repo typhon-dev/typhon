@@ -1,8 +1,20 @@
 //! LSP capabilities of the Typhon Language Server.
 
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_types::{
+    CompletionOptions,
+    HoverProviderCapability,
+    OneOf,
+    PositionEncodingKind,
+    SaveOptions,
+    ServerCapabilities,
+    TextDocumentSyncCapability,
+    TextDocumentSyncKind,
+    TextDocumentSyncOptions,
+    WorkDoneProgressOptions,
+};
 
 /// Returns the server capabilities that the Typhon Language Server supports.
+#[must_use]
 pub fn server_capabilities() -> ServerCapabilities {
     ServerCapabilities {
         position_encoding: Some(PositionEncodingKind::UTF8),

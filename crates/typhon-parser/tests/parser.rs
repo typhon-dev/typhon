@@ -12,7 +12,6 @@
 mod declaration;
 mod expression;
 mod identifier;
-mod lexer;
 mod module;
 mod pattern;
 mod statement;

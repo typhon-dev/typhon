@@ -13,11 +13,11 @@ use typhon_ast::nodes::{
     TupleType,
     UnionType,
 };
+use typhon_lexer::TokenKind;
 use typhon_source::types::Span;
 
 use super::Parser;
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 
 impl Parser<'_> {
     /// Parse a callable type (e.g. `Callable[[int, str], bool]`).

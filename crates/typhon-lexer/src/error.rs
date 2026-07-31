@@ -20,6 +20,10 @@ use typhon_source::types::SourceSpan;
 ///
 /// Coarse-grained classification used by [`LexErrorBuilder`] to construct a
 /// [`LexError`] without specifying line/column up-front.
+#[expect(
+    variant_size_differences,
+    reason = "invalid indentation diagnostics intentionally carry expected and found indentation"
+)]
 #[derive(Clone, Copy, Debug)]
 pub enum LexErrorKind {
     /// Expected indentation but found something else

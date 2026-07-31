@@ -4,10 +4,10 @@
 //! including variable identifiers, parameter identifiers, and type identifiers.
 
 use typhon_ast::nodes::{AnyNode, BasicIdent, NodeID, NodeKind, ParameterIdent, VariableExpr};
+use typhon_lexer::TokenKind;
 
 use super::{Context, ContextType, Parser};
 use crate::diagnostics::ParseResult;
-use crate::lexer::TokenKind;
 
 impl Parser<'_> {
     /// Parse an identifier (dispatches based on context).

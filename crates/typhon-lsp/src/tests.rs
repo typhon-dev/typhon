@@ -9,28 +9,23 @@ mod tests {
     use url::Url;
 
     use crate::document::DocumentManager;
-    use crate::handlers::{
-        completion_handler,
-        definition_handler,
-        document_symbol_handler,
-        hover_handler,
-        references_handler,
-    };
+    use crate::handlers::{completion_handler, document_symbol_handler, hover_handler};
 
     // Helper function to create a test document manager
     fn setup_test_document_manager() -> Arc<RwLock<DocumentManager>> {
         let mut document_manager = DocumentManager::new();
         let uri = Url::parse("file:///test.ty").unwrap();
-        let content = r#"
+        let content = r"
 def add(a: int, b: int) -> int:
     return a + b
 
 let x: int = 10
 let y: int = 20
 let result = add(x, y)
-"#
-        .to_string();
+";
+
         document_manager.add_document(uri, content, 1);
+
         Arc::new(RwLock::new(document_manager))
     }
 
@@ -52,7 +47,7 @@ let result = add(x, y)
             dm.update_document(
                 &uri,
                 Range::new(Position::new(0, 0), Position::new(0, 0)),
-                "# Test comment\n".to_string(),
+                "# Test comment\n",
                 2,
             );
         }
@@ -73,7 +68,7 @@ let result = add(x, y)
 
         // Test completion for 'ad' (should suggest 'add')
         let params = TextDocumentPositionParams {
-            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            text_document: TextDocumentIdentifier { uri },
             position: Position::new(6, 13), // Position just before 'd' in "add(x, y)"
         };
 
@@ -96,7 +91,7 @@ let result = add(x, y)
 
         // Test hover over 'def' keyword
         let params = TextDocumentPositionParams {
-            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            text_document: TextDocumentIdentifier { uri },
             position: Position::new(1, 2), // Position at 'def' keyword
         };
 
@@ -104,10 +99,20 @@ let result = add(x, y)
 
         match hover {
             Some(hover) => {
-                assert!(
-                    hover.contents.to_string().contains("def"),
-                    "Hover should provide info about 'def' keyword"
-                );
+                let text = match hover.contents {
+                    HoverContents::Markup(content) => content.value,
+                    HoverContents::Scalar(MarkedString::String(s)) => s,
+                    HoverContents::Scalar(MarkedString::LanguageString(ls)) => ls.value,
+                    HoverContents::Array(items) => items
+                        .into_iter()
+                        .map(|item| match item {
+                            MarkedString::String(s) => s,
+                            MarkedString::LanguageString(ls) => ls.value,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                };
+                assert!(text.contains("def"), "Hover should provide info about 'def' keyword");
             }
             None => panic!("Expected hover information"),
         }
@@ -119,7 +124,7 @@ let result = add(x, y)
         let uri = Url::parse("file:///test.ty").unwrap();
 
         let params = DocumentSymbolParams {
-            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            text_document: TextDocumentIdentifier { uri },
             work_done_progress_params: WorkDoneProgressParams::default(),
             partial_result_params: PartialResultParams::default(),
         };

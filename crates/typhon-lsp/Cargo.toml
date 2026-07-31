@@ -7,6 +7,7 @@ lints.workspace = true
   thiserror.workspace  = true
 
   # LSP-specific dependencies
+  env_logger.workspace  = true # Logging implementation
   parking_lot.workspace = true # Synchronization primitives
   ropey.workspace       = true # Rope data structure for text manipulation
   serde.workspace       = true
@@ -16,6 +17,7 @@ lints.workspace = true
 
   # Internal crates
   typhon-analyzer.workspace = true
+  typhon-lexer.workspace    = true
   typhon-parser.workspace   = true
   typhon-source.workspace   = true
 

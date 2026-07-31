@@ -3,9 +3,8 @@
 //! This module provides utility functions, helper macros, and testing utilities
 //! that are used throughout the Typhon parser implementation.
 
+use typhon_lexer::TokenKind;
 use typhon_source::types::{SourceSpan, Span};
-
-use crate::lexer::TokenKind;
 
 /// The size of a tab character in spaces.
 pub const TAB_SIZE: usize = 4;
