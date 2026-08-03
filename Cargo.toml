@@ -36,7 +36,7 @@
     bumpalo           = "3.19.0"
     chumsky           = "0.9.3"
     colored           = "3.0.0"
-    criterion         = "0.4"
+    criterion         = "0.8"
     crossbeam         = "0.8"
     cute              = "0.3.0"
     env_logger        = "0.10"
